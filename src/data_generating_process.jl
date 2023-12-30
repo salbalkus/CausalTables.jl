@@ -92,8 +92,10 @@ get_conditional_distribution(varfunc::Function, dgp::DataGeneratingProcess, ct::
 
 function get_conditional_distribution(varfunc::NeighborSumOut, dgp::DataGeneratingProcess, ct::CausalTable)
     neighbordists = dgp.distgen[findfirst(isequal(varfunc.var_to_summarize), [name for (name, _) in dgp.distgen])][2](; ct.tbl...)
-    return [Distributions.convolve(neighbordists[outneighbors(ct.graph, i)]) for i in 1:nv(ct.graph)] 
-end
+    return [
+        outdegree(ct.graph, i) > 0 ? Distributions.convolve(neighbordists[outneighbors(ct.graph, i)]) : Binomial(0) 
+        for i in 1:nv(ct.graph) 
+        ] end
 
 function get_conditional_distribution(varfunc::NeighborSumIn, dgp::DataGeneratingProcess, ct::CausalTable)
     neighbordists = dgp.distgen[findfirst(isequal(varfunc.var_to_summarize), [name for (name, _) in dgp.distgen])][2](; ct.tbl...)

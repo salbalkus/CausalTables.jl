@@ -8,8 +8,6 @@ using Distributions
     foo1 = DataFrame(L = [1, 2, 3], A = [5, 6, 7])
     foo2 =  (L = [1, 2, 3], A = [5, 6, 7])
     foo3 = ((L = 1, A = 5), (L = 2, A = 6), (L = 3, A = 7))
-    CausalTable(foo1)
-
 
     @test CausalTable(foo1).tbl == foo1
     @test CausalTable(foo2).tbl == foo2
@@ -25,7 +23,7 @@ end
         :Y => (; O...) -> (@. Normal(O[:A] + O[:A_s] + 0.2 * O[:L1] + 0.05 * O[:L1_s], 1))
     ]
 
-    dgp = DataGeneratingProcess(n -> erdos_renyi(n, 0.2), distseq)
+    dgp = DataGeneratingProcess(n -> erdos_renyi(n, 0.2), distseq);
     foo = rand(dgp, 10)
     
     @test typeof(foo) == CausalTable
