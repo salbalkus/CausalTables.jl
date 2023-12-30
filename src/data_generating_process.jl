@@ -1,48 +1,63 @@
 
-# Overload the convolve function to work on a vector of UnivariateDistribution
-function Distributions.convolve(ds::Vector{T}) where {T <: UnivariateDistribution}
-    output = ds[1]
-    for d in ds[2:end]
-        output = Distributions.convolve(output, d)
-    end
-    return output
-end
+"""
+    mutable struct DataGeneratingProcess
 
-### Summary functions ###
-abstract type NetworkSummary end
-abstract type NeighborSum <: NetworkSummary end
+Mutable struct representing a data generating process.
 
-struct NeighborSumOut <: NeighborSum
-    var_to_summarize::Symbol
-end
+# Fields
+- `networkgen::Function`: The function to generate the network.
+- `distgen::Vector{Pair{Symbol, ValidDGPTypes}}`: The vector of variable-summary pairs.
 
-struct NeighborSumIn <: NeighborSum
-    var_to_summarize::Symbol
-end
-
-ValidDGPTypes = Union{Function, NetworkSummary}
-
-### Constructors ###
+"""
 mutable struct DataGeneratingProcess
     networkgen::Function
     distgen::Vector{Pair{Symbol, ValidDGPTypes}}
 end
 
+"""
+    DataGeneratingProcess(distgen::Vector{Pair{Symbol, ValidDGPTypes}})
+
+Constructs a `DataGeneratingProcess` object with the given distribution generator.
+
+# Arguments
+- `distgen::Vector{Pair{Symbol, ValidDGPTypes}}`: A vector of pairs representing the distribution generator.
+
+# Returns
+- `DataGeneratingProcess`: The constructed `DataGeneratingProcess` object.
+"""
 DataGeneratingProcess(distgen::Vector{Pair{Symbol, ValidDGPTypes}}) = DataGeneratingProcess(() -> nothing, distgen)
 
-### Funtions to step through the DGP ###
-# Step for summarizing a previous step over graph neighbors
+"""
+    initialize_dgp_step(step_func::NeighborSum, ct)
+
+Initialize the data generating process (DGP) step by applying the given `step_func` to the causal table `ct`.
+
+# Arguments
+- `step_func`: The function to be applied to the causal table. Either a function or a NetworkSummary (e.g. NeighborSum).
+- `ct`: The causal table.
+
+# Returns
+- `ct`: The modified causal table after applying the `step_func`.
+
+"""
 initialize_dgp_step(step_func::NeighborSum, ct) = ct -> adjacency_matrix(ct.graph) * Tables.getcolumn(ct, step_func.var_to_summarize)
-
-# Step for creating a distribution
 initialize_dgp_step(step_func::Function, ct) = step_func(; ct.tbl...)
-
-# Handle errors
 function initialize_dgp_step(step_func, ct)
     error("Attempted to step through the DGP but failed due to incorrect type. Note that `step_func` must be of type Function or an existing NetworkSummary (e.g. NeighborSum)")
 end
 
-### Functions to draw a new column in the DGP ###
+"""
+    append_dgp_draw!(name::Symbol, step::UnivariateDistribution, ct::CausalTable, n)
+
+Appends a draw from a distribution to the CausalTable.
+
+# Arguments
+- `name::Symbol`: The name of the column to be added.
+- `step: Either the distribution (or a Vector of distributions) from which to draw values, or a function that summarizes neighboring distributions in the causal graph between units.
+- `ct::CausalTable`: The CausalTable to which the values will be appended.
+- `n`: The number of values to draw.
+
+"""
 function append_dgp_draw!(name::Symbol, step::UnivariateDistribution, ct::CausalTable, n)
     ct.tbl = merge(ct.tbl, NamedTuple{(name,)}((Distributions.rand(step, n),)))
 end
@@ -60,21 +75,47 @@ function append_dgp_draw!(name::Symbol, step::Function, ct::CausalTable, n) # ap
     ct.summaries = merge(ct.summaries, NamedTuple{(name,)}((step,)))
 end
 
-### Functions to get conditional distribution ###
-get_conditional_distribution(varfunc::Function, ct) = varfunc(; ct.tbl...)
+"""
+    get_conditional_distribution(varfunc::Function, ct)
 
-function get_conditional_distribution(varfunc::NeighborSumOut, ct)
+Compute the conditional distribution of a variable in the DataGeneratingProcess using a given function and a CausalTable.
+
+# Arguments
+- `varfunc`: The right side of the Pair used to compute the conditional distribution in the DataGeneratingProcess. Either of type Function or NetworkSummary (e.g. NeighborSum).
+- `ct::CausalTable`: The CausalTable containing the data.
+
+# Returns
+The conditional distribution of the variable.
+
+"""
+get_conditional_distribution(varfunc::Function, dgp::DataGeneratingProcess, ct::CausalTable) = varfunc(; ct.tbl...)
+
+function get_conditional_distribution(varfunc::NeighborSumOut, dgp::DataGeneratingProcess, ct::CausalTable)
     neighbordists = dgp.distgen[findfirst(isequal(varfunc.var_to_summarize), [name for (name, _) in dgp.distgen])][2](; ct.tbl...)
     return [Distributions.convolve(neighbordists[outneighbors(ct.graph, i)]) for i in 1:nv(ct.graph)] 
 end
 
-function get_conditional_distribution(varfunc::NeighborSumIn, ct)
+function get_conditional_distribution(varfunc::NeighborSumIn, dgp::DataGeneratingProcess, ct::CausalTable)
     neighbordists = dgp.distgen[findfirst(isequal(varfunc.var_to_summarize), [name for (name, _) in dgp.distgen])][2](; ct.tbl...)
-    return [Distributions.convolve(neighbordists[inneighbors(ct.graph, i)]) for i in 1:nv(ct.graph)] 
+    return [
+        indegree(ct.graph, i) > 0 ? Distributions.convolve(neighbordists[inneighbors(ct.graph, i)]) : Binomial(0) 
+        for i in 1:nv(ct.graph) 
+        ] 
 end
 
-### Random Draw from DGP ###
+"""
+    rand(dgp::DataGeneratingProcess, n::Int)
 
+Generate a random CausalTable using the specified DataGeneratingProcess.
+
+# Arguments
+- `dgp::DataGeneratingProcess`: The DataGeneratingProcess object defining the causal network and distribution steps.
+- `n::Int`: The number of observations to generate.
+
+# Returns
+- `ct::CausalTable`: The generated CausalTable.
+
+"""
 function Base.rand(dgp::DataGeneratingProcess, n::Int)
     # Initialize output
     ct = CausalTable((;), dgp.networkgen(n), (;))
@@ -93,12 +134,25 @@ function Base.rand(dgp::DataGeneratingProcess, n::Int)
     return ct
 end
 
-### Conditional Density of DGP ###
 
+"""
+    condensity(dgp::DataGeneratingProcess, ct::CausalTable, var::Symbol)
+
+Compute the conditional density of a variable in a CausalTable based on a DataGeneratingProcess.
+
+# Arguments
+- `dgp::DataGeneratingProcess`: The DataGeneratingProcess object representing the data generating process.
+- `ct::CausalTable`: The CausalTable object containing the data.
+- `var::Symbol`: The name of the variable for which to compute the conditional density.
+
+# Returns
+The conditional density of the variable in the CausalTable.
+
+"""
 function condensity(dgp::DataGeneratingProcess, ct::CausalTable, var::Symbol)
     # only take the first instance of the variable name in the DGP
     varfunc = dgp.distgen[findfirst(isequal(var), [name for (name, _) in dgp.distgen])][2]
-    return get_conditional_distribution(varfunc, ct)
+    return get_conditional_distribution(varfunc, dgp, ct)
 end
 
 

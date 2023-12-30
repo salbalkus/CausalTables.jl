@@ -1,6 +1,3 @@
-using Documenter, CausalTable
+using Documenter, CausalTables
 
-makedocs(
-    sitename="CausalTable.jl",
-    modules=[CausalTable],
-)
+makedocs(sitename="CausalTables.jl")

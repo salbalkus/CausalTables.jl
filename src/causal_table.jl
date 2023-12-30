@@ -32,6 +32,10 @@ Tables.columnnames(x::CausalTable) = Tables.columnnames(x.tbl)
 Tables.columnindex(x::CausalTable, nm::Symbol) = Tables.columnindex(x.tbl, nm)
 Tables.columntype(x::CausalTable, nm::Symbol) = Tables.columntype(x.tbl, nm)
 
+# Additional convenience methods
+Base.getindex(x::CausalTable, i) = Base.getindex(x.tbl, i)
+
+
 
 
 
