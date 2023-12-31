@@ -35,6 +35,6 @@ end
     bar = condensity(dgp, foo, :A_s)
 
     @test nrow(foo.tbl) == length(bar)
-    @test typeof(bar) == Vector{UnivariateDistribution}
+    @test typeof(bar) <: Vector{T} where {T <: UnivariateDistribution}
 end
 
