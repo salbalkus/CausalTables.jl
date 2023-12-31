@@ -5,7 +5,7 @@
 Mutable struct representing a data generating process.
 
 # Fields
-- `networkgen::Function`: The function to generate the network.
+- `networkgen::Function`: The function to generate the network. Should return a `SimpleGraph` object and take a single argument `n::Int64`, the number of nodes in the graph
 - `distgen::Vector{Pair{Symbol, ValidDGPTypes}}`: The vector of variable-summary pairs.
 
 """
@@ -25,7 +25,7 @@ Constructs a `DataGeneratingProcess` object with the given distribution generato
 # Returns
 - `DataGeneratingProcess`: The constructed `DataGeneratingProcess` object.
 """
-DataGeneratingProcess(distgen::Vector{Pair{Symbol, ValidDGPTypes}}) = DataGeneratingProcess(() -> nothing, distgen)
+DataGeneratingProcess(distgen::Vector{Pair{Symbol, T}}) where {T <: ValidDGPTypes} = DataGeneratingProcess(n -> nothing, distgen)
 
 """
     initialize_dgp_step(step_func::NeighborSum, ct)
@@ -120,7 +120,12 @@ Generate a random CausalTable using the specified DataGeneratingProcess.
 """
 function Base.rand(dgp::DataGeneratingProcess, n::Int)
     # Initialize output
-    ct = CausalTable((;), dgp.networkgen(n), (;))
+    net = dgp.networkgen(n)
+    if net isa SimpleGraph
+        ct = CausalTable((;), net, (;))
+    else
+        ct = CausalTable((;))
+    end
 
     # Iterate through each step of the DGP
     for pair in dgp.distgen

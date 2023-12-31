@@ -17,7 +17,27 @@ Random.seed!(1);
     @test CausalTable(foo3).tbl == foo3
 end
 
-@testset "DataGeneratingProcess" begin
+@testset "DataGeneratingProcess, no graphs" begin
+    distseq = [
+        :L1 => (; O...) -> DiscreteUniform(1, 5),
+        :A => (; O...) -> (@. Normal(O[:L1], 1)),
+        :Y => (; O...) -> (@. Normal(O[:A] + 0.2 * O[:L1], 1))
+    ]
+
+    dgp = DataGeneratingProcess(distseq);
+    foo = rand(dgp, 10)
+    
+    @test typeof(foo) == CausalTable
+    @test Tables.columnnames(foo.tbl) == (:L1, :A, :Y)
+
+    bar = condensity(dgp, foo, :A)
+
+    @test nrow(foo.tbl) == length(bar)
+    @test typeof(bar) <: Vector{T} where {T <: UnivariateDistribution}
+
+end
+
+@testset "DataGeneratingProcess with graphs" begin
     distseq = [
         :L1 => (; O...) -> DiscreteUniform(1, 5),
         :L1_s => NeighborSumIn(:L1),
@@ -36,5 +56,6 @@ end
 
     @test nrow(foo.tbl) == length(bar)
     @test typeof(bar) <: Vector{T} where {T <: UnivariateDistribution}
+
 end
 
