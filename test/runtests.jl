@@ -4,6 +4,8 @@ using Test
 using Graphs
 using Distributions
 
+Random.seed!(1);
+
 @testset "CausalTables" begin
     foo1 = DataFrame(L = [1, 2, 3], A = [5, 6, 7])
     foo2 =  (L = [1, 2, 3], A = [5, 6, 7])
