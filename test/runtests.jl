@@ -3,6 +3,7 @@ using DataFrames
 using Test
 using Graphs
 using Distributions
+using Random
 
 Random.seed!(1);
 
