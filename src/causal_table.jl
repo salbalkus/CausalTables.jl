@@ -34,6 +34,9 @@ Tables.columntype(x::CausalTable, nm::Symbol) = Tables.columntype(x.tbl, nm)
 
 # Additional convenience methods
 Base.getindex(x::CausalTable, i) = Base.getindex(x.tbl, i)
+DataAPI.ncol(x::CausalTable) = DataAPI.ncol(x.tbl)
+DataAPI.nrow(x::CausalTable) = DataAPI.nrow(x.tbl)
+
 
 
 
