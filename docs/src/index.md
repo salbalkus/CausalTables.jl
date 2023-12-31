@@ -1,5 +1,6 @@
-# CausalTable.jl
+# CausalTables.jl
 
-```@docs
-CausalTable
-CausalTable(tbl)
+```@autodocs
+Modules = [CausalTables]
+Order   = [:function, :type]
+```
