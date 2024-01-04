@@ -40,9 +40,9 @@ Initialize the data generating process (DGP) step by applying the given `step_fu
 - `ct`: The modified causal table after applying the `step_func`.
 
 """
-initialize_dgp_step(step_func::NetworkSummary, ct) = ct -> summarize(ct, step_func)
-
+initialize_dgp_step(step_func::NetworkSummary, ct) = step_func
 initialize_dgp_step(step_func::Function, ct) = step_func(; ct.tbl...)
+
 function initialize_dgp_step(step_func, ct)
     error("Attempted to step through the DGP but failed due to incorrect type. Note that `step_func` must be of type Function or an existing NetworkSummary (e.g. NeighborSum)")
 end
@@ -71,8 +71,8 @@ function append_dgp_draw!(name::Symbol, step::MultivariateDistribution, ct::Caus
     ct.tbl = merge(ct.tbl, NamedTuple{(name,)}((Distributions.rand(step),)))
 end
 
-function append_dgp_draw!(name::Symbol, step::Function, ct::CausalTable, n) # append the summary function and store it in the CausalTable
-    ct.tbl = merge(ct.tbl, NamedTuple{(name,)}((step(ct),)))
+function append_dgp_draw!(name::Symbol, step::NetworkSummary, ct::CausalTable, n) # summarize
+    ct.tbl = merge(ct.tbl, NamedTuple{(name,)}((summarize(ct, step),)))
     ct.summaries = merge(ct.summaries, NamedTuple{(name,)}((step,)))
 end
 
@@ -123,19 +123,17 @@ function Base.rand(dgp::DataGeneratingProcess, n::Int)
     # Initialize output
     net = dgp.networkgen(n)
     if net isa SimpleGraph
-        ct = CausalTable((;), net, (;))
+        ct = CausalTable((;), nothing, nothing, net, (;))
     else
-        ct = CausalTable((;))
+        ct = CausalTable((;), nothing, nothing, Graph(), (;))
     end
 
     # Iterate through each step of the DGP
     for pair in dgp.distgen
-        print(pair)
-        # Create the distribution (if step is a function)
-        # or summarize a previous step over graph neighbors (if step is a NetworkSummary)
+        # Create the distribution (if step is a function) or pass on the summary function
         dgp_step = initialize_dgp_step(pair[2], ct)
 
-        # Draw from the distribution or pass the summarized data on
+        # Draw from the distribution or summarize the data
         append_dgp_draw!(pair[1], dgp_step, ct, n)
     end
 

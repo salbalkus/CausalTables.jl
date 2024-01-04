@@ -25,8 +25,11 @@ export CausalTable, istable, columns, columnaccess, getcolumn, columnnames, colu
 export getindex, nrow, ncol
 export getresponse, gettreatment, getsummaries, getgraph
 
-# data_generating_process.jl
+# network_summary.jl
 export NetworkSummary, NeighborSum, NeighborSumOut, NeighborSumIn
+export summarize
+
+# data_generating_process.jl
 export DataGeneratingProcess, rand, condensity
 
 end

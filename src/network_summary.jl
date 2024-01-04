@@ -40,7 +40,5 @@ struct NeighborSumIn <: NeighborSum
     var_to_summarize::Symbol
 end
 
-
-
-
+summarize(x::CausalTable) = (;zip(propertynames(x.summaries),  [summarize(x, s) for s in x.summaries])...)
 summarize(x::CausalTable, summary::NeighborSum) = adjacency_matrix(x.graph) * Tables.getcolumn(x, summary.var_to_summarize)

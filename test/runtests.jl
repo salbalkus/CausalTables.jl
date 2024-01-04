@@ -72,16 +72,16 @@ end
         :Y => (; O...) -> (@. Normal(O[:A] + O[:A_s] + 0.2 * O[:L1] + 0.05 * O[:L1_s], 1))
     ]
 
-    dgp = DataGeneratingProcess(n -> erdos_renyi(n, 0.2), distseq);
+    dgp = DataGeneratingProcess(n -> erdos_renyi(n, 0.4), distseq);
     foo = rand(dgp, 10)
-    
+    Tables.getcolumn(foo, :L1_s)
     @test typeof(foo) == CausalTable
     @test Tables.columnnames(foo.tbl) == (:L1, :L1_s, :A, :A_s, :Y)
 
     bar = condensity(dgp, foo, :A_s)
 
     @test nrow(foo.tbl) == length(bar)
-    @test typeof(bar) <: Vector{T} where {T <: UnivariateDistribution}
-
+    @test typeof(bar) <: Vector{T} where {T <: UnivariateDistribution}   
+    @test Tables.getcolumn(foo, :L1_s) == Tables.getcolumn(summarize(foo), :L1_s)
 end
 
