@@ -1,31 +1,36 @@
 
 """
-    mutable struct DataGeneratingProcess
+    struct DataGeneratingProcess
 
-Mutable struct representing a data generating process.
+A mutable struct representing a data generating process.
 
 # Fields
-- `networkgen::Function`: The function to generate the network. Should return a `SimpleGraph` object and take a single argument `n::Int64`, the number of nodes in the graph
-- `distgen::Vector{Pair{Symbol, ValidDGPTypes}}`: The vector of variable-summary pairs.
+- `networkgen::Function`: A function that generates the network structure.
+- `distgen::Vector{Pair{Symbol, ValidDGPTypes}}`: A vector of pairs representing the distribution generators for each variable.
+- `treatment::Symbol`: The symbol representing the treatment variable.
+- `response::Symbol`: The symbol representing the response variable.
+- `controls::Vector{Symbol}`: A vector of symbols representing the control variables.
 
 """
 mutable struct DataGeneratingProcess
     networkgen::Function
     distgen::Vector{Pair{Symbol, ValidDGPTypes}}
+    treatment::Union{Symbol, Nothing}
+    response::Union{Symbol, Nothing}
+    controls::Union{Vector{Symbol}, Nothing}
 end
 
-"""
-    DataGeneratingProcess(distgen::Vector{Pair{Symbol, ValidDGPTypes}})
+# Constructors
+DataGeneratingProcess(distgen::Vector{Pair{Symbol, T}}, treatment::Symbol, response::Symbol, controls::Vector{Symbol}) where {T <: ValidDGPTypes} = DataGeneratingProcess(n -> nothing, distgen, treatment, response, controls)
+DataGeneratingProcess(distgen::Vector{Pair{Symbol, T}}) where {T <: ValidDGPTypes} = DataGeneratingProcess(n -> nothing, distgen, nothing, nothing, nothing)
+DataGeneratingProcess(distgen::Vector{Pair{Symbol, T}}) where {T <: ValidDGPTypes} = DataGeneratingProcess(n -> nothing, distgen, nothing, nothing, nothing)
+DataGeneratingProcess(networkgen::Function, distgen::Vector{Pair{Symbol, T}}) where {T <: ValidDGPTypes} = DataGeneratingProcess(networkgen, distgen, nothing, nothing, nothing)
 
-Constructs a `DataGeneratingProcess` object with the given distribution generator.
 
-# Arguments
-- `distgen::Vector{Pair{Symbol, ValidDGPTypes}}`: A vector of pairs representing the distribution generator.
-
-# Returns
-- `DataGeneratingProcess`: The constructed `DataGeneratingProcess` object.
-"""
-DataGeneratingProcess(distgen::Vector{Pair{Symbol, T}}) where {T <: ValidDGPTypes} = DataGeneratingProcess(n -> nothing, distgen)
+# Getters
+gettreatment(dgp::DataGeneratingProcess) = dgp.treatment
+getresponse(dgp::DataGeneratingProcess) = dgp.response
+getcontrols(dgp::DataGeneratingProcess) = dgp.controls
 
 """
     initialize_dgp_step(step_func::NeighborSum, ct)
@@ -123,9 +128,9 @@ function Base.rand(dgp::DataGeneratingProcess, n::Int)
     # Initialize output
     net = dgp.networkgen(n)
     if net isa SimpleGraph
-        ct = CausalTable((;), nothing, nothing, net, (;))
+        ct = CausalTable((;), gettreatment(dgp), getresponse(dgp), getcontrols(dgp), net, (;))
     else
-        ct = CausalTable((;), nothing, nothing, Graph(), (;))
+        ct = CausalTable((;), gettreatment(dgp), getresponse(dgp), getcontrols(dgp), Graph(), (;))
     end
 
     # Iterate through each step of the DGP

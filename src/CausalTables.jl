@@ -16,8 +16,6 @@ ValidDGPTypes = Union{Function, NetworkSummary}
 
 include("data_generating_process.jl")
 
-
-
 # Exports
 
 # causal_table.jl

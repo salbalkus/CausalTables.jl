@@ -57,7 +57,7 @@ Returns:
 function summarize(x::CausalTable, keep = true)
     sumtbl = (;zip(propertynames(x.summaries),  [summarize(x, s) for s in x.summaries])...)
     if keep
-        return CausalTable(merge(Tables.columns(x), sumtbl), x.treatment, x.response, getgraph(x), getsummaries(x))
+        return CausalTable(merge(Tables.columns(x), sumtbl), x.treatment, x.response, x.controls, getgraph(x), getsummaries(x))
     else
         return sumtbl
     end

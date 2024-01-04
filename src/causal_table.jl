@@ -7,31 +7,17 @@ mutable struct CausalTable
     tbl
     treatment::Union{Symbol, Nothing}
     response::Union{Symbol, Nothing}
+    controls::Union{Vector{Symbol}, Nothing}
     graph::Graph
     summaries::NamedTuple
+    CausalTable(tbl, treatment, response, controls, graph, summaries) = !isnothing(controls) && (treatment ∈ controls || response ∈ controls) ? error("Treatment and/or response cannot be the same as controls.") : new(tbl, treatment, response, controls, graph, summaries)
 end
 
-"""
-    CausalTable(tbl)
-
-An alternate constructor for `CausalTable` that takes a table (`tbl`) and initializes all other variables as blank.
-"""
-CausalTable(tbl) = CausalTable(tbl, nothing, nothing, Graph(), (;))
-
-"""
-    CausalTable(tbl)
-
-An alternate constructor for `CausalTable` that takes a table, response, and treatment, and initializes the `graph` and `summaries` as blank.
-"""
-CausalTable(tbl, treatment::Union{Symbol, Nothing}, response::Union{Symbol, Nothing}) = CausalTable(tbl, treatment, response, Graph(), (;))
-
-"""
-    CausalTable(tbl)
-
-An alternate constructor for `CausalTable` that takes a table, graph, and summaries, and initializes the `treatment` and `response` as blank.
-"""
-CausalTable(tbl, graph::Graph, summaries::NamedTuple) = CausalTable(tbl, nothing, nothing, graph, summaries)
-
+CausalTable(tbl) = CausalTable(tbl, nothing, nothing, nothing, Graph(), (;))
+CausalTable(tbl, graph::Graph, summaries::NamedTuple) = CausalTable(tbl, nothing, nothing, nothing, graph, summaries)
+# if controls not provided, assume all columns other than treatment and response are controls
+CausalTable(tbl, treatment::Union{Symbol, Nothing}, response::Union{Symbol, Nothing}) = CausalTable(tbl, treatment, response, setdiff(Tables.columnnames(Tables.columns(tbl)), [treatment, response]), Graph(), (;))
+CausalTable(tbl, treatment::Union{Symbol, Nothing}, response::Union{Symbol, Nothing}, controls::Vector{Symbol}) = CausalTable(tbl, treatment, response, controls, Graph(), (;))
 
 # declare that CausalTable is a table
 Tables.istable(::Type{CausalTable}) = true
