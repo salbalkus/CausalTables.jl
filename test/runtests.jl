@@ -80,6 +80,8 @@ end
 
     bar = condensity(dgp, foo, :A_s)
 
+    foo_sum = summarize(foo)
+
     @test nrow(foo.tbl) == length(bar)
     @test typeof(bar) <: Vector{T} where {T <: UnivariateDistribution}   
     @test Tables.getcolumn(foo, :L1_s) == Tables.getcolumn(summarize(foo), :L1_s)
