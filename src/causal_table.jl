@@ -25,6 +25,14 @@ An alternate constructor for `CausalTable` that takes a table, response, and tre
 """
 CausalTable(tbl, treatment::Union{Symbol, Nothing}, response::Union{Symbol, Nothing}) = CausalTable(tbl, treatment, response, Graph(), (;))
 
+"""
+    CausalTable(tbl)
+
+An alternate constructor for `CausalTable` that takes a table, graph, and summaries, and initializes the `treatment` and `response` as blank.
+"""
+CausalTable(tbl, graph::Graph, summaries::NamedTuple) = CausalTable(tbl, nothing, nothing, graph, summaries)
+
+
 # declare that CausalTable is a table
 Tables.istable(::Type{CausalTable}) = true
 
