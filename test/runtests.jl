@@ -8,15 +8,39 @@ using Random
 Random.seed!(1);
 
 @testset "CausalTables" begin
-    foo1 = DataFrame(L = [1, 2, 3], A = [5, 6, 7])
-    foo2 =  (L = [1, 2, 3], A = [5, 6, 7])
+    X = [1, 2, 3]
+    Y = ["a", "b", "c"]
+    foo1 = DataFrame(X = X, Y = Y)
+    foo2 =  (X = X, Y = Y)
+    foo3 = Tables.rowtable(((X = 1, Y = "a"), (X = 2, Y = "b"), (X = 3, Y = "c")))
 
-    for foo in [foo1, foo2]
-        ct = CausalTable(foo)
-        @test ct.tbl == foo
-        @test ncol(ct) == 2
-        @test nrow(ct) == 3
-    end
+    # DataFrame form
+    df = CausalTable(foo1)
+    @test df.tbl == foo1
+    @test ncol(df) == 2
+    @test nrow(df) == 3
+    @test getindex(df, 1, 2) == "a"
+    @test Tables.getcolumn(df, :X) == X
+
+    # Row table form
+    rowtbl = CausalTable(foo3, :X, :Y)
+    @test rowtbl.tbl == foo3
+    @test ncol(rowtbl) == 2
+    @test nrow(rowtbl) == 3
+    @test Tables.getcolumn(rowtbl, :Y) == Y
+
+    # Column table form
+    coltbl = CausalTable(foo2)
+    @test coltbl.tbl == foo2
+    @test ncol(coltbl) == 2
+    @test nrow(coltbl) == 3
+    @test Tables.columnnames(coltbl) == (:X, :Y)
+
+    # Causal Inference
+    @test gettreatment(rowtbl) == X
+    @test getresponse(rowtbl) == Y
+    @test getsummaries(rowtbl) == NamedTuple()
+    @test getgraph(rowtbl) == Graph()
 end
 
 @testset "DataGeneratingProcess, no graphs" begin

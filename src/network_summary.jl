@@ -39,3 +39,8 @@ Struct representing a summary of incoming neighbor variables.
 struct NeighborSumIn <: NeighborSum
     var_to_summarize::Symbol
 end
+
+
+
+
+summarize(x::CausalTable, summary::NeighborSum) = adjacency_matrix(x.graph) * Tables.getcolumn(x, summary.var_to_summarize)

@@ -23,6 +23,7 @@ include("data_generating_process.jl")
 # causal_table.jl
 export CausalTable, istable, columns, columnaccess, getcolumn, columnnames, columnindex, columntype
 export getindex, nrow, ncol
+export getresponse, gettreatment, getsummaries, getgraph
 
 # data_generating_process.jl
 export NetworkSummary, NeighborSum, NeighborSumOut, NeighborSumIn

@@ -40,7 +40,8 @@ Initialize the data generating process (DGP) step by applying the given `step_fu
 - `ct`: The modified causal table after applying the `step_func`.
 
 """
-initialize_dgp_step(step_func::NeighborSum, ct) = ct -> adjacency_matrix(ct.graph) * Tables.getcolumn(ct, step_func.var_to_summarize)
+initialize_dgp_step(step_func::NetworkSummary, ct) = ct -> summarize(ct, step_func)
+
 initialize_dgp_step(step_func::Function, ct) = step_func(; ct.tbl...)
 function initialize_dgp_step(step_func, ct)
     error("Attempted to step through the DGP but failed due to incorrect type. Note that `step_func` must be of type Function or an existing NetworkSummary (e.g. NeighborSum)")
