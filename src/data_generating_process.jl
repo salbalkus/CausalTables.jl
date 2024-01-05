@@ -18,14 +18,14 @@ mutable struct DataGeneratingProcess
     treatment::Union{Symbol, Nothing}
     response::Union{Symbol, Nothing}
     controls::Union{Vector{Symbol}, Nothing}
-    function DataGeneratingProcess(networkgen::Function, distgen::Vector{Pair{Symbol, ValidDGPTypes}}, treatment::Symbol, response::Symbol, controls::Array{Symbol})
+    function DataGeneratingProcess(networkgen, distgen, treatment, response, controls)
         varnames = [name for (name, _) in distgen] 
         if !isnothing(controls) && (treatment ∈ controls || response ∈ controls)
             error("Treatment and/or response cannot be the same as controls.")
-        elseif treatment ∉ varnames || response ∉ varnames || any([c ∉ varnames for c in controls])
+        elseif (!isnothing(treatment) && treatment ∉ varnames) || (!isnothing(response) && response ∉ varnames) || (!isnothing(controls) && any([c ∉ varnames for c in controls]))
             error("Treatment and/or response names not found in distribution generators.")
         end
-        new(networkgen, distgen, treatment, response, controls)
+        return new(networkgen, distgen, treatment, response, controls)
     end
 end
 
