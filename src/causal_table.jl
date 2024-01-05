@@ -80,7 +80,7 @@ Selects the control variables from the given `CausalTable` object `x`.
 A new `CausalTable` object containing only the control variables.
 
 """
-getcontrols(x::CausalTable) = TableOperations.select(x, x.controls)
+getcontrols(x::CausalTable) = TableOperations.select(x, x.controls...) |> Tables.columntable
 
 
 # Network causal inference getters

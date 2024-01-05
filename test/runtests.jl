@@ -10,35 +10,36 @@ Random.seed!(1);
 @testset "CausalTables" begin
     X = [1, 2, 3]
     Y = ["a", "b", "c"]
-    foo1 = DataFrame(X = X, Y = Y)
-    foo2 =  (X = X, Y = Y)
-    foo3 = Tables.rowtable(((X = 1, Y = "a"), (X = 2, Y = "b"), (X = 3, Y = "c")))
-
+    Z = [1.0, 2.0, 3.0]
+    foo1 = DataFrame(X = X, Y = Y, Z = Z)
+    foo2 =  (X = X, Y = Y, Z = Z)
+    foo3 = Tables.rowtable(((X = 1, Y = "a", Z = 1.0), (X = 2, Y = "b", Z = 2.0), (X = 3, Y = "c", Z = 3.0)))
     # DataFrame form
     df = CausalTable(foo1)
     @test df.tbl == foo1
-    @test ncol(df) == 2
+    @test ncol(df) == 3
     @test nrow(df) == 3
     @test getindex(df, 1, 2) == "a"
     @test Tables.getcolumn(df, :X) == X
 
     # Row table form
-    rowtbl = CausalTable(foo3, :X, :Y)
+    rowtbl = CausalTable(foo3, :X, :Y, [:Z])
     @test rowtbl.tbl == foo3
-    @test ncol(rowtbl) == 2
+    @test ncol(rowtbl) == 3
     @test nrow(rowtbl) == 3
     @test Tables.getcolumn(rowtbl, :Y) == Y
 
     # Column table form
     coltbl = CausalTable(foo2)
     @test coltbl.tbl == foo2
-    @test ncol(coltbl) == 2
+    @test ncol(coltbl) == 3
     @test nrow(coltbl) == 3
-    @test Tables.columnnames(coltbl) == (:X, :Y)
+    @test Tables.columnnames(coltbl) == (:X, :Y, :Z)
 
     # Causal Inference
     @test gettreatment(rowtbl) == X
     @test getresponse(rowtbl) == Y
+    @test getcontrols(rowtbl) == (Z = Z,)
     @test getsummaries(rowtbl) == NamedTuple()
     @test getgraph(rowtbl) == Graph()
 end
