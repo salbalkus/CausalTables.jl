@@ -67,6 +67,24 @@ The treatment column of the CausalTable.
 """
 gettreatment(x::CausalTable) = Tables.getcolumn(x, x.treatment)
 
+
+"""
+    getcontrols(x::CausalTable)
+
+Selects the control variables from the given `CausalTable` object `x`.
+
+# Arguments
+- `x::CausalTable`: The `CausalTable` object from which to select the control variables.
+
+# Returns
+- `Table`: A new `CausalTable` object containing only the control variables.
+
+"""
+getcontrols(x::CausalTable) = TableOperations.select(x, x.controls)
+
+"""
+    getsummaries(x::CausalTable)
+
 # Network causal inference getters
 """
     getsummaries(x::CausalTable)

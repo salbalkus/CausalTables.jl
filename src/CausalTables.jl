@@ -4,6 +4,7 @@ module CausalTables
 using Distributions
 using Graphs
 using Tables
+using TableOperations
 using DataAPI
 import Base: getindex
 
