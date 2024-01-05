@@ -73,9 +73,8 @@ end
         :Y => (; O...) -> (@. Normal(O[:A] + O[:A_s] + 0.2 * O[:L1] + 0.05 * O[:L1_s], 1))
     ])
 
-    dgp = DataGeneratingProcess(n -> erdos_renyi(n, 0.4), distseq);
+    dgp = DataGeneratingProcess(n -> erdos_renyi(n, 0.4), distseq; controls = [:L1, :L1_s]);
     foo = rand(dgp, 10)
-    Tables.getcolumn(foo, :L1_s)
     @test typeof(foo) == CausalTable
     @test Tables.columnnames(foo.tbl) == (:L1, :L1_s, :A, :A_s, :Y)
 
