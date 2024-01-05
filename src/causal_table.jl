@@ -41,7 +41,7 @@ Base.getindex(x::CausalTable, i, j) = Base.getindex(x.tbl, i, j)
 DataAPI.ncol(x::CausalTable) = DataAPI.ncol(x.tbl)
 DataAPI.nrow(x::CausalTable) = DataAPI.nrow(x.tbl)
 
-# Basic causal inference getters
+# Basic causal inference getters and setters
 """
     getresponse(x::CausalTable)
 
@@ -92,6 +92,32 @@ Get the graph associated with a CausalTable.
 - The graph associated with the CausalTable.
 """
 getgraph(x::CausalTable) = x.graph
+
+function settreatment!(x::CausalTable, treatment::Symbol)
+    x.treatment = treatment
+end
+
+function setresponse!(x::CausalTable, response::Symbol)
+    x.response = response
+end
+
+function setcontrols!(x::CausalTable, controls::Vector{Symbol})
+    x.controls = controls
+end
+
+function setcausalvars!(x::CausalTable; treatment=nothing, response=nothing, controls=nothing)
+    if !isnothing(treatment)
+        settreatment!(x, treatment)
+    end
+    if !isnothing(response)
+        setresponse!(x, response)
+    end
+    if !isnothing(controls)
+        setcontrols!(x, controls)
+    end
+end
+
+
 
 
 
