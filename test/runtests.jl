@@ -1,6 +1,6 @@
+using Test
 using CausalTables
 using DataFrames
-using Test
 using Graphs
 using Distributions
 using Random

@@ -77,19 +77,16 @@ Selects the control variables from the given `CausalTable` object `x`.
 - `x::CausalTable`: The `CausalTable` object from which to select the control variables.
 
 # Returns
-- `Table`: A new `CausalTable` object containing only the control variables.
+A new `CausalTable` object containing only the control variables.
 
 """
 getcontrols(x::CausalTable) = TableOperations.select(x, x.controls)
 
-"""
-    getsummaries(x::CausalTable)
 
 # Network causal inference getters
 """
     getsummaries(x::CausalTable)
 
-Returns the tables stored in the CausalTable `x`.
 
 # Arguments
 - `x::CausalTable`: The CausalTable object.
