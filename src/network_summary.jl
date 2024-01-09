@@ -6,6 +6,8 @@ Abstract type representing a summary of a network.
 """
 abstract type NetworkSummary end
 
+get_var_to_summarize(x::NetworkSummary) = x.var_to_summarize
+
 """
     abstract type NeighborSum <: NetworkSummary
 
