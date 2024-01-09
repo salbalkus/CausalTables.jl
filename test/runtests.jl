@@ -39,7 +39,7 @@ Random.seed!(1);
     # Causal Inference
     @test gettreatment(rowtbl) == X
     @test getresponse(rowtbl) == Y
-    @test getcontrols(rowtbl) == (Z = Z,)
+    @test getcontrols(rowtbl).tbl == (Z = Z,)
     @test getsummaries(rowtbl) == NamedTuple()
     @test getgraph(rowtbl) == Graph()
 end

@@ -75,12 +75,19 @@ Selects the control variables from the given `CausalTable` object `x`.
 
 # Arguments
 - `x::CausalTable`: The `CausalTable` object from which to select the control variables.
+- `keepcausal::Bool`: Determines whether to keep the CausalTable wrapping or return a NamedTuple. Default is `true`.
 
 # Returns
 A new `CausalTable` object containing only the control variables.
 
 """
-getcontrols(x::CausalTable) = TableOperations.select(x, x.controls...) |> Tables.columntable
+function getcontrols(x::CausalTable; keepcausal = true)
+    L = TableOperations.select(x, x.controls...) |> Tables.columntable
+    if keepcausal
+        L = CausalTable(L, x.treatment, x.response, x.controls, x.graph, x.summaries)
+    end
+    return L
+end
 
 
 # Network causal inference getters

@@ -9,7 +9,7 @@ abstract type NetworkSummary end
 """
     abstract type NeighborSum <: NetworkSummary
 
-Abstract type representing a summary of neighbor variables.
+Struct representing a summary of neighbor variables.
 
 """
 mutable struct NeighborSum <: NetworkSummary 
@@ -42,3 +42,5 @@ function summarize(x::CausalTable, keep = true)
 end
 
 summarize(x::CausalTable, summary::NeighborSum) = adjacency_matrix(x.graph) * Tables.getcolumn(x, summary.var_to_summarize)
+
+
