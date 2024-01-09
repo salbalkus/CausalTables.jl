@@ -26,7 +26,7 @@ export getresponse, gettreatment, getsummaries, getgraph, getcontrols
 
 # network_summary.jl
 export NetworkSummary, NeighborSum
-export summarize
+export summarize, get_var_to_summarize
 
 # data_generating_process.jl
 export DataGeneratingProcess, rand, condensity
