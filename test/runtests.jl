@@ -67,9 +67,9 @@ end
     # TODO: Make it easier to define this type of vector
     distseq = Vector{Pair{Symbol, CausalTables.ValidDGPTypes}}([
         :L1 => (; O...) -> DiscreteUniform(1, 5),
-        :L1_s => NeighborSumIn(:L1),
+        :L1_s => NeighborSum(:L1),
         :A => (; O...) -> (@. Normal(O[:L1] + O[:L1_s], 1)),
-        :A_s => NeighborSumIn(:A),
+        :A_s => NeighborSum(:A),
         :Y => (; O...) -> (@. Normal(O[:A] + O[:A_s] + 0.2 * O[:L1] + 0.05 * O[:L1_s], 1))
     ])
 

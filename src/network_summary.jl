@@ -12,34 +12,12 @@ abstract type NetworkSummary end
 Abstract type representing a summary of neighbor variables.
 
 """
-abstract type NeighborSum <: NetworkSummary end
-
-"""
-    struct NeighborSumOut <: NeighborSum
-
-Struct representing a summary of outgoing neighbor variables.
-
-# Fields
-- `var_to_summarize::Symbol`: The variable to summarize.
-
-"""
-struct NeighborSumOut <: NeighborSum
+mutable struct NeighborSum <: NetworkSummary 
     var_to_summarize::Symbol
+    use_inneighbors::Bool
+    NeighborSum(var_to_summarize::Symbol; use_inneighbors::Bool = true) = new(var_to_summarize, use_inneighbors)
 end
 
-"""
-    struct NeighborSumIn <: NeighborSum
-
-Struct representing a summary of incoming neighbor variables.
-
-# Fields
-- `var_to_summarize::Symbol`: The variable to summarize.
-- `keep::Bool`: Whether to append the summarized columns to the existing CausalTable. Defaults to `true`.
-
-"""
-struct NeighborSumIn <: NeighborSum
-    var_to_summarize::Symbol
-end
 
 """
     summarize(x::CausalTable, keep = true)

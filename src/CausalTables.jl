@@ -25,7 +25,7 @@ export getindex, nrow, ncol
 export getresponse, gettreatment, getsummaries, getgraph, getcontrols
 
 # network_summary.jl
-export NetworkSummary, NeighborSum, NeighborSumOut, NeighborSumIn
+export NetworkSummary, NeighborSum
 export summarize
 
 # data_generating_process.jl
