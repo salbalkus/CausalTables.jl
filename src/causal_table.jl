@@ -139,6 +139,9 @@ function setcausalvars!(x::CausalTable; treatment=nothing, response=nothing, con
     end
 end
 
+replacetable(x::CausalTable, tbl) = CausalTable(tbl, x.treatment, x.response, x.controls, x.graph, x.summaries)
+
+
 
 
 
