@@ -20,6 +20,26 @@ mutable struct NeighborSum <: NetworkSummary
     NeighborSum(var_to_summarize::Symbol; use_inneighbors::Bool = true) = new(var_to_summarize, use_inneighbors)
 end
 
+mutable struct NeighborProduct <: NetworkSummary 
+    var_to_summarize::Symbol
+    use_inneighbors::Bool
+    NeighborProduct(var_to_summarize::Symbol; use_inneighbors::Bool = true) = new(var_to_summarize, use_inneighbors)
+end
+
+abstract type NeighborOrderStatistic <: NetworkSummary end
+
+mutable struct NeighborMaximum <: NeighborOrderStatistic 
+    var_to_summarize::Symbol
+    use_inneighbors::Bool
+    NeighborMaximum(var_to_summarize::Symbol; use_inneighbors::Bool = true) = new(var_to_summarize, use_inneighbors)
+end
+
+mutable struct NeighborMinimum <: NeighborOrderStatistic 
+    var_to_summarize::Symbol
+    use_inneighbors::Bool
+    NeighborMinimum(var_to_summarize::Symbol; use_inneighbors::Bool = true) = new(var_to_summarize, use_inneighbors)
+end
+
 
 """
     summarize(x::CausalTable, keep = true)
@@ -44,5 +64,13 @@ function summarize(x::CausalTable, keep = true)
 end
 
 summarize(x::CausalTable, summary::NeighborSum) = adjacency_matrix(x.graph) * Tables.getcolumn(x, summary.var_to_summarize)
+
+# TODO: Not sure if these work. Need to test
+summarize(x::CausalTable, summary::NeighborProduct) = exp.(adjacency_matrix(x.graph) * log.(Tables.getcolumn(x, summary.var_to_summarize)))
+summarize(x::CausalTable, summary::NeighborMaximum) = maximum(adjacency_matrix(x.graph) .* Tables.getcolumn(x, summary.var_to_summarize); dims = 2)
+summarize(x::CausalTable, summary::NeighborMinimum) = minimum(adjacency_matrix(x.graph) .* Tables.getcolumn(x, summary.var_to_summarize); dims = 2)
+
+
+
 
 
