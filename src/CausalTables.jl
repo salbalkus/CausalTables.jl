@@ -2,7 +2,6 @@ module CausalTables
 
 # Imports
 using Distributions
-using Expectations
 using Graphs
 using Tables
 using TableOperations
