@@ -2,6 +2,7 @@ module CausalTables
 
 # Imports
 using Distributions
+using Expectations
 using Graphs
 using Tables
 using TableOperations
@@ -30,6 +31,6 @@ export NetworkSummary, NeighborSum
 export summarize, get_var_to_summarize
 
 # data_generating_process.jl
-export DataGeneratingProcess, rand, condensity
+export DataGeneratingProcess, rand, condensity, conmean
 
 end

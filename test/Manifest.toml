@@ -2,7 +2,7 @@
 
 julia_version = "1.10.0"
 manifest_format = "2.0"
-project_hash = "05ffcd02ed6e5bc7398f456a1330600836cd5dde"
+project_hash = "6d88dcbd09cc3e018d50f2cb8de813672ce1ce58"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -108,6 +108,18 @@ deps = ["Calculus", "NaNMath", "SpecialFunctions"]
 git-tree-sha1 = "5837a837389fccf076445fce071c8ddaea35a566"
 uuid = "fa6b7ba4-c1ee-5f82-b5fc-ecf0adba8f74"
 version = "0.6.8"
+
+[[deps.Expectations]]
+deps = ["Distributions", "FastGaussQuadrature", "LinearAlgebra", "SpecialFunctions"]
+git-tree-sha1 = "5b46996cf6fc4ad19d1122884c36faa62ed0a7d2"
+uuid = "2fe49d83-0758-5602-8f54-1f90ad0d522b"
+version = "1.9.2"
+
+[[deps.FastGaussQuadrature]]
+deps = ["LinearAlgebra", "SpecialFunctions", "StaticArrays"]
+git-tree-sha1 = "8ef0363cffeedb7e73339b664ce6d33cc278a3c4"
+uuid = "442a2c76-b920-505d-bb47-c5924d526838"
+version = "1.0.1"
 
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"

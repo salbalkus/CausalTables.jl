@@ -182,6 +182,23 @@ function condensity(dgp::DataGeneratingProcess, ct::CausalTable, var::Symbol)
     return get_conditional_distribution(varfunc, dgp, ct)
 end
 
+"""
+    conmean(dgp::DataGeneratingProcess, ct::CausalTable, var::Symbol)
+
+Compute the conditional mean of a variable in a CausalTable based on a DataGeneratingProcess.
+
+# Arguments
+- `dgp::DataGeneratingProcess`: The DataGeneratingProcess object representing the data generating process.
+- `ct::CausalTable`: The CausalTable object representing the data.
+- `var::Symbol`: The variable for which to compute the conditional mean.
+
+# Returns
+An array of conditional means for the specified variable.
+
+"""
+conmean(dgp::DataGeneratingProcess, ct::CausalTable, var::Symbol) = mean.(condensity(dgp, ct, var))
+
+
 
 
 
