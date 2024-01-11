@@ -22,8 +22,8 @@ include("data_generating_process.jl")
 # causal_table.jl
 export CausalTable, istable, columns, columnaccess, getcolumn, columnnames, columnindex, columntype
 export getindex, nrow, ncol
-export getresponse, gettreatment, getsummaries, getgraph, getcontrols
-export replacetable
+export getresponse, gettreatment, getsummaries, getgraph, getcontrols, gettable, getresponsesymbol, gettreatmentsymbol, getcontrolssymbols
+export replacetable, replace, subset
 
 # network_summary.jl
 export NetworkSummary, NeighborSum

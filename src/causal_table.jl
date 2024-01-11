@@ -36,7 +36,7 @@ Tables.columnnames(x::CausalTable) = Tables.columnnames(Tables.columns(x.tbl))
 Tables.columnindex(x::CausalTable, nm::Symbol) = Tables.columnindex(x.tbl, nm)
 Tables.columntype(x::CausalTable, nm::Symbol) = Tables.columntype(x.tbl, nm)
 
-# Additional convenience methods
+# Additional convenience functions from existing method
 Base.getindex(x::CausalTable, i, j) = Base.getindex(x.tbl, i, j)
 DataAPI.ncol(x::CausalTable) = DataAPI.ncol(x.tbl)
 DataAPI.nrow(x::CausalTable) = DataAPI.nrow(x.tbl)
@@ -89,6 +89,10 @@ function getcontrols(x::CausalTable; keepcausal = true)
     return L
 end
 
+gettreatmentsymbol(x::CausalTable) = x.treatment
+getresponsesymbol(x::CausalTable) = x.response
+getcontrolssymbols(x::CausalTable) = x.controls
+
 
 # Network causal inference getters
 """
@@ -115,6 +119,22 @@ Get the graph associated with a CausalTable.
 """
 getgraph(x::CausalTable) = x.graph
 
+
+"""
+    gettable(x::CausalTable)
+
+Extracts the underlying table from a `CausalTable`.
+
+# Arguments
+- `x::CausalTable`: The `CausalTable` object.
+
+# Returns
+- The underlying table.
+
+"""
+gettable(x::CausalTable) = x.tbl
+
+
 function settreatment!(x::CausalTable, treatment::Symbol)
     x.treatment = treatment
 end
@@ -139,7 +159,52 @@ function setcausalvars!(x::CausalTable; treatment=nothing, response=nothing, con
     end
 end
 
+# custom convenience methods
+function replace(x::CausalTable; tbl = nothing, treatment = nothing, response = nothing, controls = nothing, graph = nothing, summaries = nothing)
+    if isnothing(tbl)
+        tbl = gettable(x)
+    end
+    if isnothing(treatment)
+        treatment = gettreatmentsymbol(x)
+    end
+    if isnothing(response)
+        response = getresponsesymbol(x)
+    end
+    if isnothing(controls)
+        controls = getcontrolssymbols(x)
+    end
+    if isnothing(graph)
+        graph = getgraph(x)
+    end
+    if isnothing(summaries)
+        summaries = getsummaries(x)
+    end
+
+    return CausalTable(tbl, treatment, response, controls, graph, summaries)
+end
+
 replacetable(x::CausalTable, tbl) = CausalTable(tbl, x.treatment, x.response, x.controls, x.graph, x.summaries)
+
+
+# Additional overloaded Tables methods
+function Tables.subset(x::CausalTable, ind)
+    graph_subset = getgraph(x) # default graph, for when graph has no edges
+
+    # Subset the table
+    tbl_subset = Tables.subset(gettable(x), ind)
+
+    if nv(graph_subset) > 0 # If the graph isn't empty...
+        if length(unique(ind)) == length(ind) # If there are duplicate indices...
+            error("Cannot subset CausalTable with non-unique indices.")
+        else
+            graph_subset = induced_subgraph(graph_subset, ind) # Subset the graph
+        end
+    end
+
+    return replace(x; tbl = tbl_subset, graph = graph_subset)
+end
+
+
 
 
 

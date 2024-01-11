@@ -21,6 +21,7 @@ Random.seed!(1);
     @test nrow(df) == 3
     @test getindex(df, 1, 2) == "a"
     @test Tables.getcolumn(df, :X) == X
+    @test gettable(df) == foo1
 
     # Row table form
     rowtbl = CausalTable(foo3, :X, :Y, [:Z])
@@ -28,20 +29,32 @@ Random.seed!(1);
     @test ncol(rowtbl) == 3
     @test nrow(rowtbl) == 3
     @test Tables.getcolumn(rowtbl, :Y) == Y
+    @test gettable(rowtbl) == foo3
+
 
     # Column table form
-    coltbl = CausalTable(foo2)
+    coltbl = CausalTable(foo2, :X, :Y, [:Z])
     @test coltbl.tbl == foo2
     @test ncol(coltbl) == 3
     @test nrow(coltbl) == 3
     @test Tables.columnnames(coltbl) == (:X, :Y, :Z)
+    @test gettable(coltbl) == foo2
+
 
     # Causal Inference
+    @test gettreatmentsymbol(rowtbl) == :X
+    @test getresponsesymbol(rowtbl) == :Y
+    @test getcontrolssymbols(rowtbl) == [:Z]
     @test gettreatment(rowtbl) == X
     @test getresponse(rowtbl) == Y
     @test getcontrols(rowtbl).tbl == (Z = Z,)
     @test getsummaries(rowtbl) == NamedTuple()
     @test getgraph(rowtbl) == Graph()
+
+    # Other convenience
+    baz = (F = [4, 5], G = ["foo", "bar"])
+    @test gettable(CausalTables.replace(rowtbl; tbl = baz)) == baz
+    @test gettable(Tables.subset(coltbl, 1:2)) == (X = X[1:2], Y = Y[1:2], Z = Z[1:2])
 end
 
 @testset "DataGeneratingProcess, no graphs" begin
