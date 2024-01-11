@@ -98,5 +98,12 @@ end
     @test nrow(foo.tbl) == length(bar)
     @test typeof(bar) <: Vector{T} where {T <: UnivariateDistribution}   
     @test Tables.getcolumn(foo, :L1_s) == Tables.getcolumn(summarize(foo), :L1_s)
+    
+
+    # Test the graph subsetting capabilities of CausalTable
+    indices = 1:10
+    baz = Tables.subset(foo, indices)
+    @test baz.tbl == Tables.subset(foo.tbl, indices)
+    @test nv(baz.graph) == nv(foo.graph[indices])
 end
 

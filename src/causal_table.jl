@@ -197,7 +197,7 @@ function Tables.subset(x::CausalTable, ind)
         if length(unique(ind)) != length(ind) # If there are duplicate indices...
             error("Cannot subset CausalTable with non-unique indices.")
         else
-            graph_subset = induced_subgraph(graph_subset, ind) # Subset the graph
+            graph_subset = induced_subgraph(graph_subset, ind)[1] # Subset the graph
         end
     end
 
