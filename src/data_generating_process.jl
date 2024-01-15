@@ -32,7 +32,6 @@ end
 # Constructors
 DataGeneratingProcess(distgen::Vector{Pair{Symbol, T}}, treatment::Symbol, response::Symbol, controls::Vector{Symbol}) where {T <: ValidDGPTypes} = DataGeneratingProcess(n -> nothing, distgen, treatment, response, controls)
 DataGeneratingProcess(distgen::Vector{Pair{Symbol, T}}) where {T <: ValidDGPTypes} = DataGeneratingProcess(n -> nothing, distgen, nothing, nothing, nothing)
-DataGeneratingProcess(networkgen::Function, distgen::Vector{Pair{Symbol, T}}) where {T <: ValidDGPTypes} = DataGeneratingProcess(networkgen, distgen, nothing, nothing, nothing)
 
 function DataGeneratingProcess(networkgen::Function, distgen::Vector{Pair{Symbol, T}}; treatment = nothing, response = nothing, controls = nothing) where {T <: ValidDGPTypes}
     if !isnothing(controls) && (treatment ∈ controls || response ∈ controls)
