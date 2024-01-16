@@ -7,6 +7,7 @@ using Tables
 using TableOperations
 using DataAPI
 import Base: getindex
+import MacroTools: postwalk
 
 # Includes
 include("utilities.jl")
@@ -14,6 +15,8 @@ include("causal_table.jl")
 include("network_summary.jl")
 
 ValidDGPTypes = Union{Function, NetworkSummary}
+SymbolOrNothing = Union{Symbol, Nothing}
+VectorOfSymbolsOrNothing = Union{Vector{Symbol}, Nothing}
 
 include("data_generating_process.jl")
 
@@ -31,5 +34,6 @@ export summarize, get_var_to_summarize
 
 # data_generating_process.jl
 export DataGeneratingProcess, rand, condensity, conmean
+export @scm
 
 end
