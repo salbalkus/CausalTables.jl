@@ -1,4 +1,26 @@
 
+macro scm(args...)
+    return Vector{Pair{Symbol, CausalTables.ValidDGPTypes}}([parse_tilde(arg) for arg in args])
+end
+
+function parse_tilde(expr)
+    if expr.head == :(=) && (typeof(eval(expr.args[2])) <: NetworkSummary)
+        return expr.args[1] => eval(expr.args[2])
+    elseif expr.args[1] == :~
+        return expr.args[2] => eval(:((; O...) -> $(parse_distribution(expr.args[3]))))
+    else
+        error("Invalid expression. Must be of the form `var ~ distribution` or `var2 = NetworkSummary(var1)`.")
+    end
+end
+
+function parse_distribution(expr)
+    return postwalk(expr) do s
+        typeof(s)==QuoteNode && return (:(O[$s]))
+        s
+    end
+end
+
+
 """
     struct DataGeneratingProcess
 
@@ -15,17 +37,17 @@ A mutable struct representing a data generating process.
 mutable struct DataGeneratingProcess
     networkgen::Function
     distgen::Vector{Pair{Symbol, ValidDGPTypes}}
-    treatment::Union{Symbol, Nothing}
-    response::Union{Symbol, Nothing}
-    controls::Union{Vector{Symbol}, Nothing}
-    function DataGeneratingProcess(networkgen, distgen, treatment, response, controls)
+    treatment::SymbolOrNothing
+    response::SymbolOrNothing
+    controls::VectorOfSymbolsOrNothing
+    function DataGeneratingProcess(networkgen::Function, distgen::Vector{Pair{Symbol, T}}, treatment::SymbolOrNothing, response::SymbolOrNothing, controls::VectorOfSymbolsOrNothing) where {T <: ValidDGPTypes}
         varnames = [name for (name, _) in distgen] 
         if !isnothing(controls) && (treatment ∈ controls || response ∈ controls)
             error("Treatment and/or response cannot be the same as controls.")
         elseif (!isnothing(treatment) && treatment ∉ varnames) || (!isnothing(response) && response ∉ varnames) || (!isnothing(controls) && any([c ∉ varnames for c in controls]))
             error("Treatment and/or response names not found in distribution generators.")
         end
-        return new(networkgen, distgen, treatment, response, controls)
+        return new(networkgen, Vector{Pair{Symbol, ValidDGPTypes}}(distgen), treatment, response, controls)
     end
 end
 
