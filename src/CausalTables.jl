@@ -34,6 +34,6 @@ export summarize, get_var_to_summarize
 
 # data_generating_process.jl
 export DataGeneratingProcess, rand, condensity, conmean
-export @scm
+export @dgp
 
 end

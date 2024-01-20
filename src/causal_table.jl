@@ -15,6 +15,7 @@ end
 
 CausalTable(tbl) = CausalTable(tbl, nothing, nothing, nothing, Graph(), (;))
 CausalTable(tbl, graph::Graph, summaries::NamedTuple) = CausalTable(tbl, nothing, nothing, nothing, graph, summaries)
+
 # if controls not provided, assume all columns other than treatment and response are controls
 CausalTable(tbl, treatment::Union{Symbol, Nothing}, response::Union{Symbol, Nothing}) = CausalTable(tbl, treatment, response, setdiff(Tables.columnnames(Tables.columns(tbl)), [treatment, response]), Graph(), (;))
 CausalTable(tbl, treatment::Union{Symbol, Nothing}, response::Union{Symbol, Nothing}, controls::Vector{Symbol}) = CausalTable(tbl, treatment, response, controls, Graph(), (;))
@@ -135,18 +136,60 @@ Extracts the underlying table from a `CausalTable`.
 gettable(x::CausalTable) = x.tbl
 
 
+"""
+    settreatment!(x::CausalTable, treatment::Symbol)
+
+Set the treatment variable for a CausalTable.
+
+# Arguments
+- `x::CausalTable`: The CausalTable object.
+- `treatment::Symbol`: The symbol representing the new treatment variable.
+
+"""
 function settreatment!(x::CausalTable, treatment::Symbol)
     x.treatment = treatment
 end
 
+"""
+    setresponse!(x::CausalTable, response::Symbol)
+
+Set the response variable for a CausalTable.
+
+# Arguments
+- `x::CausalTable`: The CausalTable object.
+- `response::Symbol`: The symbol representing the new response variable.
+
+"""
 function setresponse!(x::CausalTable, response::Symbol)
     x.response = response
 end
 
+"""
+    setcontrols!(x::CausalTable, controls::Vector{Symbol})
+
+Set the control variables for a CausalTable.
+
+# Arguments
+- `x::CausalTable`: The CausalTable object.
+- `controls::Vector{Symbol}`: The new control variables to be set.
+
+"""
 function setcontrols!(x::CausalTable, controls::Vector{Symbol})
     x.controls = controls
 end
 
+
+"""
+    setcausalvars!(x::CausalTable; treatment=nothing, response=nothing, controls=nothing)
+
+Convenience function for setting new treatment, response, and controls variables for a CausalTable at once.
+
+Arguments:
+- `x::CausalTable`: The CausalTable object.
+- `treatment=nothing`: The treatment variable.
+- `response=nothing`: The response variable.
+- `controls=nothing`: The control variables.
+"""
 function setcausalvars!(x::CausalTable; treatment=nothing, response=nothing, controls=nothing)
     if !isnothing(treatment)
         settreatment!(x, treatment)
@@ -159,7 +202,24 @@ function setcausalvars!(x::CausalTable; treatment=nothing, response=nothing, con
     end
 end
 
-# custom convenience methods
+"""
+    replace(x::CausalTable; tbl = nothing, treatment = nothing, response = nothing, controls = nothing, graph = nothing, summaries = nothing)
+
+Conviently replace several components of a CausalTable with new values.
+
+Arguments:
+- `x::CausalTable`: The CausalTable object to modify.
+- `tbl`: The new table to replace the existing table. If `nothing`, the current table is used.
+- `treatment`: The new treatment symbol to replace the existing treatment symbol. If `nothing`, the current treatment symbol is used.
+- `response`: The new response symbol to replace the existing response symbol. If `nothing`, the current response symbol is used.
+- `controls`: The new control symbols to replace the existing control symbols. If `nothing`, the current control symbols are used.
+- `graph`: The new graph to replace the existing graph. If `nothing`, the current graph is used.
+- `summaries`: The new summaries to replace the existing summaries. If `nothing`, the current summaries are used.
+
+Returns:
+- `CausalTable`: The modified CausalTable object.
+
+"""
 function replace(x::CausalTable; tbl = nothing, treatment = nothing, response = nothing, controls = nothing, graph = nothing, summaries = nothing)
     if isnothing(tbl)
         tbl = gettable(x)
@@ -183,10 +243,35 @@ function replace(x::CausalTable; tbl = nothing, treatment = nothing, response = 
     return CausalTable(tbl, treatment, response, controls, graph, summaries)
 end
 
+"""
+    replacetable(x::CausalTable, tbl)
+
+Conveniently replace the underlying table of a `CausalTable` with a new table.
+
+# Arguments
+- `x::CausalTable`: The `CausalTable` object to replace the table for.
+- `tbl`: The new table to replace the existing table with.
+
+# Returns
+A new `CausalTable` object with the updated table.
+
+"""
 replacetable(x::CausalTable, tbl) = CausalTable(tbl, x.treatment, x.response, x.controls, x.graph, x.summaries)
 
 
-# Additional overloaded Tables methods
+"""
+    subset(x::CausalTable, ind)
+
+Subset a CausalTable `x` based on the given indices `ind`.
+
+# Arguments
+- `x`: The CausalTable to be subsetted.
+- `ind`: The indices to subset the table and graph.
+
+# Returns
+A new CausalTable with the subsetted table. If the `graph` attribute is not Nothing, then this function takes the subgraph induced by the subsetted indices using `induced`
+
+"""
 function Tables.subset(x::CausalTable, ind)
     graph_subset = getgraph(x) # default graph, for when graph has no edges
 

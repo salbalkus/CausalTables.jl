@@ -78,8 +78,8 @@ end
     @test baz == Tables.getcolumn(foo, :A) .+ 0.2 .* Tables.getcolumn(foo, :L1)
 end
 
-@testset "DataGeneratingProcess using SCM macro, no graphs" begin
-    distseq = @scm(
+@testset "DataGeneratingProcess using dgp macro, no graphs" begin
+    distseq = @dgp(
         L1 ~ DiscreteUniform(1, 5),
         A ~ (@. Normal(:L1, 1)),
         Y ~ (@. Normal(:A + 0.2 * :L1, 1))
@@ -129,8 +129,8 @@ end
     @test nv(baz.graph) == nv(foo.graph[indices])
 end
 
-@testset "DataGeneratingProcess with graphs using SCM macro" begin
-    distseq = @scm(
+@testset "DataGeneratingProcess with graphs using dgp macro" begin
+    distseq = @dgp(
         L1 ~ DiscreteUniform(1, 5),
         L1_s = NeighborSum(:L1),
         A ~ (@. Normal(:L1 + :L1_s, 1)),
