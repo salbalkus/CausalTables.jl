@@ -47,7 +47,7 @@ One we've defined our list of distribution functions, we can generate data from 
 data = rand(dgp, 10)
 ```
 
-For a more detailed guide of how to generate data please refer to [Generating Data](generating-data.md).
+For a more detailed guide of how to generate data please refer to [Generating Data](man/generating-data.md).
 
 ### Computing Ground Truth Conditional Distributions
 
@@ -63,7 +63,7 @@ For convenience, there also exists a `conmean` function that extracts the true c
 Z_mean = conmean(dgp, data, :Z)
 ```
 
-For a more detailed guide of how to compute ground truth conditional distributions please refer to [Computing Ground Truth Conditional Distributions](ground-truth.md).
+For a more detailed guide of how to compute ground truth conditional distributions please refer to [Computing Ground Truth Conditional Distributions](man/ground-truth.md).
 
 ### Wrapping an existing Table as a CausalTable
 
@@ -74,7 +74,7 @@ tbl = (W = rand(1:5, 10), X = randn(10), Y = randn(10))
 ctbl = CausalTable(tbl; treatment = :X, response = :Y, controls = [:W])
 ```
 
-For a more detailed guide of how to wrap an existing table as a CausalTable please refer to [Turning Your Data Into a CausalTable](formatting.md).
+For a more detailed guide of how to wrap an existing table as a CausalTable please refer to [Turning Your Data Into a CausalTable](man/formatting.md).
 
 
 
