@@ -36,7 +36,7 @@ g = SimpleGraphFromIterator([Edge(x...) for x in zip(data.graphs[1].edge_index..
 # Note that the input to summaries must be a NamedTuple, even if there is only one summary variable, so the trailing comma is necessary.
 ctbl = CausalTable(tbl; graph = g, treatment = :friends, response = :labels_clubs, summaries = (friends = Friends(),));
 nothing # hide
-#output
+# output
 ```
 
 Be warned: if you try to call `gettreatment` on a `CausalTable` that has not been summarized, you will get an error:
