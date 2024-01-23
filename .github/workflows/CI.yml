@@ -42,6 +42,15 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           flag-name: run${{ matrix.os }}-${{ matrix.version }}-${{ matrix.arch }}
           parallel: true
-      
+finish:
+  needs: test
+  if: always()
+  runs-on: ubuntu-latest
+  steps:
+    - name: Coveralls Finished
+      uses: coverallsapp/github-action@master
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        parallel-finished: true
 
 
