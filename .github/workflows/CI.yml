@@ -40,8 +40,3 @@ jobs:
         with:
           path-to-lcov: lcov.info
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          flag-name: run${{ matrix.os }}-${{ matrix.version }}-${{ matrix.arch }}
-          parallel: true
-      
-
-
