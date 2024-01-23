@@ -8,7 +8,7 @@ makedocs(
         "Turning data into a `CausalTable`" =>              "man/formatting.md",
         "Generating Data for Statistical Experiments" =>    "man/generating-data.md",
         "Computing Ground Truth of Causal Parameters" =>    "man/ground-truth.md",
-        "User-Defined Network Summaries" =>                 "man/network-summaries.md",
+        "Network Summaries" =>                 "man/network-summaries.md",
     ]
 )
 

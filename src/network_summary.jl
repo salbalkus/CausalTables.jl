@@ -40,6 +40,17 @@ mutable struct NeighborMinimum <: NeighborOrderStatistic
     NeighborMinimum(var_to_summarize::Symbol; use_inneighbors::Bool = true) = new(var_to_summarize, use_inneighbors)
 end
 
+mutable struct NeighborMode <: NetworkSummary 
+    var_to_summarize::Symbol
+    use_inneighbors::Bool
+    NeighborMode(var_to_summarize::Symbol; use_inneighbors::Bool = true) = new(var_to_summarize, use_inneighbors)
+end
+
+mutable struct Friends <: NetworkSummary 
+    use_inneighbors::Bool
+    Friends(; use_inneighbors::Bool = true) = new(use_inneighbors)
+end
+
 
 """
     summarize(x::CausalTable, keep = true)
@@ -63,13 +74,24 @@ function summarize(x::CausalTable, keep = true)
     end
 end
 
-summarize(x::CausalTable, summary::NeighborSum) = adjacency_matrix(x.graph) * Tables.getcolumn(x, summary.var_to_summarize)
+# Warning: _neighbor_summarize is very slow, 
+# and should only be used when there is no other alternative
 
-# TODO: Not sure if these work. Need to test
+function _neighbor_summarize(x::CausalTable, var_to_summarize::Symbol, summary_func::Function; use_inneighbors = true)
+    variable = Tables.getcolumn(x, var_to_summarize)
+    if use_inneighbors
+        return [summary_func(variable[inneighbors(x.graph, i)]) for i in 1:DataAPI.nrow(x)]
+    else
+        return [summary_func(variable[outneighbors(x.graph, i)]) for i in 1:DataAPI.nrow(x)]
+    end
+end
+
+summarize(x::CausalTable, summary::NeighborSum) = adjacency_matrix(x.graph) * Tables.getcolumn(x, summary.var_to_summarize)
 summarize(x::CausalTable, summary::NeighborProduct) = exp.(adjacency_matrix(x.graph) * log.(Tables.getcolumn(x, summary.var_to_summarize)))
 summarize(x::CausalTable, summary::NeighborMaximum) = maximum(adjacency_matrix(x.graph) .* Tables.getcolumn(x, summary.var_to_summarize); dims = 2)
 summarize(x::CausalTable, summary::NeighborMinimum) = minimum(adjacency_matrix(x.graph) .* Tables.getcolumn(x, summary.var_to_summarize); dims = 2)
-
+summarize(x::CausalTable, summary::NeighborMode) = _neighbor_summarize(x, summary.var_to_summarize, StatsBase.mode; use_inneighbors = summary.use_inneighbors)
+summarize(x::CausalTable, summary::Friends) = adjacency_matrix(x.graph) * ones(DataAPI.nrow(x))
 
 
 

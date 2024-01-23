@@ -5,6 +5,7 @@ using Graphs
 using Distributions
 using Random
 
+
 @testset "CausalTables" begin
     X = [1, 2, 3]
     Y = ["a", "b", "c"]
@@ -38,7 +39,6 @@ using Random
     @test Tables.columnnames(coltbl) == (:X, :Y, :Z)
     @test gettable(coltbl) == foo2
 
-    getcontrols(rowtbl)
     # Causal Inference
     @test gettreatmentsymbol(rowtbl) == :X
     @test getresponsesymbol(rowtbl) == :Y
@@ -59,6 +59,9 @@ using Random
     @test_throws ArgumentError CausalTable(foo1, :X, :X, [:Z])
     @test_throws ArgumentError CausalTable(foo1, :X, :Z, [:Z])
     @test_throws ArgumentError CausalTable(foo1, :Z, :X, [:Z])
+
+    tbl4 = CausalTable(foo1, :W, :Y, [:Z])
+    @test_throws ErrorException("Treatment variable not contained in the data. Note: If response is a summary over a network (contained within tbl.summaries), make sure that you call `summary(tbl::CausalTable)` on your table before calling `gettreatment`.") gettreatment(tbl4)
 end
 
 @testset "DataGeneratingProcess, no graphs" begin

@@ -1,3 +1,6 @@
+# Define Exception messages
+SUMMARY_NOTE = "Note: If response is a summary over a network (contained within tbl.summaries), make sure that you call `summary(tbl::CausalTable)` on your table before calling"
+
 """
     CausalTable
 
@@ -66,7 +69,7 @@ Get the response variable from a CausalTable.
 # Returns
 The response variable from the CausalTable.
 """
-getresponse(x::CausalTable) = Tables.getcolumn(x, x.response)
+getresponse(x::CausalTable) = try Tables.getcolumn(x, x.response) catch; error("Response variable not contained in the data. $(SUMMARY_NOTE) `getresponse`.") end 
 """
     gettreatment(x::CausalTable)
 
@@ -78,7 +81,7 @@ Get the treatment column from a CausalTable.
 # Returns
 The treatment column of the CausalTable.
 """
-gettreatment(x::CausalTable) = Tables.getcolumn(x, gettreatmentsymbol(x))
+gettreatment(x::CausalTable) = try Tables.getcolumn(x, gettreatmentsymbol(x)) catch; error("Treatment variable not contained in the data. $(SUMMARY_NOTE) `gettreatment`.") end 
 
 """
     getcontrols(x::CausalTable)
@@ -94,13 +97,17 @@ A new `CausalTable` object containing only the control variables.
 
 """
 function getcontrols(x::CausalTable; keepcausal = true)
-    L = TableOperations.select(x, x.controls...) |> Tables.columntable
+    try
+        L = TableOperations.select(x, x.controls...) |> Tables.columntable
+    catch
+        error("One or more control variables not contained in the data. $(SUMMARY_NOTE) `getcontrols`.")
+    end 
     if keepcausal
         L = CausalTable(L, gettreatmentsymbol(x), 
-                           getresponsesymbol(x), 
-                           getcontrolssymbols(x), 
-                           getgraph(x), 
-                           getsummaries(x))
+                        getresponsesymbol(x), 
+                        getcontrolssymbols(x), 
+                        getgraph(x), 
+                        getsummaries(x))
     end
     return L
 end

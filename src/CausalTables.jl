@@ -6,6 +6,7 @@ using Graphs
 using Tables
 using TableOperations
 using DataAPI
+using StatsBase
 import Base: getindex
 import MacroTools: postwalk
 
@@ -29,7 +30,14 @@ export getresponse, gettreatment, getsummaries, getgraph, getcontrols, gettable,
 export replacetable, replace, subset
 
 # network_summary.jl
-export NetworkSummary, NeighborSum
+export NetworkSummary, 
+       NeighborSum, 
+       NeighborProduct, 
+       NeighborOrderStatistic, 
+       NeighborMaximum, 
+       NeighborMinimum, 
+       NeighborMode,
+       Friends
 export summarize, get_var_to_summarize
 
 # data_generating_process.jl

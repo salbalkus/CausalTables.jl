@@ -1,1 +1,1 @@
-# Defining Your Own Network Summaries
+# Network Summaries
