@@ -52,7 +52,7 @@ Random.seed!(1);
 data = rand(dgp, 5)
 
 # output
-CausalTable((W = [1, 2, 4, 4, 5], X = [1.267564418628885, 3.749933692528245, 3.1739792080807026, 2.957247582108903, 4.670866154143596], Y = [0.9853125032197694, 5.332176395928403, 4.454670622625683, 3.7546894015545953, 7.105478705857513]), :X, :Y, [:W], SimpleGraph{Int64}(0, Vector{Int64}[]), NamedTuple())
+CausalTable((W = [1, 2, 4, 4, 5], X = [1.267564418628885, 3.749933692528245, 3.1739792080807026, 2.957247582108903, 4.670866154143596], Y = [0.9853125032197694, 5.332176395928403, 4.454670622625683, 3.7546894015545953, 7.105478705857513]), :X, :Y, [:W], Graphs.SimpleGraphs.SimpleGraph{Int64}(0, Vector{Int64}[]), NamedTuple())
 ```
 
 For a more detailed guide of how to generate data please refer to [Generating Data](man/generating-data.md).
@@ -65,12 +65,12 @@ Once we've defined a DGP and have some table of data with variables matching tho
 X_distribution = condensity(dgp, data, :X)
 
 # output
-5-element Vector{Normal{Float64}}:
- Normal{Float64}(μ=1.0, σ=1.0)
- Normal{Float64}(μ=2.0, σ=1.0)
- Normal{Float64}(μ=4.0, σ=1.0)
- Normal{Float64}(μ=4.0, σ=1.0)
- Normal{Float64}(μ=5.0, σ=1.0)
+ 5-element Vector{Distributions.Normal{Float64}}:
+  Distributions.Normal{Float64}(μ=1.0, σ=1.0)
+  Distributions.Normal{Float64}(μ=2.0, σ=1.0)
+  Distributions.Normal{Float64}(μ=4.0, σ=1.0)
+  Distributions.Normal{Float64}(μ=4.0, σ=1.0)
+  Distributions.Normal{Float64}(μ=5.0, σ=1.0)
 ```
 
 For convenience, there also exists a `conmean` function that extracts the true conditional mean of a specific variable the CausalTable:
@@ -98,7 +98,7 @@ tbl = (W = rand(1:5, 10), X = randn(10), Y = randn(10))
 ctbl = CausalTable(tbl; treatment = :X, response = :Y, controls = [:W])
 
 # output
-CausalTable((W = [4, 1, 1, 2, 1], X = [0.7979290545612041, -1.2452663162861664, -0.5043635727484704, 0.7380730015204348, -0.5070072144278108], Y = [1.5526026771305754, 0.8274757264628023, 2.121981455933453, -1.5729323029574562, -1.3901156800484877]), :X, :Y, [:W], SimpleGraph{Int64}(0, Vector{Int64}[]), NamedTuple())
+CausalTable((W = [4, 1, 1, 2, 1, 3, 4, 2, 5, 3], X = [0.8368780076380373, 0.7625987122922915, 1.3399028099332886, 0.3933244983292907, 0.7182246880278974, 1.7429555866643915, 1.567984839687284, -0.003792715523756588, -1.6907757555898597, -2.406519455680792], Y = [-0.2942279070703944, -0.6668265580083714, 0.16560721534408443, -0.5052374899783175, 0.46175632905790776, -0.8915708334578072, -0.7643361560895672, -1.4725034534957362, -0.5066603365693706, -2.103326596494467]), :X, :Y, [:W], Graphs.SimpleGraphs.SimpleGraph{Int64}(0, Vector{Int64}[]), NamedTuple())
 ```
 
 For a more detailed guide of how to wrap an existing table as a CausalTable please refer to [Turning Your Data Into a CausalTable](man/formatting.md).
