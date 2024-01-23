@@ -5,6 +5,19 @@ using Graphs
 using Distributions
 using Random
 
+distributions = @dgp(
+        W ~ DiscreteUniform(1, 5),
+        X ~ (@. Normal(:W, 1)),
+        Y ~ (@. Normal(:A + 0.2 * :W, 1))
+    )
+
+dgp = DataGeneratingProcess(
+    distributions;
+    treatment = :X,
+    response = :Y,
+    controls = [:W]
+)
+
 Random.seed!(1);
 
 @testset "CausalTables" begin
@@ -40,7 +53,7 @@ Random.seed!(1);
     @test Tables.columnnames(coltbl) == (:X, :Y, :Z)
     @test gettable(coltbl) == foo2
 
-
+    getcontrols(rowtbl)
     # Causal Inference
     @test gettreatmentsymbol(rowtbl) == :X
     @test getresponsesymbol(rowtbl) == :Y
@@ -52,9 +65,15 @@ Random.seed!(1);
     @test getgraph(rowtbl) == Graph()
 
     # Other convenience
-    baz = (F = [4, 5], G = ["foo", "bar"])
+    baz = (X = [4, 5], Y = ["foo", "bar"], Z = [0.1, 0.2])
+    gettable(CausalTables.replace(rowtbl; tbl = baz))
     @test gettable(CausalTables.replace(rowtbl; tbl = baz)) == baz
     @test gettable(Tables.subset(coltbl, 1:2)) == (X = X[1:2], Y = Y[1:2], Z = Z[1:2])
+
+    # Errors
+    @test_throws ArgumentError CausalTable(foo1, :X, :X, [:Z])
+    @test_throws ArgumentError CausalTable(foo1, :X, :Z, [:Z])
+    @test_throws ArgumentError CausalTable(foo1, :Z, :X, [:Z])
 end
 
 @testset "DataGeneratingProcess, no graphs" begin
@@ -98,7 +117,6 @@ end
     @test typeof(baz) <: Vector{T} where {T <: Real}
     @test baz == Tables.getcolumn(foo, :A) .+ 0.2 .* Tables.getcolumn(foo, :L1)
 end
-
 
 
 @testset "DataGeneratingProcess with graphs" begin

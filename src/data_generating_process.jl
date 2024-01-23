@@ -63,29 +63,28 @@ mutable struct DataGeneratingProcess
     function DataGeneratingProcess(networkgen::Function, distgen::Vector{Pair{Symbol, T}}, treatment::SymbolOrNothing, response::SymbolOrNothing, controls::VectorOfSymbolsOrNothing) where {T <: ValidDGPTypes}
         varnames = [name for (name, _) in distgen] 
         if !isnothing(controls) && (treatment ∈ controls || response ∈ controls)
-            error("Treatment and/or response cannot be the same as controls.")
+            throw(ArgumentError("Treatment and/or response cannot be the same as controls."))
         elseif (!isnothing(treatment) && treatment ∉ varnames) || (!isnothing(response) && response ∉ varnames) || (!isnothing(controls) && any([c ∉ varnames for c in controls]))
-            error("Treatment and/or response names not found in distribution generators.")
+            throw(ArgumentError("Treatment and/or response names not found in distribution generators."))
         end
         return new(networkgen, Vector{Pair{Symbol, ValidDGPTypes}}(distgen), treatment, response, controls)
     end
 end
 
 # Constructors
-DataGeneratingProcess(distgen::Vector{Pair{Symbol, T}}, treatment::Symbol, response::Symbol, controls::Vector{Symbol}) where {T <: ValidDGPTypes} = DataGeneratingProcess(n -> nothing, distgen, treatment, response, controls)
-DataGeneratingProcess(distgen::Vector{Pair{Symbol, T}}) where {T <: ValidDGPTypes} = DataGeneratingProcess(n -> nothing, distgen, nothing, nothing, nothing)
-
-function DataGeneratingProcess(networkgen::Function, distgen::Vector{Pair{Symbol, T}}; treatment = nothing, response = nothing, controls = nothing) where {T <: ValidDGPTypes}
+function DataGeneratingProcess(networkgen::Function, distgen::Vector{Pair{Symbol, T}}; treatment::SymbolOrNothing = nothing, response::SymbolOrNothing = nothing, controls::VectorOfSymbolsOrNothing = nothing) where {T <: ValidDGPTypes}
     if !isnothing(controls) && (treatment ∈ controls || response ∈ controls)
-        error("Treatment and/or response cannot be the same as controls.")
+        throw(ArgumentError("Treatment and/or response cannot be the same as controls."))
     end
     return DataGeneratingProcess(networkgen, distgen, treatment, response, controls)
 end
 
+DataGeneratingProcess(distgen::Vector{Pair{Symbol, T}}; treatment::SymbolOrNothing = nothing, response::SymbolOrNothing = nothing, controls::VectorOfSymbolsOrNothing = nothing) where {T <: ValidDGPTypes} = DataGeneratingProcess(n -> nothing, distgen; treatment = treatment, response = response, controls = controls)
+
 # Getters
-gettreatment(dgp::DataGeneratingProcess) = dgp.treatment
-getresponse(dgp::DataGeneratingProcess) = dgp.response
-getcontrols(dgp::DataGeneratingProcess) = dgp.controls
+gettreatmentsymbol(dgp::DataGeneratingProcess) = dgp.treatment
+getresponsesymbol(dgp::DataGeneratingProcess) = dgp.response
+getcontrolssymbol(dgp::DataGeneratingProcess) = dgp.controls
 
 
 # Helper function to initialize the DGP step depending on its type using multiple dispatch
@@ -149,9 +148,9 @@ function Base.rand(dgp::DataGeneratingProcess, n::Int)
     # Initialize output
     net = dgp.networkgen(n)
     if net isa SimpleGraph
-        ct = CausalTable((;), gettreatment(dgp), getresponse(dgp), getcontrols(dgp), net, (;))
+        ct = CausalTable((;), gettreatmentsymbol(dgp), getresponsesymbol(dgp), getcontrolssymbol(dgp), net, (;))
     else
-        ct = CausalTable((;), gettreatment(dgp), getresponse(dgp), getcontrols(dgp), Graph(), (;))
+        ct = CausalTable((;), gettreatmentsymbol(dgp), getresponsesymbol(dgp), getcontrolssymbol(dgp), Graph(), (;))
     end
 
     # Iterate through each step of the DGP

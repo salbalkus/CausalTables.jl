@@ -10,7 +10,16 @@ mutable struct CausalTable
     controls::Union{Vector{Symbol}, Nothing}
     graph::Graph
     summaries::NamedTuple
-    CausalTable(tbl, treatment, response, controls, graph, summaries) = !isnothing(controls) && (treatment ∈ controls || response ∈ controls) ? error("Treatment and/or response cannot be the same as controls.") : new(tbl, treatment, response, controls, graph, summaries)
+    function CausalTable(tbl, treatment, response, controls, graph, summaries)
+        cols = Tables.columns(tbl)
+        if !isnothing(controls) && (treatment ∈ controls || response ∈ controls) 
+            throw(ArgumentError("Treatment and/or response cannot be the same as controls.")) 
+        elseif !isnothing(treatment) && !isnothing(response) && treatment == response
+            throw(ArgumentError("Treatment cannot be the same as response"))
+        else 
+            new(tbl, treatment, response, controls, graph, summaries)
+        end
+    end
 end
 
 CausalTable(tbl) = CausalTable(tbl, nothing, nothing, nothing, Graph(), (;))
@@ -19,6 +28,9 @@ CausalTable(tbl, graph::Graph, summaries::NamedTuple) = CausalTable(tbl, nothing
 # if controls not provided, assume all columns other than treatment and response are controls
 CausalTable(tbl, treatment::Union{Symbol, Nothing}, response::Union{Symbol, Nothing}) = CausalTable(tbl, treatment, response, setdiff(Tables.columnnames(Tables.columns(tbl)), [treatment, response]), Graph(), (;))
 CausalTable(tbl, treatment::Union{Symbol, Nothing}, response::Union{Symbol, Nothing}, controls::Vector{Symbol}) = CausalTable(tbl, treatment, response, controls, Graph(), (;))
+
+# Construct using kwargs
+CausalTable(tbl = nothing; treatment = nothing, response = nothing, controls = nothing, graph = Graph(), summaries = (;)) = CausalTable(tbl, treatment, response, controls, graph, summaries)
 
 # declare that CausalTable is a table
 Tables.istable(::Type{CausalTable}) = true
@@ -38,9 +50,9 @@ Tables.columnindex(x::CausalTable, nm::Symbol) = Tables.columnindex(x.tbl, nm)
 Tables.columntype(x::CausalTable, nm::Symbol) = Tables.columntype(x.tbl, nm)
 
 # Additional convenience functions from existing method
-Base.getindex(x::CausalTable, i, j) = Base.getindex(x.tbl, i, j)
 DataAPI.ncol(x::CausalTable) = DataAPI.ncol(x.tbl)
 DataAPI.nrow(x::CausalTable) = DataAPI.nrow(x.tbl)
+Base.getindex(x::CausalTable, i::Int, j::Int) = Base.getindex(x.tbl, i, j)
 
 # Basic causal inference getters and setters
 """
@@ -66,8 +78,7 @@ Get the treatment column from a CausalTable.
 # Returns
 The treatment column of the CausalTable.
 """
-gettreatment(x::CausalTable) = Tables.getcolumn(x, x.treatment)
-
+gettreatment(x::CausalTable) = Tables.getcolumn(x, gettreatmentsymbol(x))
 
 """
     getcontrols(x::CausalTable)
@@ -85,7 +96,11 @@ A new `CausalTable` object containing only the control variables.
 function getcontrols(x::CausalTable; keepcausal = true)
     L = TableOperations.select(x, x.controls...) |> Tables.columntable
     if keepcausal
-        L = CausalTable(L, x.treatment, x.response, x.controls, x.graph, x.summaries)
+        L = CausalTable(L, gettreatmentsymbol(x), 
+                           getresponsesymbol(x), 
+                           getcontrolssymbols(x), 
+                           getgraph(x), 
+                           getsummaries(x))
     end
     return L
 end
@@ -98,7 +113,6 @@ getcontrolssymbols(x::CausalTable) = x.controls
 # Network causal inference getters
 """
     getsummaries(x::CausalTable)
-
 
 # Arguments
 - `x::CausalTable`: The CausalTable object.
@@ -177,7 +191,6 @@ Set the control variables for a CausalTable.
 function setcontrols!(x::CausalTable, controls::Vector{Symbol})
     x.controls = controls
 end
-
 
 """
     setcausalvars!(x::CausalTable; treatment=nothing, response=nothing, controls=nothing)
@@ -262,7 +275,7 @@ replacetable(x::CausalTable, tbl) = CausalTable(tbl, x.treatment, x.response, x.
 """
     subset(x::CausalTable, ind)
 
-Subset a CausalTable `x` based on the given indices `ind`.
+Subset a CausalTable `x` based on the given indices `ind`. Note that viewhinting is not supported; this function will return a *copy* of the CausalTable.
 
 # Arguments
 - `x`: The CausalTable to be subsetted.
@@ -272,15 +285,21 @@ Subset a CausalTable `x` based on the given indices `ind`.
 A new CausalTable with the subsetted table. If the `graph` attribute is not Nothing, then this function takes the subgraph induced by the subsetted indices using `induced`
 
 """
-function Tables.subset(x::CausalTable, ind)
+function Tables.subset(x::CausalTable, ind; viewhint = nothing)
+    # First check to see if user is trying to viewhint; Graphs do not support this, so we need to throw an error
+    if viewhint == true
+        throw(ArgumentError("CausalTables do not support viewhinting. Remove `viewhint = true` argument from your call to Tables.subset"))
+    end
+
     graph_subset = getgraph(x) # default graph, for when graph has no edges
 
     # Subset the table
     tbl_subset = Tables.subset(gettable(x), ind)
 
+    # Subset the graph
     if nv(graph_subset) > 0 # If the graph isn't empty...
         if length(unique(ind)) != length(ind) # If there are duplicate indices...
-            error("Cannot subset CausalTable with non-unique indices.")
+            throw(ArgumentError("Cannot subset CausalTable with non-unique indices."))
         else
             graph_subset = induced_subgraph(graph_subset, ind)[1] # Subset the graph
         end

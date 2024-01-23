@@ -1,1 +1,1 @@
-# Computing Ground Truth of Causal Parameters
+# Computing Ground Truth Conditional Distributions
