@@ -45,7 +45,7 @@ Be warned: if you try to call `gettreatment` on a `CausalTable` that has not bee
 gettreatment(ctbl)
 
 # output
-ErrorException("Treatment variable not contained in the data. Note: If response is a summary over a network (contained within tbl.summaries), make sure that you call `summary(tbl::CausalTable)` on your table before calling `gettreatment`.")
+ERROR: Treatment variable not contained in the data. Note: If response is a summary over a network (contained within tbl.summaries), make sure that you call `summary(tbl::CausalTable)` on your table before calling `gettreatment`.
 ```
 
 If you wish to extract the treatment variable, you will first need to call `summarize` on the CausalTable object, which computes the summary variables over the network. Then, calling `gettreatment` will yield the summarized treatment variable, like so:

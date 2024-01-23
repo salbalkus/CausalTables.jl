@@ -40,9 +40,8 @@ dgp = DataGeneratingProcess(
     response = :Y,
     controls = [:W]
 )
-
+nothing # hide
 # output
-DataGeneratingProcess(CausalTables.var"#26#27"(), Pair{Symbol, Union{NetworkSummary, Function}}[:W => CausalTables.var"#36#38"(), :X => CausalTables.var"#39#41"(), :Y => CausalTables.var"#42#44"()], :X, :Y, [:W])
 ```
 
 One we've defined our list of distribution functions, we can generate data from the DGP using the `rand` function:
