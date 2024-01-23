@@ -17,7 +17,7 @@ nothing # hide
 
 The code above assumes that each unit (row in the Table, in this case `df`), is "causally independent" of every other unit -- that is, the treatment of one unit does not affect the response of any other unit. In some cases, however, we might work with data in which units may *not* be causally independent, but rather, in which one unit's variables could dependent on some summary function of its neighbors. 
 
-In this case, we can specify a `graph` argument to the `CausalTable` constructor, a Graph object from Graphs.jl which will be used to determine which units are neighbors of one another. We would also specify a `summaries` argument, a `NamedTuple` of `NetworkSummary` objects representing variables summarized over each unit's neighbors in the graph. More detail on the types of `NetworkSummary` that can be used in a dependent-data `CausalTable` can be found in [Network Summaries](man/network-summaries.md)
+In this case, we can specify a `graph` argument to the `CausalTable` constructor, a Graph object from Graphs.jl which will be used to determine which units are neighbors of one another. We would also specify a `summaries` argument, a `NamedTuple` of `NetworkSummary` objects representing variables summarized over each unit's neighbors in the graph. More detail on the types of `NetworkSummary` that can be used in a dependent-data `CausalTable` can be found in [Network Summaries](network-summaries.md)
 
 Here's an example of how such a `CausalTable` might be constructed, using the Karate Club dataset. Treatment is defined as the number of friends a club member has, denoted by the summary function parameter `summaries = (friends = Friends(),)`. 
 
