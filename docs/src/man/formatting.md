@@ -5,12 +5,13 @@ One of the main purposes of CausalTables.jl is to wrap a Table of data in Julia 
 ```jldoctest titanic
 using CausalTables
 using MLDatasets: Titanic
+using DataFrames
 
 df = Titanic().dataframe
 
 # Wrapping the dataset in a CausalTable
 ctbl = CausalTable(df; treatment = :Sex, response = :Survived, controls = [:Pclass, :Age, :SibSp]);
-
+nothing # hide
 # output
 ```
 
@@ -34,7 +35,7 @@ g = SimpleGraphFromIterator([Edge(x...) for x in zip(data.graphs[1].edge_index..
 
 # Note that the input to summaries must be a NamedTuple, even if there is only one summary variable, so the trailing comma is necessary.
 ctbl = CausalTable(tbl; graph = g, treatment = :friends, response = :labels_clubs, summaries = (friends = Friends(),));
-
+nothing # hide
 #output
 ```
 
@@ -52,6 +53,6 @@ If you wish to extract the treatment variable, you will first need to call `summ
 ```jldoctest karateclub
 ctbl_summarized = summarize(ctbl)
 gettreatment(ctbl_summarized);
-
+nothing # hide
 # output
 ```
