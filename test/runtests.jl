@@ -5,21 +5,6 @@ using Graphs
 using Distributions
 using Random
 
-distributions = @dgp(
-        W ~ DiscreteUniform(1, 5),
-        X ~ (@. Normal(:W, 1)),
-        Y ~ (@. Normal(:A + 0.2 * :W, 1))
-    )
-
-dgp = DataGeneratingProcess(
-    distributions;
-    treatment = :X,
-    response = :Y,
-    controls = [:W]
-)
-
-Random.seed!(1);
-
 @testset "CausalTables" begin
     X = [1, 2, 3]
     Y = ["a", "b", "c"]
