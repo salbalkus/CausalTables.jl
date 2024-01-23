@@ -25,9 +25,11 @@ using CausalTables
 using MLDatasets
 using Graphs
 
+# Get a Table of Karate Club data from MLDatasets
 data = KarateClub()
-
 tbl = data.graphs[1].node_data
+
+# Convert the karate club data into a Graphs.jl graph object
 g = SimpleGraphFromIterator([Edge(x...) for x in zip(data.graphs[1].edge_index...)])
 
 # Note that the input to summaries must be a NamedTuple, even if there is only one summary variable, so the trailing comma is necessary.
