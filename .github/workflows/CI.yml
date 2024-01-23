@@ -39,4 +39,7 @@ jobs:
       - uses: codecov/codecov-action@v1
         with:
           file: lcov.info
+      - uses: coverallsapp/github-action@master
+      
+
 
