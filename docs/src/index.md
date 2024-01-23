@@ -26,6 +26,7 @@ To set up a statistical simulation using CausalTables.jl, we first define a `Dat
 
 ```jldoctest quicktest
 using CausalTables
+using Random
 
 distributions = @dgp(
         W ~ DiscreteUniform(1, 5),
@@ -38,9 +39,10 @@ dgp = DataGeneratingProcess(
     treatment = :X,
     response = :Y,
     controls = [:W]
-);
+)
 
 # output
+DataGeneratingProcess(CausalTables.var"#26#27"(), Pair{Symbol, Union{NetworkSummary, Function}}[:W => CausalTables.var"#36#38"(), :X => CausalTables.var"#39#41"(), :Y => CausalTables.var"#42#44"()], :X, :Y, [:W])
 ```
 
 One we've defined our list of distribution functions, we can generate data from the DGP using the `rand` function:
