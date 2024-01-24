@@ -24,7 +24,7 @@ The examples below illustrate each of these three functionalities.
 
 To set up a statistical simulation using CausalTables.jl, we first define a `DataGeneratingProcess` (DGP). The easiest way to do this is using the `@dgp` macro, which takes a sequence of conditional distributions of the form `[variable name] ~ Distribution(args...)` and returns a `DataGeneratingProcess` object like so:
 
-```jldoctest quicktest; output = false, filter = r"(?<=.{21}).*"
+```jldoctest quicktest; output = false, filter = r"(?<=.{21}).*"s
 using CausalTables
 using Random
 
@@ -47,7 +47,7 @@ DataGeneratingProcess
 
 One we've defined our list of distribution functions, we can generate data from the DGP using the `rand` function:
 
-```jldoctest quicktest; output = false, filter = r"(?<=.{11}).*"
+```jldoctest quicktest; output = false, filter = r"(?<=.{11}).*"s
 Random.seed!(1);
 data = rand(dgp, 5)
 
@@ -93,7 +93,7 @@ For a more detailed guide of how to compute ground truth conditional distributio
 
 If you have a table of data that you would like to use with CausalTables.jl without defining a corresponding DataGeneratingProcess (i.e. to use with another package) you can wrap it as a `CausalTable` using the corresponding constructor:
 
-```jldoctest quicktest; output = false, filter = r"(?<=.{11}).*"
+```jldoctest quicktest; output = false, filter = r"(?<=.{11}).*"s
 tbl = (W = rand(1:5, 10), X = randn(10), Y = randn(10))
 ctbl = CausalTable(tbl; treatment = :X, response = :Y, controls = [:W])
 
