@@ -9,20 +9,6 @@ abstract type NetworkSummary end
 get_var_to_summarize(x::NetworkSummary) = x.var_to_summarize
 
 
-"""
-    mutable struct NeighborSum <: NetworkSummary
-
-A mutable struct representing a network summary that calculates the sum of a variable's neighbors.
-
-# Fields
-- `var_to_summarize::Symbol`: The variable to summarize.
-- `use_inneighbors::Bool`: Whether to use the in-neighbors or out-neighbors for the summary. If `true`, then the in-neighbors are used. If the graph is undirected, this has no effect.
-
-# Constructors
-- `NeighborSum(var_to_summarize::Symbol; use_inneighbors::Bool = true)`: Create a new NeighborSum object.
-
-"""
-
 mutable struct NeighborSum <: NetworkSummary 
     var_to_summarize::Symbol
     use_inneighbors::Bool
@@ -48,19 +34,6 @@ mutable struct NeighborSum <: NetworkSummary
     NeighborSum(var_to_summarize::Symbol; use_inneighbors::Bool = true) = new(var_to_summarize, use_inneighbors)
 end
 
-"""
-    mutable struct NeighborProduct <: NetworkSummary
-
-A mutable struct representing a network summary that calculates the product of a variable's neighbors.
-
-# Fields
-- `var_to_summarize::Symbol`: The variable to summarize.
-- `use_inneighbors::Bool`: Whether to use the in-neighbors or out-neighbors. If `true`, then the in-neighbors are used. If the graph is undirected, this has no effect.
-
-# Constructors
-- `NeighborProduct(var_to_summarize::Symbol; use_inneighbors::Bool = true)`: Create a new `NeighborProduct` object.
-
-"""
 mutable struct NeighborProduct <: NetworkSummary 
     var_to_summarize::Symbol
     use_inneighbors::Bool
@@ -87,19 +60,6 @@ end
 
 abstract type NeighborOrderStatistic <: NetworkSummary end
 
-"""
-    mutable struct NeighborMaximum <: NeighborOrderStatistic
-
-A mutable struct representing a network summary that calculates the maximum of a variable's neighbors.
-
-# Fields
-- `var_to_summarize::Symbol`: The variable to summarize.
-- `use_inneighbors::Bool`: Whether to use the in-neighbors or out-neighbors. If `true`, then the in-neighbors are used. If the graph is undirected, this has no effect.
-
-# Constructors
-- `NeighborMaximum(var_to_summarize::Symbol; use_inneighbors::Bool = true)`: Create a new `NeighborMaximum` object.
-
-"""
 mutable struct NeighborMaximum <: NeighborOrderStatistic 
     var_to_summarize::Symbol
     use_inneighbors::Bool
@@ -124,19 +84,6 @@ mutable struct NeighborMaximum <: NeighborOrderStatistic
     NeighborMaximum(var_to_summarize::Symbol; use_inneighbors::Bool = true) = new(var_to_summarize, use_inneighbors)
 end
 
-"""
-    mutable struct NeighborMinimum <: NeighborOrderStatistic
-
-A mutable struct representing a network summary that calculates the maximum of a variable's neighbors.
-
-# Fields
-- `var_to_summarize::Symbol`: The variable to summarize.
-- `use_inneighbors::Bool`: Whether to use the in-neighbors or out-neighbors. If `true`, then the in-neighbors are used. If the graph is undirected, this has no effect.
-
-# Constructors
-- `NeighborMinimum(var_to_summarize::Symbol; use_inneighbors::Bool = true)`: Create a new `NeighborMinimum` object.
-
-"""
 mutable struct NeighborMinimum <: NeighborOrderStatistic 
     var_to_summarize::Symbol
     use_inneighbors::Bool
@@ -161,19 +108,6 @@ mutable struct NeighborMinimum <: NeighborOrderStatistic
     NeighborMinimum(var_to_summarize::Symbol; use_inneighbors::Bool = true) = new(var_to_summarize, use_inneighbors)
 end
 
-"""
-    mutable struct NeighborMode <: NetworkSummary
-
-A mutable struct representing a network summary that calculates the mode of a variable's neighbors.
-
-# Fields
-- `var_to_summarize::Symbol`: The variable to summarize.
-- `use_inneighbors::Bool`: Whether to use the in-neighbors or out-neighbors. If `true`, then the in-neighbors are used. If the graph is undirected, this has no effect.
-
-# Constructors
-- `NeighborMode(var_to_summarize::Symbol; use_inneighbors::Bool = true)`: Create a new `NeighborMode` object.
-
-"""
 mutable struct NeighborMode <: NetworkSummary 
     var_to_summarize::Symbol
     use_inneighbors::Bool
@@ -192,18 +126,6 @@ mutable struct NeighborMode <: NetworkSummary
     NeighborMode(var_to_summarize::Symbol; use_inneighbors::Bool = true) = new(var_to_summarize, use_inneighbors)
 end
 
-"""
-    mutable struct NeighborMode <: NetworkSummary
-
-A mutable struct representing a network summary that calculates the number of neighbors of each unit.
-
-# Fields
-- `use_inneighbors::Bool`: Whether to use the in-neighbors or out-neighbors. If `true`, then the in-neighbors are used. If the graph is undirected, this has no effect.
-
-# Constructors
-- `Friends(var_to_summarize::Symbol; use_inneighbors::Bool = true)`: Create a new `Friends` object.
-
-"""
 mutable struct Friends <: NetworkSummary 
     use_inneighbors::Bool
     @doc raw"""
