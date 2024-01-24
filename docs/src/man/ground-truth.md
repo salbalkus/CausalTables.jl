@@ -38,7 +38,7 @@ X_distribution = condensity(dgp, data, :X)
 Xs_distribution = condensity(dgp, data, :Xs)
 
 # output
-5-element Vector{Normal{Float64}}:
+5-element Vector{Distributions.Normal{Float64}}:
  Distributions.Normal{Float64}(μ=7.0, σ=1.4142135623730951)
  Distributions.Normal{Float64}(μ=8.0, σ=1.4142135623730951)
  Distributions.Normal{Float64}(μ=8.0, σ=1.4142135623730951)
