@@ -10,7 +10,7 @@ When evaluating a causal inference method, we often want to test it on data from
 
 where `X` is the treatment, `Y` is the response, and `W` is a control variable. A verbose and inconvenient (albeit correct) way to define this DGP would be as follows:
 
-```jldoctest generation; output = false, filter = r"^.{1,16}"
+```jldoctest generation; output = false, filter = r"(?<=.{16}).*"
 using Distributions
 
 distributions = [
@@ -27,7 +27,7 @@ Note how Distributions can take previous variables as arguments by referencing t
 
 However, a much more convenient way to define this DGP is using the `@dgp` macro, which takes a sequence of conditional distributions of the form `[variable name] ~ Distribution(args...)` and automatically generates a valid Vector of Pairs for a DataGeneratingProcess. For example, the *easier* way to define the DGP above is as follows:
 
-```jldoctest generation; output = false, filter = r"^.{1,16}"
+```jldoctest generation; output = false, filter = r"(?<=.{16}).*"
 distributions = @dgp(
         W ~ DiscreteUniform(1, 5),
         X ~ (@. Normal(:W, 1)),
@@ -41,7 +41,7 @@ distributions = @dgp(
 Note that with the `@dgp` macro, any symbol used in Distribution is automatically replaced with the corresponding previously-defined variable in the process. For instance, in `Normal(:W, 1)`, the `:W` will be replaced automatically with the distribution we defined as `W` earlier in the sequence. With this vector in hand, we can define a `DataGeneratingProcess` object like so -- treatment, response, and control variables in the causal model are specified as keyword arguments to the `DataGeneratingProcess` constructor:
 
 
-```jldoctest generation; output = false, filter = r"^.{1,21}"
+```jldoctest generation; output = false, filter = r"(?<=.{21}).*"
 using CausalTables
 dgp = DataGeneratingProcess(
     distributions;
@@ -63,7 +63,7 @@ In some cases, we might work with data in which units may *not* be causally inde
 
 Here's an example of how such a `DataGeneratingProcess` might be constructed:
 
-```jldoctest network; output = false, filter = r"^.{1,21}"
+```jldoctest network; output = false, r"(?<=.{21}).*"
 using Graphs
 using CausalTables
 
