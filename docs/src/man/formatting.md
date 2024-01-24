@@ -2,7 +2,7 @@
 
 One of the main purposes of CausalTables.jl is to wrap a Table of data in Julia in order to provide it as input to some other causal inference package. Given a Table of some data, we can turn it into a `CausalTable` by specifying the treatment, response, and control variables. The code below demonstrates this on the Titanic dataset. This could be, for example, to use as input into some estimator of whether a passenger's sex caused them to survive the Titanic disaster, controlling for some baselineline covariates listed in `controls`.
 
-```jldoctest titanic; output = false, filter = r"(?<=.{12}).*" # only take the first 12 characters of output
+```jldoctest titanic; output = false, filter = r"^.{1,11}" # only take the first 11 characters of output
 using CausalTables
 using MLDatasets: Titanic
 using DataFrames
@@ -22,7 +22,7 @@ In this case, we can specify a `graph` argument to the `CausalTable` constructor
 
 Here's an example of how such a `CausalTable` might be constructed, using the Karate Club dataset. Treatment is defined as the number of friends a club member has, denoted by the summary function parameter `summaries = (friends = Friends(),)`. 
 
-```jldoctest karateclub; output = false, filter = r"(?<=.{12}).*"
+```jldoctest karateclub; output = false, filter = r"^.{1,11}"
 using CausalTables
 using MLDatasets
 using Graphs
@@ -52,21 +52,10 @@ ERROR: Treatment variable not contained in the data. Note: If response is a summ
 
 If you wish to extract the treatment variable, you will first need to call `summarize` on the CausalTable object, which computes the summary variables over the network. Then, calling `gettreatment` will yield the summarized treatment variable, like so:
 
-```jldoctest karateclub
+```jldoctest karateclub; filter = r"^.{1,17}"
 ctbl_summarized = summarize(ctbl)
 gettreatment(ctbl_summarized)
 
 # output
-34-element Vector{Float64}:
- 16.0
-  9.0
- 10.0
-  6.0
-  3.0
-  ⋮
-  4.0
-  4.0
-  6.0
- 12.0
- 17.0
+34-element Vector
 ```

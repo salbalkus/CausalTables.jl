@@ -9,8 +9,7 @@ makedocs(
         "Generating Data for Statistical Experiments" =>    "man/generating-data.md",
         "Computing Ground Truth of Causal Parameters" =>    "man/ground-truth.md",
         "Network Summaries" =>                 "man/network-summaries.md",
-    ],
-    doctestfilters = [r"#[0-9][0-9]"] # filter out anonymous function numbers from doctest output
+    ]
 )
 
 deploydocs(
