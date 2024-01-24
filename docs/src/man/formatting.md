@@ -1,6 +1,10 @@
 # Turning Your Data Into a `CausalTable`
 
-One of the main purposes of CausalTables.jl is to wrap a Table of data in Julia in order to provide it as input to some other causal inference package. Given a Table of some data, we can turn it into a `CausalTable` by specifying the treatment, response, and control variables. The code below demonstrates this on the Titanic dataset. This could be, for example, to use as input into some estimator of whether a passenger's sex caused them to survive the Titanic disaster, controlling for some baselineline covariates listed in `controls`.
+One of the main purposes of CausalTables.jl is to wrap a Table of data in Julia in order to provide it as input to some other causal inference package. Given a Table of some data, we can turn it into a `CausalTable` by specifying the treatment, response, and control variables. 
+
+## Tables with Causally Independent Units
+
+The code below demonstrates this on the Titanic dataset. This could be, for example, to use as input into some estimator of whether a passenger's sex caused them to survive the Titanic disaster, controlling for some baselineline covariates listed in `controls`.
 
 ```jldoctest titanic; output = false, filter = r"(?<=.{11}).*"s
 using CausalTables
@@ -16,7 +20,9 @@ ctbl = CausalTable(df; treatment = :Sex, response = :Survived, controls = [:Pcla
 CausalTable
 ```
 
-The code above assumes that each unit (row in the Table, in this case `df`), is "causally independent" of every other unit -- that is, the treatment of one unit does not affect the response of any other unit. In some cases, however, we might work with data in which units may *not* be causally independent, but rather, in which one unit's variables could dependent on some summary function of its neighbors. 
+## Tables with Network-Dependent Units
+
+The previous example assumes that each unit (row in the Table, in this case `df`), is "causally independent" of every other unit -- that is, the treatment of one unit does not affect the response of any other unit. In some cases, however, we might work with data in which units may *not* be causally independent, but rather, in which one unit's variables could dependent on some summary function of its neighbors. 
 
 In this case, we can specify a `graph` argument to the `CausalTable` constructor, a Graph object from Graphs.jl which will be used to determine which units are neighbors of one another. We would also specify a `summaries` argument, a `NamedTuple` of `NetworkSummary` objects representing variables summarized over each unit's neighbors in the graph. More detail on the types of `NetworkSummary` that can be used in a dependent-data `CausalTable` can be found in [Network Summaries](network-summaries.md)
 

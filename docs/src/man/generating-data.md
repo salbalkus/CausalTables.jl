@@ -1,6 +1,10 @@
 # Generating Data for Statistical Experiments
 
-When evaluating a causal inference method, we often want to test it on data from a known causal model. CausalTables.jl allows us to define a `DataGeneratingProcess` (or DGP) to do just that in two easy steps. First, we need to define a Vector of Pairs of the form `variable name => (; O...) -> Distribution(args...)`. The Distribution should take arguments corresponding to the names of the variables in the DGP. For example, suppose we wanted to define a statistical model of the form
+When evaluating a causal inference method, we often want to test it on data from a known causal model. CausalTables.jl allows us to define a `DataGeneratingProcess` (or DGP) to do just that. 
+
+## Defining a DataGeneratingProcess
+
+To start, we need to define a Vector of Pairs of the form `variable name => (; O...) -> Distribution(args...)`. The Distribution should take arguments corresponding to the names of the variables in the DGP. For example, suppose we wanted to define a statistical model of the form
 
 ```math
 \begin{align*}

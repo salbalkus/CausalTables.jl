@@ -39,11 +39,11 @@ Xs_distribution = condensity(dgp, data, :Xs)
 
 # output
 5-element Vector{Normal{Float64}}:
- Normal{Float64}(μ=7.0, σ=1.4142135623730951)
- Normal{Float64}(μ=8.0, σ=1.4142135623730951)
- Normal{Float64}(μ=8.0, σ=1.4142135623730951)
- Normal{Float64}(μ=8.0, σ=1.4142135623730951)
- Normal{Float64}(μ=9.0, σ=1.4142135623730951)
+ Distributions.Normal{Float64}(μ=7.0, σ=1.4142135623730951)
+ Distributions.Normal{Float64}(μ=8.0, σ=1.4142135623730951)
+ Distributions.Normal{Float64}(μ=8.0, σ=1.4142135623730951)
+ Distributions.Normal{Float64}(μ=8.0, σ=1.4142135623730951)
+ Distributions.Normal{Float64}(μ=9.0, σ=1.4142135623730951)
 ```
 
 One can also compute the ground truth conditional mean of a variable in a CausalTable using the `conmean` function:
