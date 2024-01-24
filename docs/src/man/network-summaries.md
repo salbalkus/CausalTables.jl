@@ -5,33 +5,33 @@ Typically, performing causal inference on a network relies on summarizing the tr
 ## Summarizing a CausalTable
 
 ```@docs
-summarize(x::CausalTable, keep = true)
+summarize
 ```
 
 ## Existing Summary Measures
 
 ```@docs
-NeighborSum(var_to_summarize::Symbol; use_inneighbors::Bool = true)
+NeighborSum
 ```
 
 ```@docs
-NeighborProduct(var_to_summarize::Symbol; use_inneighbors::Bool = true)
+NeighborProduct
 ```
 
 ```@docs
-NeighborMaximum(var_to_summarize::Symbol; use_inneighbors::Bool = true)
+NeighborMaximum
 ```
 
 ```@docs
-NeighborMinimum(var_to_summarize::Symbol; use_inneighbors::Bool = true)
+NeighborMinimum
 ```
 
 ```@docs
-NeighborMode(var_to_summarize::Symbol; use_inneighbors::Bool = true)
+NeighborMode
 ```
 
 ```@docs
-Friends(; use_inneighbors::Bool = true)
+Friends
 ```
 
 ## Defining Your Own Summary Measures
