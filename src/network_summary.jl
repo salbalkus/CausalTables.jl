@@ -27,7 +27,7 @@ mutable struct NeighborSum <: NetworkSummary
     var_to_summarize::Symbol
     use_inneighbors::Bool
     
-    @doc """
+    @doc raw"""
         NeighborSum(var_to_summarize::Symbol; use_inneighbors::Bool = true)
 
     Constructs a Network Summary denoting the **sum** of `var_to_summarize` over each unit's neighbors. If `var_to_summarize` is ``X``, then mathematically this computes
@@ -64,7 +64,7 @@ A mutable struct representing a network summary that calculates the product of a
 mutable struct NeighborProduct <: NetworkSummary 
     var_to_summarize::Symbol
     use_inneighbors::Bool
-    @doc """
+    @doc raw"""
         NeighborProduct(var_to_summarize::Symbol; use_inneighbors::Bool = true)
 
     Constructs a Network Summary denoting the **product** of `var_to_summarize` over each unit's neighbors. If `var_to_summarize` is ``X``, then mathematically this computes
@@ -103,7 +103,7 @@ A mutable struct representing a network summary that calculates the maximum of a
 mutable struct NeighborMaximum <: NeighborOrderStatistic 
     var_to_summarize::Symbol
     use_inneighbors::Bool
-    @doc """
+    @doc raw"""
         NeighborMaximum(var_to_summarize::Symbol; use_inneighbors::Bool = true)
 
     Constructs a Network Summary denoting the **maximum** of `var_to_summarize` over each unit's neighbors. If `var_to_summarize` is ``X``, then mathematically this computes
@@ -140,7 +140,7 @@ A mutable struct representing a network summary that calculates the maximum of a
 mutable struct NeighborMinimum <: NeighborOrderStatistic 
     var_to_summarize::Symbol
     use_inneighbors::Bool
-    @doc """
+    @doc raw"""
         NeighborMinimum(var_to_summarize::Symbol; use_inneighbors::Bool = true)
 
     Constructs a Network Summary denoting the **minimum** of `var_to_summarize` over each unit's neighbors. If `var_to_summarize` is ``X``, then mathematically this computes
@@ -177,7 +177,7 @@ A mutable struct representing a network summary that calculates the mode of a va
 mutable struct NeighborMode <: NetworkSummary 
     var_to_summarize::Symbol
     use_inneighbors::Bool
-    @doc """
+    @doc raw"""
         NeighborMode(var_to_summarize::Symbol; use_inneighbors::Bool = true)
 
     Constructs a Network Summary denoting the **mode** of `var_to_summarize` over each unit's neighbors -- that is, the value occuring most often among units connected to each unit in the network.
@@ -206,7 +206,7 @@ A mutable struct representing a network summary that calculates the number of ne
 """
 mutable struct Friends <: NetworkSummary 
     use_inneighbors::Bool
-    @doc """
+    @doc raw"""
         Friends(var_to_summarize::Symbol; use_inneighbors::Bool = true)
 
     Constructs a Network Summary denoting the **number of neighbors** of each unit in the network.

@@ -25,7 +25,6 @@ mutable struct CausalTable
     end
 end
 
-CausalTable(tbl) = CausalTable(tbl, nothing, nothing, nothing, Graph(), (;))
 CausalTable(tbl, graph::Graph, summaries::NamedTuple) = CausalTable(tbl, nothing, nothing, nothing, graph, summaries)
 
 # if controls not provided, assume all columns other than treatment and response are controls
