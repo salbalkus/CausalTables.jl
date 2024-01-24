@@ -10,7 +10,7 @@ When evaluating a causal inference method, we often want to test it on data from
 
 where `X` is the treatment, `Y` is the response, and `W` is a control variable. A verbose and inconvenient (albeit correct) way to define this DGP would be as follows:
 
-```jldoctest generation
+```jldoctest generation; output = false
 using Distributions
 
 distributions = [
@@ -18,25 +18,37 @@ distributions = [
         :X => (; O...) -> (@. Normal(O[:L1], 1)),
         :Y => (; O...) -> (@. Normal(O[:A] + 0.2 * O[:L1], 1))
     ]
+
+# output
+3-element Vector{Pair{Symbol, Function}}:
+ :W => var""()
+ :X => var""()
+ :Y => var""()
 ```
 
 Note how Distributions can take previous variables as arguments by referencing them from the object `O`. The `; O...` syntax is a shorthand for a function that takes keyword arguments corresponding to the names of the variables in the DGP. 
 
 However, a much more convenient way to define this DGP is using the `@dgp` macro, which takes a sequence of conditional distributions of the form `[variable name] ~ Distribution(args...)` and automatically generates a valid Vector of Pairs for a DataGeneratingProcess. For example, the *easier* way to define the DGP above is as follows:
 
-```jldoctest generation
+```jldoctest generation; output = false
 distributions = @dgp(
         W ~ DiscreteUniform(1, 5),
         X ~ (@. Normal(:W, 1)),
         Y ~ (@. Normal(:X + 0.2 * :W, 1))
     )
 
+# output
+3-element Vector{Pair{Symbol, Union{NetworkSummary, Function}}}:
+ :W => CausalTables.var""()
+ :X => CausalTables.var""()
+ :Y => CausalTables.var""()
+
 ```
 
 Note that with the `@dgp` macro, any symbol used in Distribution is automatically replaced with the corresponding previously-defined variable in the process. For instance, in `Normal(:W, 1)`, the `:W` will be replaced automatically with the distribution we defined as `W` earlier in the sequence. With this vector in hand, we can define a `DataGeneratingProcess` object like so -- treatment, response, and control variables in the causal model are specified as keyword arguments to the `DataGeneratingProcess` constructor:
 
 
-```jldoctest generation
+```jldoctest generation; output = false
 using CausalTables
 dgp = DataGeneratingProcess(
     distributions;
@@ -44,6 +56,9 @@ dgp = DataGeneratingProcess(
     response = :Y,
     controls = [:W]
 )
+
+# output
+DataGeneratingProcess(CausalTables.var""(), Pair{Symbol, Union{NetworkSummary, Function}}[:W => CausalTables.var""(), :X => CausalTables.var""(), :Y => CausalTables.var""()], :X, :Y, [:W])
 
 ```
 
