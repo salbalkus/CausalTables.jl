@@ -5,15 +5,6 @@ using Graphs
 using Distributions
 using Random
 
-using CausalTables
-using MLDatasets: Titanic
-using DataFrames
-
-df = Titanic().dataframe
-
-# Wrapping the dataset in a CausalTable
-ctbl = CausalTable(df; treatment = :Sex, response = :Survived, controls = [:Pclass, :Age, :SibSp]);
-
 
 @testset "CausalTables" begin
     X = [1, 2, 3]
