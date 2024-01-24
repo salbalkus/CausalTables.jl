@@ -24,7 +24,7 @@ The examples below illustrate each of these three functionalities.
 
 To set up a statistical simulation using CausalTables.jl, we first define a `DataGeneratingProcess` (DGP). The easiest way to do this is using the `@dgp` macro, which takes a sequence of conditional distributions of the form `[variable name] ~ Distribution(args...)` and returns a `DataGeneratingProcess` object like so:
 
-```jldoctest quicktest
+```jldoctest quicktest; output = false
 using CausalTables
 using Random
 
@@ -40,8 +40,9 @@ dgp = DataGeneratingProcess(
     response = :Y,
     controls = [:W]
 )
-nothing # hide
+
 # output
+DataGeneratingProcess(CausalTables.var""(), Pair{Symbol, Union{NetworkSummary, Function}}[:W => CausalTables.var""(), :X => CausalTables.var""(), :Y => CausalTables.var""()], :X, :Y, [:W])
 ```
 
 One we've defined our list of distribution functions, we can generate data from the DGP using the `rand` function:

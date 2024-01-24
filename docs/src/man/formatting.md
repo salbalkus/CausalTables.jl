@@ -2,7 +2,7 @@
 
 One of the main purposes of CausalTables.jl is to wrap a Table of data in Julia in order to provide it as input to some other causal inference package. Given a Table of some data, we can turn it into a `CausalTable` by specifying the treatment, response, and control variables. The code below demonstrates this on the Titanic dataset. This could be, for example, to use as input into some estimator of whether a passenger's sex caused them to survive the Titanic disaster, controlling for some baselineline covariates listed in `controls`.
 
-```jldoctest titanic
+```jldoctest titanic; output = false, filter = r"(?<=.{12}).*" # only take the first 12 characters of output
 using CausalTables
 using MLDatasets: Titanic
 using DataFrames
@@ -10,9 +10,10 @@ using DataFrames
 df = Titanic().dataframe
 
 # Wrapping the dataset in a CausalTable
-ctbl = CausalTable(df; treatment = :Sex, response = :Survived, controls = [:Pclass, :Age, :SibSp]);
-nothing # hide
+ctbl = CausalTable(df; treatment = :Sex, response = :Survived, controls = [:Pclass, :Age, :SibSp])
+
 # output
+CausalTable
 ```
 
 The code above assumes that each unit (row in the Table, in this case `df`), is "causally independent" of every other unit -- that is, the treatment of one unit does not affect the response of any other unit. In some cases, however, we might work with data in which units may *not* be causally independent, but rather, in which one unit's variables could dependent on some summary function of its neighbors. 
@@ -21,7 +22,7 @@ In this case, we can specify a `graph` argument to the `CausalTable` constructor
 
 Here's an example of how such a `CausalTable` might be constructed, using the Karate Club dataset. Treatment is defined as the number of friends a club member has, denoted by the summary function parameter `summaries = (friends = Friends(),)`. 
 
-```jldoctest karateclub
+```jldoctest karateclub; output = false, filter = r"(?<=.{12}).*"
 using CausalTables
 using MLDatasets
 using Graphs
@@ -34,9 +35,10 @@ tbl = data.graphs[1].node_data
 g = SimpleGraphFromIterator([Edge(x...) for x in zip(data.graphs[1].edge_index...)])
 
 # Note that the input to summaries must be a NamedTuple, even if there is only one summary variable, so the trailing comma is necessary.
-ctbl = CausalTable(tbl; graph = g, treatment = :friends, response = :labels_clubs, summaries = (friends = Friends(),));
-nothing # hide
+ctbl = CausalTable(tbl; graph = g, treatment = :friends, response = :labels_clubs, summaries = (friends = Friends(),))
+
 # output
+CausalTable
 ```
 
 Be warned: if you try to call `gettreatment` on a `CausalTable` that has not been summarized, you will get an error:
@@ -52,7 +54,19 @@ If you wish to extract the treatment variable, you will first need to call `summ
 
 ```jldoctest karateclub
 ctbl_summarized = summarize(ctbl)
-gettreatment(ctbl_summarized);
-nothing # hide
+gettreatment(ctbl_summarized)
+
 # output
+34-element Vector{Float64}:
+ 16.0
+  9.0
+ 10.0
+  6.0
+  3.0
+  ⋮
+  4.0
+  4.0
+  6.0
+ 12.0
+ 17.0
 ```
