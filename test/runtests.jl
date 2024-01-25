@@ -193,7 +193,8 @@ end
     @test Tables.getcolumn(data, :F)[i] == 5
     @test Tables.getcolumn(data, :A_sum)[i] == sum(A_samp)
     @test Tables.getcolumn(data, :A_prod)[i] == prod(A_samp)
-    @test Tables.getcolumn(data, :B_mode)[i] == StatsBase.mode(B_samp)
+
+    @test Tables.getcolumn(data, :B_mode)[i] == mode(B_samp)
     @test Tables.getcolumn(data, :A_max)[i] == maximum(A_samp)
     @test Tables.getcolumn(data, :A_min)[i] == minimum(A_samp)
 end
