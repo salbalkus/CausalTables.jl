@@ -1,5 +1,8 @@
 using Test
 using CausalTables
+using Tables
+using TableOperations
+import StatsBase: mode
 using DataFrames
 using Graphs
 using Distributions
@@ -162,4 +165,37 @@ end
     @test baz.tbl == Tables.subset(foo.tbl, indices)
     @test nv(baz.graph) == nv(foo.graph[indices])
 end
+
+@testset "test all summary functions" begin
+    distseq = @dgp(
+        A ~ (@. Normal(0, 1)),
+        A_sum = NeighborSum(:A),
+        A_max = NeighborMaximum(:A),
+        A_min = NeighborMinimum(:A),
+        A_prod = NeighborProduct(:A),
+        F = Friends(),
+        B ~ Binomial(4, 0.5),
+        B_mode = NeighborMode(:B),
+    )
+
+    dgp = DataGeneratingProcess(n -> random_regular_graph(n, 5), distseq);
+    data = rand(dgp, 10)
+    data2 = CausalTables.summarize(data)
+    tbl2 = CausalTables.summarize(data; keep_original = false)
+
+    @test gettable(data) == gettable(data2)
+    @test TableOperations.select(data2, :A_sum, :A_max, :A_min, :A_prod, :F, :B_mode) |> Tables.columntable == tbl2
+
+    i = 1
+    f = neighbors(data.graph, i)
+    A_samp = Tables.getcolumn(data, :A)[f]
+    B_samp = Tables.getcolumn(data, :B)[f]
+    @test Tables.getcolumn(data, :F)[i] == 5
+    @test Tables.getcolumn(data, :A_sum)[i] == sum(A_samp)
+    @test Tables.getcolumn(data, :A_prod)[i] == prod(A_samp)
+    @test Tables.getcolumn(data, :B_mode)[i] == StatsBase.mode(B_samp)
+    @test Tables.getcolumn(data, :A_max)[i] == maximum(A_samp)
+    @test Tables.getcolumn(data, :A_min)[i] == minimum(A_samp)
+end
+
 

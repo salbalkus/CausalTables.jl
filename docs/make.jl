@@ -9,6 +9,7 @@ makedocs(
         "Generating Data for Statistical Experiments" =>    "man/generating-data.md",
         "Computing Ground Truth of Causal Parameters" =>    "man/ground-truth.md",
         "Network Summaries" =>                 "man/network-summaries.md",
+        "API" =>                                "man/api.md",
     ]
 )
 

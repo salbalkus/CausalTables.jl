@@ -38,7 +38,7 @@ export NetworkSummary,
        NeighborMinimum, 
        NeighborMode,
        Friends
-export summarize, get_var_to_summarize
+export summarize, get_var_to_summarize, apply_function_over_neighbors
 
 # data_generating_process.jl
 export DataGeneratingProcess, rand, condensity, conmean
