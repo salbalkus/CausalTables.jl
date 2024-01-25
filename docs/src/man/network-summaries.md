@@ -42,7 +42,7 @@ Friends
 
 If you want to use a custom summary measure, you can define your own by creating a new type that is a subtype of `NetworkSummary`. The following example shows how to define a new summary measure that computes the mode of a variable over a unit's neighbors:
 
-```@example
+```julia
 mutable struct NeighborMode <: NetworkSummary 
     var_to_summarize::Symbol
     use_inneighbors::Bool
@@ -58,7 +58,7 @@ In this case, we can use `StatsBase.mode` to compute the mode of each unit's nei
 apply_function_over_neighbors
 ```
 
-```@example
+```julia
 summarize(x::CausalTable, summary::NeighborMode) = apply_function_over_neighbors(x, summary.var_to_summarize, StatsBase.mode; use_inneighbors = summary.use_inneighbors)
 ```
 
