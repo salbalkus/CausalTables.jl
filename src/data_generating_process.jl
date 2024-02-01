@@ -114,17 +114,17 @@ end
 # Helper function to get the conditional distribution of a variable in a CausalTable depending on whether it is a distribution or a summary using multiple dispatch
 _get_conditional_distribution(varfunc::Function, dgp::DataGeneratingProcess, ct::CausalTable) = varfunc(; ct.tbl...)
 
-function _get_conditional_distribution(varfunc::NeighborSum, dgp::DataGeneratingProcess, ct::CausalTable)
+function _get_conditional_distribution(varfunc::Sum, dgp::DataGeneratingProcess, ct::CausalTable)
     neighbordists = dgp.distgen[findfirst(isequal(varfunc.var_to_summarize), [name for (name, _) in dgp.distgen])][2](; ct.tbl...)
 
     if varfunc.use_inneighbors
         return [
-            indegree(ct.graph, i) > 0 ? Distributions.convolve(neighbordists[inneighbors(ct.graph, i)]) : Binomial(0) 
+            indegree(ct.graph, i) > 0 ? Distributions.convolve(neighbordists[Graphs.inneighbors(ct.graph, i, varfunc.include_self)]) : Binomial(0) 
             for i in 1:nv(ct.graph) 
             ]
     else
         return [
-            outdegree(ct.graph, i) > 0 ? Distributions.convolve(neighbordists[outneighbors(ct.graph, i)]) : Binomial(0) 
+            outdegree(ct.graph, i) > 0 ? Distributions.convolve(neighbordists[Graphs.outneighbors(ct.graph, i, varfunc.include_self)]) : Binomial(0) 
             for i in 1:nv(ct.graph) 
             ]
     end

@@ -113,9 +113,9 @@ end
 @testset "DataGeneratingProcess with graphs" begin
     distseq = Vector{Pair{Symbol, CausalTables.ValidDGPTypes}}([
         :L1 => (; O...) -> DiscreteUniform(1, 5),
-        :L1_s => NeighborSum(:L1),
+        :L1_s => Sum(:L1),
         :A => (; O...) -> (@. Normal(O[:L1] + O[:L1_s], 1)),
-        :A_s => NeighborSum(:A),
+        :A_s => Sum(:A),
         :Y => (; O...) -> (@. Normal(O[:A] + O[:A_s] + 0.2 * O[:L1] + 0.05 * O[:L1_s], 1))
     ])
 
@@ -141,9 +141,9 @@ end
 @testset "DataGeneratingProcess with graphs using dgp macro" begin
     distseq = @dgp(
         L1 ~ DiscreteUniform(1, 5),
-        L1_s = NeighborSum(:L1),
+        L1_s = Sum(:L1),
         A ~ (@. Normal(:L1 + :L1_s, 1)),
-        A_s = NeighborSum(:A),
+        A_s = Sum(:A),
         Y ~ (@. Normal(:A + :A_s + 0.2 * :L1 + 0.05 * :L1_s, 1))
     )
 
@@ -169,13 +169,13 @@ end
 @testset "test all summary functions" begin
     distseq = @dgp(
         A ~ (@. Normal(0, 1)),
-        A_sum = NeighborSum(:A),
-        A_max = NeighborMaximum(:A),
-        A_min = NeighborMinimum(:A),
-        A_prod = NeighborProduct(:A),
+        A_sum = Sum(:A, include_self = false),
+        A_max = Maximum(:A, include_self = false),
+        A_min = Minimum(:A, include_self = false),
+        A_prod = Product(:A, include_self = false),
         F = Friends(),
         B ~ Binomial(4, 0.5),
-        B_mode = NeighborMode(:B),
+        B_mode = Mode(:B, include_self = false),
     )
 
     dgp = DataGeneratingProcess(n -> random_regular_graph(n, 5), distseq);

@@ -9,12 +9,13 @@ abstract type NetworkSummary end
 get_var_to_summarize(x::NetworkSummary) = x.var_to_summarize
 
 
-mutable struct NeighborSum <: NetworkSummary 
+mutable struct Sum <: NetworkSummary 
     var_to_summarize::Symbol
     use_inneighbors::Bool
+    include_self::Bool
     
     @doc raw"""
-        NeighborSum(var_to_summarize::Symbol; use_inneighbors::Bool = true)
+        Sum(var_to_summarize::Symbol; use_inneighbors::Bool = true)
 
     Constructs a Network Summary denoting the **sum** of `var_to_summarize` over each unit's neighbors. If `var_to_summarize` is ``X``, then mathematically this computes
 
@@ -27,18 +28,21 @@ mutable struct NeighborSum <: NetworkSummary
     # Arguments
     - `var_to_summarize::Symbol`: The variable to summarize.
     - `use_inneighbors::Bool`: Whether to use the in-neighbors or out-neighbors. If `true`, then the in-neighbors are used. If the graph is undirected, this has no effect.
+    - `include_self::Bool`: Whether to include the value of `var_to_summarize` for the unit itself in the sum. Default is `true`.
 
     # Returns
-    - `NeighborSum`: The constructed NeighborSum object.
+    - `Sum`: The constructed Sum object.
     """
-    NeighborSum(var_to_summarize::Symbol; use_inneighbors::Bool = true) = new(var_to_summarize, use_inneighbors)
+    Sum(var_to_summarize::Symbol; use_inneighbors::Bool = true, include_self = true) = new(var_to_summarize, use_inneighbors, include_self)
 end
 
-mutable struct NeighborProduct <: NetworkSummary 
+mutable struct Product <: NetworkSummary 
     var_to_summarize::Symbol
     use_inneighbors::Bool
+    include_self::Bool
+
     @doc raw"""
-        NeighborProduct(var_to_summarize::Symbol; use_inneighbors::Bool = true)
+        Product(var_to_summarize::Symbol; use_inneighbors::Bool = true)
 
     Constructs a Network Summary denoting the **product** of `var_to_summarize` over each unit's neighbors. If `var_to_summarize` is ``X``, then mathematically this computes
 
@@ -53,18 +57,20 @@ mutable struct NeighborProduct <: NetworkSummary
     - `use_inneighbors::Bool`: Whether to use the in-neighbors or out-neighbors. If `true`, then the in-neighbors are used. If the graph is undirected, this has no effect.
 
     # Returns
-    - `NeighborProduct`: The constructed NeighborProduct object.
+    - `Product`: The constructed Product object.
     """
-    NeighborProduct(var_to_summarize::Symbol; use_inneighbors::Bool = true) = new(var_to_summarize, use_inneighbors)
+    Product(var_to_summarize::Symbol; use_inneighbors::Bool = true, include_self = true) = new(var_to_summarize, use_inneighbors, include_self)
 end
 
-abstract type NeighborOrderStatistic <: NetworkSummary end
+abstract type OrderStatistic <: NetworkSummary end
 
-mutable struct NeighborMaximum <: NeighborOrderStatistic 
+mutable struct Maximum <: OrderStatistic 
     var_to_summarize::Symbol
     use_inneighbors::Bool
+    include_self::Bool
+
     @doc raw"""
-        NeighborMaximum(var_to_summarize::Symbol; use_inneighbors::Bool = true)
+        Maximum(var_to_summarize::Symbol; use_inneighbors::Bool = true)
 
     Constructs a Network Summary denoting the **maximum** of `var_to_summarize` over each unit's neighbors. If `var_to_summarize` is ``X``, then mathematically this computes
 
@@ -79,16 +85,17 @@ mutable struct NeighborMaximum <: NeighborOrderStatistic
     - `use_inneighbors::Bool`: Whether to use the in-neighbors or out-neighbors. If `true`, then the in-neighbors are used. If the graph is undirected, this has no effect.
 
     # Returns
-    - `NeighborMaximum`: The constructed NeighborMaximum object.
+    - `Maximum`: The constructed Maximum object.
     """
-    NeighborMaximum(var_to_summarize::Symbol; use_inneighbors::Bool = true) = new(var_to_summarize, use_inneighbors)
+    Maximum(var_to_summarize::Symbol; use_inneighbors::Bool = true, include_self::Bool = true) = new(var_to_summarize, use_inneighbors, include_self)
 end
 
-mutable struct NeighborMinimum <: NeighborOrderStatistic 
+mutable struct Minimum <: OrderStatistic 
     var_to_summarize::Symbol
     use_inneighbors::Bool
+    include_self::Bool
     @doc raw"""
-        NeighborMinimum(var_to_summarize::Symbol; use_inneighbors::Bool = true)
+        Minimum(var_to_summarize::Symbol; use_inneighbors::Bool = true)
 
     Constructs a Network Summary denoting the **minimum** of `var_to_summarize` over each unit's neighbors. If `var_to_summarize` is ``X``, then mathematically this computes
 
@@ -103,16 +110,17 @@ mutable struct NeighborMinimum <: NeighborOrderStatistic
     - `use_inneighbors::Bool`: Whether to use the in-neighbors or out-neighbors. If `true`, then the in-neighbors are used. If the graph is undirected, this has no effect.
 
     # Returns
-    - `NeighborMinimum`: The constructed NeighborMinimum object.
+    - `Minimum`: The constructed Minimum object.
     """
-    NeighborMinimum(var_to_summarize::Symbol; use_inneighbors::Bool = true) = new(var_to_summarize, use_inneighbors)
+    Minimum(var_to_summarize::Symbol; use_inneighbors::Bool = true, include_self::Bool = true) = new(var_to_summarize, use_inneighbors, include_self)
 end
 
-mutable struct NeighborMode <: NetworkSummary 
+mutable struct Mode <: NetworkSummary 
     var_to_summarize::Symbol
     use_inneighbors::Bool
+    include_self::Bool
     @doc raw"""
-        NeighborMode(var_to_summarize::Symbol; use_inneighbors::Bool = true)
+        Mode(var_to_summarize::Symbol; use_inneighbors::Bool = true)
 
     Constructs a Network Summary denoting the **mode** of `var_to_summarize` over each unit's neighbors -- that is, the value occuring most often among units connected to each unit in the network.
 
@@ -121,9 +129,9 @@ mutable struct NeighborMode <: NetworkSummary
     - `use_inneighbors::Bool`: Whether to use the in-neighbors or out-neighbors. If `true`, then the in-neighbors are used. If the graph is undirected, this has no effect.
 
     # Returns
-    - `NeighborMode`: The constructed NeighborMode object.
+    - `Mode`: The constructed Mode object.
     """
-    NeighborMode(var_to_summarize::Symbol; use_inneighbors::Bool = true) = new(var_to_summarize, use_inneighbors)
+    Mode(var_to_summarize::Symbol; use_inneighbors::Bool = true, include_self::Bool = true) = new(var_to_summarize, use_inneighbors, include_self)
 end
 
 mutable struct Friends <: NetworkSummary 
@@ -162,15 +170,15 @@ using Graphs
 ctbl = CausalTable(
     (A = [1, 2, 3],);
     graph = Graphs.complete_graph(3),
-    summaries = (As = NeighborSum(:A), Am = NeighborMaximum(:A))
+    summaries = (As = Sum(:A), Am = Maximum(:A))
 )
 
 # Compute the summaries of the CausalTable
 summarize(ctbl)
 
 # output
-CausalTable((A = [1, 2, 3], As = [5, 4, 3], Am = [3, 3, 2]), nothing, nothing, nothing, SimpleGraph{Int64}(3, [[2, 3], [1, 3], [1, 2]]), (As = NeighborSum(:A, true), Am 
-= NeighborMaximum(:A, true)))
+CausalTable((A = [1, 2, 3], As = [5, 4, 3], Am = [3, 3, 2]), nothing, nothing, nothing, SimpleGraph{Int64}(3, [[2, 3], [1, 3], [1, 2]]), (As = Sum(:A, true), Am 
+= Maximum(:A, true)))
 ```
 """
 function summarize(x::CausalTable; keep_original = true)
@@ -181,6 +189,10 @@ function summarize(x::CausalTable; keep_original = true)
         return sumtbl
     end
 end
+
+# Overload neighbor functions from Graphs
+Graphs.inneighbors(g::SimpleGraph, v::Int, include_self) = include_self ? [v; Graphs.inneighbors(g, v)] : Graphs.inneighbors(g, v)
+Graphs.outneighbors(g::SimpleGraph, v::Int, include_self) = include_self ? [v; Graphs.outneighbors(g, v)] : Graphs.outneighbors(g, v)
 
 # Warning: this function is very slow and should be used only when there are no better options.
 """
@@ -198,20 +210,28 @@ Apply a summary function over the neighbors of each row in a CausalTable. Mostly
 A Vector containing the summary value for each row.
 
 """
-function apply_function_over_neighbors(x::CausalTable, var_to_summarize::Symbol, summary_func::Function; use_inneighbors = true)
+function apply_function_over_neighbors(x::CausalTable, var_to_summarize::Symbol, summary_func::Function; use_inneighbors = true, include_self = true)
     variable = Tables.getcolumn(x, var_to_summarize)
     if use_inneighbors
-        return [summary_func(variable[inneighbors(x.graph, i)]) for i in 1:DataAPI.nrow(x)]
+        return [summary_func(variable[Graphs.inneighbors(x.graph, i, include_self)]) for i in 1:DataAPI.nrow(x)]
     else
-        return [summary_func(variable[outneighbors(x.graph, i)]) for i in 1:DataAPI.nrow(x)]
+        return [summary_func(variable[Graphs.outneighbors(x.graph, i, include_self)]) for i in 1:DataAPI.nrow(x)]
     end
 end
 
-summarize(x::CausalTable, summary::NeighborSum) = adjacency_matrix(x.graph) * Tables.getcolumn(x, summary.var_to_summarize)
-summarize(x::CausalTable, summary::NeighborProduct) = all(Tables.getcolumn(x, summary.var_to_summarize) .> 0) ? exp.(adjacency_matrix(x.graph) * log.(Tables.getcolumn(x, summary.var_to_summarize))) : apply_function_over_neighbors(x, summary.var_to_summarize, prod; use_inneighbors = summary.use_inneighbors)
-summarize(x::CausalTable, summary::NeighborMaximum) = apply_function_over_neighbors(x, summary.var_to_summarize, maximum; use_inneighbors = summary.use_inneighbors)
-summarize(x::CausalTable, summary::NeighborMinimum) = apply_function_over_neighbors(x, summary.var_to_summarize, minimum; use_inneighbors = summary.use_inneighbors)
-summarize(x::CausalTable, summary::NeighborMode) = apply_function_over_neighbors(x, summary.var_to_summarize, StatsBase.mode; use_inneighbors = summary.use_inneighbors)
+summarize(x::CausalTable, summary::Sum) = adjacency_matrix(x.graph) * Tables.getcolumn(x, summary.var_to_summarize) .+ (summary.include_self ? Tables.getcolumn(x, summary.var_to_summarize) : 0)
+
+function summarize(x::CausalTable, summary::Product)
+    if all(Tables.getcolumn(x, summary.var_to_summarize) .> 0)
+        output = exp.(adjacency_matrix(x.graph) * log.(Tables.getcolumn(x, summary.var_to_summarize)))
+    else
+        output = apply_function_over_neighbors(x, summary.var_to_summarize, prod; use_inneighbors = summary.use_inneighbors, include_self = summary.include_self)
+    end
+    return output
+end
+summarize(x::CausalTable, summary::Maximum) = apply_function_over_neighbors(x, summary.var_to_summarize, maximum; use_inneighbors = summary.use_inneighbors, include_self = summary.include_self)
+summarize(x::CausalTable, summary::Minimum) = apply_function_over_neighbors(x, summary.var_to_summarize, minimum; use_inneighbors = summary.use_inneighbors, include_self = summary.include_self)
+summarize(x::CausalTable, summary::Mode) = apply_function_over_neighbors(x, summary.var_to_summarize, StatsBase.mode; use_inneighbors = summary.use_inneighbors, include_self = summary.include_self)
 summarize(x::CausalTable, summary::Friends) = adjacency_matrix(x.graph) * ones(DataAPI.nrow(x))
 
 

@@ -31,12 +31,12 @@ export replacetable, replace, subset
 
 # network_summary.jl
 export NetworkSummary, 
-       NeighborSum, 
-       NeighborProduct, 
-       NeighborOrderStatistic, 
-       NeighborMaximum, 
-       NeighborMinimum, 
-       NeighborMode,
+       Sum, 
+       Product, 
+       OrderStatistic, 
+       Maximum, 
+       Minimum, 
+       Mode,
        Friends
 export summarize, get_var_to_summarize, apply_function_over_neighbors
 
