@@ -15,23 +15,23 @@ summarize
 The following lists summary measures currently available off-the-shelf in CausalTables.jl. Examples on their use are provided in [Generating Data for Statistical Experiments](generating-data.md) and [Turning data into a `CausalTable`](formatting.md).
 
 ```@docs
-NeighborSum
+Sum
 ```
 
 ```@docs
-NeighborProduct
+Product
 ```
 
 ```@docs
-NeighborMaximum
+Maximum
 ```
 
 ```@docs
-NeighborMinimum
+Minimum
 ```
 
 ```@docs
-NeighborMode
+Mode
 ```
 
 ```@docs
@@ -43,10 +43,11 @@ Friends
 If you want to use a custom summary measure, you can define your own by creating a new type that is a subtype of `NetworkSummary`. The following example shows how to define a new summary measure that computes the mode of a variable over a unit's neighbors:
 
 ```julia
-mutable struct NeighborMode <: NetworkSummary 
+mutable struct Mode <: NetworkSummary 
     var_to_summarize::Symbol
     use_inneighbors::Bool
-    NeighborMode(var_to_summarize::Symbol; use_inneighbors::Bool = true) = new(var_to_summarize, use_inneighbors)
+    include_self::Bool
+    Mode(var_to_summarize::Symbol; use_inneighbors::Bool = true, include_self = true) = new(var_to_summarize, use_inneighbors, include_self)
 end
 ```
 
@@ -59,6 +60,6 @@ apply_function_over_neighbors
 ```
 
 ```julia
-summarize(x::CausalTable, summary::NeighborMode) = apply_function_over_neighbors(x, summary.var_to_summarize, StatsBase.mode; use_inneighbors = summary.use_inneighbors)
+summarize(x::CausalTable, summary::Mode) = apply_function_over_neighbors(x, summary.var_to_summarize, StatsBase.mode; use_inneighbors = summary.use_inneighbors)
 ```
 

@@ -12,7 +12,7 @@ using Random
 distributions = @dgp(
         W ~ Binomial(10, 0.3),
         X ~ (@. Normal(:W + 1)),
-        Xs = NeighborSum(:X),
+        Xs = Sum(:X),
         Y ~ (@. LogNormal(log(0.2 * :Xs + 4), 0.1 * :W + 1))
     )
 

@@ -75,9 +75,9 @@ using CausalTables
 
 distributions = @dgp(
         W ~ DiscreteUniform(1, 5),
-        Ws = NeighborSum(:W),
+        Ws = Sum(:W),
         X ~ (@. Normal(:Ws, 1)),
-        Xs = NeighborSum(:X),
+        Xs = Sum(:X),
         Y ~ (@. Normal(:Xs + 0.2 * :Ws, 1))
     )
 
