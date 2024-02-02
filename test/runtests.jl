@@ -167,15 +167,21 @@ end
 end
 
 @testset "test all summary functions" begin
+    Random.seed!(1)
     distseq = @dgp(
         A ~ (@. Normal(0, 1)),
         A_sum = Sum(:A, include_self = false),
+        A_sum2 = Sum(:A, include_self = true),
         A_max = Maximum(:A, include_self = false),
+        A_max2 = Maximum(:A, include_self = true),
         A_min = Minimum(:A, include_self = false),
+        A_min2 = Minimum(:A, include_self = true),
         A_prod = Product(:A, include_self = false),
+        A_prod2 = Product(:A, include_self = true),
         F = Friends(),
         B ~ Binomial(4, 0.5),
         B_mode = Mode(:B, include_self = false),
+        B_mode2 = Mode(:B, include_self = true)
     )
 
     dgp = DataGeneratingProcess(n -> random_regular_graph(n, 5), distseq);
@@ -184,19 +190,25 @@ end
     tbl2 = CausalTables.summarize(data; keep_original = false)
 
     @test gettable(data) == gettable(data2)
-    @test TableOperations.select(data2, :A_sum, :A_max, :A_min, :A_prod, :F, :B_mode) |> Tables.columntable == tbl2
+    @test TableOperations.select(data2, :A_sum, :A_sum2, :A_max, :A_max2, :A_min, :A_min2, :A_prod, :A_prod2, :F, :B_mode, :B_mode2) |> Tables.columntable == tbl2
 
     i = 1
     f = neighbors(data.graph, i)
-    A_samp = Tables.getcolumn(data, :A)[f]
+    A = Tables.getcolumn(data, :A)
+    A[i]
+    A_samp = A[f]
     B_samp = Tables.getcolumn(data, :B)[f]
     @test Tables.getcolumn(data, :F)[i] == 5
     @test Tables.getcolumn(data, :A_sum)[i] == sum(A_samp)
+    @test Tables.getcolumn(data, :A_sum2)[i] == sum(A_samp) + A[i]
     @test Tables.getcolumn(data, :A_prod)[i] == prod(A_samp)
-
+    @test Tables.getcolumn(data, :A_prod2)[i] ≈ prod(A_samp) * A[i]
     @test Tables.getcolumn(data, :B_mode)[i] == mode(B_samp)
+    @test Tables.getcolumn(data, :B_mode2)[i] == mode(B_samp)
     @test Tables.getcolumn(data, :A_max)[i] == maximum(A_samp)
+    @test Tables.getcolumn(data, :A_max2)[i] == maximum([A_samp; A[i]])
     @test Tables.getcolumn(data, :A_min)[i] == minimum(A_samp)
+    @test Tables.getcolumn(data, :A_min2)[i] == minimum([A_samp; A[i]])
 end
 
 
