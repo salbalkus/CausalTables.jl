@@ -8,6 +8,11 @@ using Graphs
 using Distributions
 using Random
 
+@testset "convolve" begin
+    @test convolve([Normal(0, 1), Normal(0, 1)]) == Normal(0, sqrt(2))
+    @test_throws ArgumentError convolve(Vector{Normal}(undef, 0))
+    @test_throws ArgumentError convolve([Normal(0, 1), Uniform(0, 1)])
+end
 
 @testset "CausalTables" begin
     X = [1, 2, 3]

@@ -19,9 +19,9 @@ function Distributions.convolve(ds::Vector{T}) where {T <: UnivariateDistributio
         return output
     catch
         if length(ds) == 0
-            error("Attempted to convolve an empty vector")
+            throw(ArgumentError("Attempted to convolve an empty vector"))
         else
-            error("Attempted to convolve a vector of distributions that may not have a closed-form convolution formula")
+            throw(ArgumentError("Attempted to convolve a vector of distributions that may not have a closed-form convolution formula"))
         end
     end
 end
