@@ -21,29 +21,43 @@ end
     foo1 = DataFrame(X = X, Y = Y, Z = Z)
     foo2 =  (X = X, Y = Y, Z = Z)
     foo3 = Tables.rowtable(((X = 1, Y = "a", Z = 1.0), (X = 2, Y = "b", Z = 2.0), (X = 3, Y = "c", Z = 3.0)))
+    
     # DataFrame form
     df = CausalTable(foo1)
+    @test Tables.istable(df)
     @test df.tbl == foo1
     @test ncol(df) == 3
     @test nrow(df) == 3
     @test getindex(df, 1, 2) == "a"
-    @test Tables.getcolumn(df, :X) == X
+    @test Tables.getcolumn(df, :X) == X    
+    @test Tables.getcolumn(df, 1) == X
+    @test Tables.columnindex(df, :X) == 1
+    @test Tables.columntype(df, :X) == Int
     @test gettable(df) == foo1
 
     # Row table form
     rowtbl = CausalTable(foo3, :X, :Y, [:Z])
+    @test Tables.istable(rowtbl)
     @test rowtbl.tbl == foo3
     @test ncol(rowtbl) == 3
     @test nrow(rowtbl) == 3
     @test Tables.getcolumn(rowtbl, :Y) == Y
+    @test Tables.getcolumn(rowtbl, 1) == X
+    @test Tables.columnindex(rowtbl, :X) == 1
+    @test Tables.columntype(rowtbl, :X) == Int
     @test gettable(rowtbl) == foo3
 
 
     # Column table form
     coltbl = CausalTable(foo2, :X, :Y, [:Z])
+    @test Tables.istable(coltbl)
     @test coltbl.tbl == foo2
     @test ncol(coltbl) == 3
     @test nrow(coltbl) == 3
+    @test Tables.getcolumn(rowtbl, :Y) == Y
+    @test Tables.getcolumn(rowtbl, 1) == X
+    @test Tables.columnindex(rowtbl, :X) == 1
+    @test Tables.columntype(rowtbl, :X) == Int
     @test Tables.columnnames(coltbl) == (:X, :Y, :Z)
     @test gettable(coltbl) == foo2
 
@@ -63,13 +77,30 @@ end
     @test gettable(CausalTables.replace(rowtbl; tbl = baz)) == baz
     @test gettable(Tables.subset(coltbl, 1:2)) == (X = X[1:2], Y = Y[1:2], Z = Z[1:2])
 
+    @test replacetable(coltbl, baz).tbl == baz
+    @test CausalTables.replace(rowtbl; treatment = :X).treatment == :X
+
     # Errors
     @test_throws ArgumentError CausalTable(foo1, :X, :X, [:Z])
     @test_throws ArgumentError CausalTable(foo1, :X, :Z, [:Z])
     @test_throws ArgumentError CausalTable(foo1, :Z, :X, [:Z])
 
-    tbl4 = CausalTable(foo1, :W, :Y, [:Z])
-    @test_throws ErrorException("Treatment variable not contained in the data. Note: If response is a summary over a network (contained within tbl.summaries), make sure that you call `summary(tbl::CausalTable)` on your table before calling `gettreatment`.") gettreatment(tbl4)
+    # Setters
+    setresponse!(coltbl, :Z)
+    @test getresponse(coltbl) == Z
+    settreatment!(coltbl, :Z)
+    @test gettreatment(coltbl) == Z
+    setcontrols!(coltbl, [:A, :B])
+    @test getcontrolssymbols(coltbl) == [:A, :B]
+    @test_throws ErrorException getcontrols(coltbl)
+
+    setcausalvars!(coltbl; treatment=:Q, response=:R, controls=[:S])
+    @test getcontrolssymbols(coltbl) == [:S]
+    @test gettreatmentsymbol(coltbl) == :Q
+    @test getresponsesymbol(coltbl) == :R
+
+    @test_throws ArgumentError Tables.subset(coltbl, 1:3, viewhint = true)
+
 end
 
 @testset "DataGeneratingProcess, no graphs" begin
@@ -112,6 +143,7 @@ end
     @test typeof(bar) <: Vector{T} where {T <: UnivariateDistribution}
     @test typeof(baz) <: Vector{T} where {T <: Real}
     @test baz == Tables.getcolumn(foo, :A) .+ 0.2 .* Tables.getcolumn(foo, :L1)
+
 end
 
 
@@ -141,6 +173,9 @@ end
     baz = Tables.subset(foo, indices)
     @test baz.tbl == Tables.subset(foo.tbl, indices)
     @test nv(baz.graph) == nv(foo.graph[indices])
+
+    # Test that duplicate indices throw an error
+    @test_throws ArgumentError Tables.subset(foo, [2, 2])
 end
 
 @testset "DataGeneratingProcess with graphs using dgp macro" begin

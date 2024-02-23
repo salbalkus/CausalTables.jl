@@ -45,6 +45,7 @@ Tables.columns(x::CausalTable) = Tables.columns(x.tbl)
 # required Tables.AbstractColumns object methods
 Tables.getcolumn(x::CausalTable, ::Type{T}, col::Int, nm::Symbol) where {T} = Tables.getcolumn(Tables.columns(x.tbl), col)
 Tables.getcolumn(x::CausalTable, nm::Symbol) = Tables.getcolumn(Tables.columns(x.tbl), nm)
+Tables.getcolumn(x::CausalTable, col::Int) = Tables.getcolumn(Tables.columns(x.tbl), col)
 Tables.columnnames(x::CausalTable) = Tables.columnnames(Tables.columns(x.tbl))
 
 # fixing StackOverflow error with column indexing methods via overloading
