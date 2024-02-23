@@ -148,6 +148,7 @@ end
 
 
 @testset "DataGeneratingProcess with graphs" begin
+
     distseq = Vector{Pair{Symbol, CausalTables.ValidDGPTypes}}([
         :L1 => (; O...) -> DiscreteUniform(1, 5),
         :L1_s => Sum(:L1),
@@ -207,6 +208,8 @@ end
 end
 
 @testset "test all summary functions" begin
+    @test get_var_to_summarize(Sum(:A)) == :A
+
     Random.seed!(1)
     distseq = @dgp(
         A ~ (@. Normal(0, 1)),
@@ -218,10 +221,12 @@ end
         A_min2 = Minimum(:A, include_self = true),
         A_prod = Product(:A, include_self = false),
         A_prod2 = Product(:A, include_self = true),
-        F = Friends(),
+        F1 = Friends(),
+        F2 = Friends(use_inneighbors = false),
         B ~ Binomial(4, 0.5),
         B_mode = Mode(:B, include_self = false),
-        B_mode2 = Mode(:B, include_self = true)
+        B_mode2 = Mode(:B, include_self = true),
+        B_prod = Product(:B, include_self = false)
     )
 
     dgp = DataGeneratingProcess(n -> random_regular_graph(n, 5), distseq);
@@ -230,7 +235,7 @@ end
     tbl2 = CausalTables.summarize(data; keep_original = false)
 
     @test gettable(data) == gettable(data2)
-    @test TableOperations.select(data2, :A_sum, :A_sum2, :A_max, :A_max2, :A_min, :A_min2, :A_prod, :A_prod2, :F, :B_mode, :B_mode2) |> Tables.columntable == tbl2
+    @test TableOperations.select(data2, :A_sum, :A_sum2, :A_max, :A_max2, :A_min, :A_min2, :A_prod, :A_prod2, :F1, :F2, :B_mode, :B_mode2, :B_prod) |> Tables.columntable == tbl2
 
     i = 1
     f = neighbors(data.graph, i)
@@ -238,7 +243,8 @@ end
     A[i]
     A_samp = A[f]
     B_samp = Tables.getcolumn(data, :B)[f]
-    @test Tables.getcolumn(data, :F)[i] == 5
+    @test Tables.getcolumn(data, :F1)[i] == 5
+    @test Tables.getcolumn(data, :F2)[i] == 5
     @test Tables.getcolumn(data, :A_sum)[i] == sum(A_samp)
     @test Tables.getcolumn(data, :A_sum2)[i] == sum(A_samp) + A[i]
     @test Tables.getcolumn(data, :A_prod)[i] == prod(A_samp)
@@ -249,6 +255,8 @@ end
     @test Tables.getcolumn(data, :A_max2)[i] == maximum([A_samp; A[i]])
     @test Tables.getcolumn(data, :A_min)[i] == minimum(A_samp)
     @test Tables.getcolumn(data, :A_min2)[i] == minimum([A_samp; A[i]])
+    Tables.getcolumn(data, :B_prod)[i]
+    @test Tables.getcolumn(data, :B_prod)[i] == prod(B_samp)
 end
 
 
