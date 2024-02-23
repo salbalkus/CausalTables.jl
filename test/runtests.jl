@@ -223,7 +223,7 @@ end
         A_prod2 = Product(:A, include_self = true),
         F1 = Friends(),
         F2 = Friends(use_inneighbors = false),
-        B ~ Binomial(4, 0.5),
+        B ~ DiscreteUniform(1, 4),
         B_mode = Mode(:B, include_self = false),
         B_mode2 = Mode(:B, include_self = true),
         B_prod = Product(:B, include_self = false)
@@ -237,12 +237,13 @@ end
     @test gettable(data) == gettable(data2)
     @test TableOperations.select(data2, :A_sum, :A_sum2, :A_max, :A_max2, :A_min, :A_min2, :A_prod, :A_prod2, :F1, :F2, :B_mode, :B_mode2, :B_prod) |> Tables.columntable == tbl2
 
-    i = 1
+
     f = neighbors(data.graph, i)
     A = Tables.getcolumn(data, :A)
-    A[i]
     A_samp = A[f]
-    B_samp = Tables.getcolumn(data, :B)[f]
+    B = Tables.getcolumn(data, :B)
+    B_samp = B[f]
+
     @test Tables.getcolumn(data, :F1)[i] == 5
     @test Tables.getcolumn(data, :F2)[i] == 5
     @test Tables.getcolumn(data, :A_sum)[i] == sum(A_samp)
@@ -250,7 +251,7 @@ end
     @test Tables.getcolumn(data, :A_prod)[i] == prod(A_samp)
     @test Tables.getcolumn(data, :A_prod2)[i] ≈ prod(A_samp) * A[i]
     @test Tables.getcolumn(data, :B_mode)[i] == mode(B_samp)
-    @test Tables.getcolumn(data, :B_mode2)[i] == mode(B_samp)
+    @test Tables.getcolumn(data, :B_mode2)[i] == mode([B_samp; B[i]])
     @test Tables.getcolumn(data, :A_max)[i] == maximum(A_samp)
     @test Tables.getcolumn(data, :A_max2)[i] == maximum([A_samp; A[i]])
     @test Tables.getcolumn(data, :A_min)[i] == minimum(A_samp)
