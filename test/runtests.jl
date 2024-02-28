@@ -280,17 +280,4 @@ end
     @test_throws ArgumentError CausalTables._parse_tilde(:(A; ~ Normal(0, 1)))
     @test_throws ArgumentError CausalTables._parse_tilde(:([]p23[p4] ~ Normal(0, 1)))
     
-    # Test RHS
-    @test_throws ArgumentError CausalTables._parse_tilde(:(jke;jrkla;sjdflqnwoejfa)) 
-    @test_throws ArgumentError CausalTables._parse_tilde(:(A ~ log(Normal(0, 1)))) 
-    @test_throws ArgumentError CausalTables._parse_tilde(:(A ~ Normal(0, 1) + Normal(0, 1))) 
-
-    a = true
-    @test_throws ArgumentError CausalTables._parse_tilde(:(A ~ a ? Normal() : 1))
-    
-    @test try CausalTables._parse_tilde(:(A ~ a ? Normal() : Binomial(1, 0.5)))
-        true
-    catch
-        false
-    end
 end

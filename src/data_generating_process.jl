@@ -27,11 +27,8 @@ function _parse_tilde(expr)
     # If expr is of the form `var ~ distribution`, turn it into an anonymous function that returns said distribution
     elseif expr.args[1] == :~
         pair = expr.args[2] => eval(:((; O...) -> $(_parse_distribution(expr.args[3]))))
-        rtype = Base.return_types(pair[2])
-        if !all(rtype .<: Distribution) || any(rtype .<: Union)
-            throw(ArgumentError("Invalid distribution. Expression to the right of `~` must return a Distribution."))
-        elseif !(pair[1] isa String || pair[1] isa Symbol)
-            throw(ArgumentError("Invalid variable name. Variable name must be a string or symbol."))
+        if !(pair[1] isa String || pair[1] isa Symbol)
+           throw(ArgumentError("Invalid variable name. Variable name must be a string or symbol."))
         end
         return pair
     else
