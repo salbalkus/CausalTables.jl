@@ -115,8 +115,6 @@ end
 
     dgp = DataGeneratingProcess(distseq);
 
-    typeof(dgp.networkgen(10))
-
     foo = rand(dgp, 10)
     
     @test typeof(foo) == CausalTable
@@ -283,9 +281,11 @@ end
     
 
     ### Test the DGP constructor
+
     distseq = @dgp(
         L1 ~ DiscreteUniform(1, 5),
         L1_s = Sum(:L1, include_self = false),
+        L1_s2 = Product(:L1, include_self = false),
         A ~ (@. Normal(:L1 + :L1_s, 1)),
         A_s = Sum(:A, include_self = false),
         Y ~ (@. Normal(:A + :A_s + 0.2 * :L1 + 0.05 * :L1_s, 1))
@@ -295,4 +295,19 @@ end
     @test_throws ArgumentError DataGeneratingProcess(distseq; response = :L1, controls = [:L1])
     @test_throws ArgumentError DataGeneratingProcess(distseq; treatment = :X, controls = [:Y])
 
+
+    # Test the LHS
+    # TODO: Currently errors in DGP construct are deferred until rand or condensity is called.
+    # Can we catch them earlier?
+    bad = DataGeneratingProcess(@dgp(L ~ asdjfk))
+    @test_throws ErrorException rand(bad, 10)
+
+    bad1 = DataGeneratingProcess(distseq; treatment = :A, response = :Y, controls = [:L1])
+    @test_throws ArgumentError rand(bad1, 10)
+    bad2 = DataGeneratingProcess(n -> Graphs.path_graph(n), distseq, controls = [:L1_s2])
+    badtab = rand(bad2, 5)
+    @test_throws ErrorException condensity(bad2, badtab, :L1_s2)
+
+    good = DataGeneratingProcess(distseq; treatment = :A, response = :Y, controls = [:L1])
+    foo = rand(dgp, 10)
 end

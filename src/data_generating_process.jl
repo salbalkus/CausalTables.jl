@@ -1,4 +1,13 @@
-
+NET_ERR_MSG = "Failed to generate a valid network. This is likely because the function provided to the DataGeneratingProcess 
+                does not return a valid Graph object. Ensure that `networkgen` is a function of the form n -> Graph(n, ...) 
+                where `n` is the number of nodes in the graph."
+DIST_ERR_MSG(node) = "Failed to generate a valid distribution for variable $(node). This is likely because the function provided to the 
+                      DataGeneratingProcess does not return a valid distribution object. If using the @dgp macro, ensure that the 
+                        right hand side of `$(node) ~ Distribution` returns either a valid distribution or a vector of distributions.
+                        Otherwise, ensure that the distribution functions are of the form (; O...) -> Distribution(...) where `O` is a 
+                        NamedTuple of the observed variables. Finally, ensure that when referencing previous variables in the DGP, 
+                        that they are preceded by a colon, as in `:X`"
+SUPPORTED_SUMMARIES = "Sum"
 """
     macro dgp(args...)
 
@@ -71,6 +80,7 @@ mutable struct DataGeneratingProcess
         elseif (!isnothing(treatment) && treatment ∉ varnames) || (!isnothing(response) && response ∉ varnames) || (!isnothing(controls) && any([c ∉ varnames for c in controls]))
             throw(ArgumentError("Treatment and/or response names not found in distribution generators."))
         end
+        
         return new(networkgen, Vector{Pair{Symbol, ValidDGPTypes}}(distgen), treatment, response, controls)
     end
 end
@@ -87,14 +97,13 @@ gettreatmentsymbol(dgp::DataGeneratingProcess) = dgp.treatment
 getresponsesymbol(dgp::DataGeneratingProcess) = dgp.response
 getcontrolssymbol(dgp::DataGeneratingProcess) = dgp.controls
 
-
 # Helper function to initialize the DGP step depending on its type using multiple dispatch
-_initialize_dgp_step(step_func::NetworkSummary, ct) = step_func
-_initialize_dgp_step(step_func::Function, ct) = step_func(; ct.tbl...)
+_initialize_dgp_step(label, step_func::NetworkSummary, ct) = step_func
+_initialize_dgp_step(label, step_func::Function, ct) = step_func(; ct.tbl...)
 
 # Fallback in case the step of the DGP is not of a valid type.
-function _initialize_dgp_step(step_func, ct)
-    error("Attempted to step through the DGP but failed due to incorrect type. Note that `step_func` must be of type Function or an existing NetworkSummary (e.g. NeighborSum)")
+function _initialize_dgp_step(label, step_func, ct)
+    error(DIST_ERR_MSG(label))
 end
 
 # Helper functions for drawing from the distribution or summarizing the data in a CausalTable using the `rand` function via multiple dispatch
@@ -113,22 +122,39 @@ function _append_dgp_draw!(name::Symbol, step::NetworkSummary, ct::CausalTable, 
 end
 
 # Helper function to get the conditional distribution of a variable in a CausalTable depending on whether it is a distribution or a summary using multiple dispatch
-_get_conditional_distribution(varfunc::Function, dgp::DataGeneratingProcess, ct::CausalTable) = varfunc(; ct.tbl...)
+_get_conditional_distribution(label, varfunc::Function, dgp::DataGeneratingProcess, ct::CausalTable) = try 
+    varfunc(; ct.tbl...)
+catch e
+    error(DIST_ERR_MSG(label))
+end
 
-function _get_conditional_distribution(varfunc::Sum, dgp::DataGeneratingProcess, ct::CausalTable)
-    neighbordists = dgp.distgen[findfirst(isequal(varfunc.var_to_summarize), [name for (name, _) in dgp.distgen])][2](; ct.tbl...)
+function _get_conditional_distribution(label, varfunc::Sum, dgp::DataGeneratingProcess, ct::CausalTable)
+    try 
+        neighbordists = dgp.distgen[findfirst(isequal(varfunc.var_to_summarize), [name for (name, _) in dgp.distgen])][2](; ct.tbl...)
 
-    if varfunc.use_inneighbors
-        return [
-            indegree(ct.graph, i) > 0 ? Distributions.convolve(neighbordists[Graphs.inneighbors(ct.graph, i, varfunc.include_self)]) : Binomial(0) 
-            for i in 1:nv(ct.graph) 
-            ]
-    else
-        return [
-            outdegree(ct.graph, i) > 0 ? Distributions.convolve(neighbordists[Graphs.outneighbors(ct.graph, i, varfunc.include_self)]) : Binomial(0) 
-            for i in 1:nv(ct.graph) 
-            ]
+        if varfunc.use_inneighbors
+            return [
+                indegree(ct.graph, i) > 0 ? Distributions.convolve(neighbordists[Graphs.inneighbors(ct.graph, i, varfunc.include_self)]) : Binomial(0) 
+                for i in 1:nv(ct.graph) 
+                ]
+        else
+            return [
+                outdegree(ct.graph, i) > 0 ? Distributions.convolve(neighbordists[Graphs.outneighbors(ct.graph, i, varfunc.include_self)]) : Binomial(0) 
+                for i in 1:nv(ct.graph) 
+                ]
+        end
+    catch
+        throw(ArgumentError("Sum cannot be computed over the specified distribution of $(label), likely because there is no closed-form convolution formula. Ensure that the distribution of $(label) adheres to the list given here: https://juliastats.org/Distributions.jl/stable/convolution/"))
     end
+end
+
+# Fallbacks in case of error
+function _get_conditional_distribution(label, varfunc::T, dgp::DataGeneratingProcess, ct::CausalTable) where {T <: NetworkSummary}
+    error("NetworkSummary type not supported for computation over conditional distribution. Currently supported types are: $(SUPPORTED_SUMMARIES)")
+end
+
+function _get_conditional_distribution(label, varfunc, dgp::DataGeneratingProcess, ct::CausalTable)
+    error(DIST_ERR_MSG(label))
 end
 
 
@@ -147,7 +173,13 @@ Generate a random CausalTable using the specified DataGeneratingProcess.
 """
 function Base.rand(dgp::DataGeneratingProcess, n::Int)
     # Initialize output
-    net = dgp.networkgen(n)
+    net = try
+        dgp.networkgen(n)
+    catch e
+        error(NET_ERR_MSG)
+    end
+    !(typeof(net) <: Union{AbstractGraph, Nothing}) && error(NET_ERR_MSG)
+
     if (typeof(net) <: AbstractGraph)
         ct = CausalTable((;), gettreatmentsymbol(dgp), getresponsesymbol(dgp), getcontrolssymbol(dgp), net, (;))
     else
@@ -157,7 +189,11 @@ function Base.rand(dgp::DataGeneratingProcess, n::Int)
     # Iterate through each step of the DGP
     for pair in dgp.distgen
         # Create the distribution (if step is a function) or pass on the summary function
-        dgp_step = _initialize_dgp_step(pair[2], ct)
+        dgp_step = try
+            _initialize_dgp_step(pair[1], pair[2], ct)
+        catch
+            error(DIST_ERR_MSG(pair[1]))
+        end
 
         # Draw from the distribution or summarize the data
         _append_dgp_draw!(pair[1], dgp_step, ct, n)
@@ -183,8 +219,8 @@ The conditional density of the variable in the CausalTable.
 """
 function condensity(dgp::DataGeneratingProcess, ct::CausalTable, var::Symbol)
     # only take the first instance of the variable name in the DGP
-    varfunc = dgp.distgen[findfirst(isequal(var), [name for (name, _) in dgp.distgen])][2]
-    return _get_conditional_distribution(varfunc, dgp, ct)
+    label, varfunc = dgp.distgen[findfirst(isequal(var), [name for (name, _) in dgp.distgen])]
+    return _get_conditional_distribution(label, varfunc, dgp, ct)
 end
 
 """

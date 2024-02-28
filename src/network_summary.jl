@@ -219,8 +219,12 @@ function apply_function_over_neighbors(x::CausalTable, var_to_summarize::Symbol,
     end
 end
 
-summarize(x::CausalTable, summary::Sum) = adjacency_matrix(getgraph(x)) * Tables.getcolumn(x, summary.var_to_summarize) .+ (summary.include_self ? Tables.getcolumn(x, summary.var_to_summarize) : 0)
-
+summarize(x::CausalTable, summary::Sum) = try 
+    adjacency_matrix(getgraph(x)) * Tables.getcolumn(x, summary.var_to_summarize) .+ (summary.include_self ? Tables.getcolumn(x, summary.var_to_summarize) : 0)
+catch
+    throw(ArgumentError("Attempted to summarize a variable over a graph that is not the correct size. In a CausalTable, the Graph must have the same number of vertices as the number of rows of the Table. 
+    If no graph is being provided to the table, then it is not possible to apply a summary."))
+end
 function summarize(x::CausalTable, summary::Product)
     if all(Tables.getcolumn(x, summary.var_to_summarize) .> 0)
         output = exp.(adjacency_matrix(x.graph) * log.(Tables.getcolumn(x, summary.var_to_summarize)))
