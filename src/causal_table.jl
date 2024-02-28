@@ -14,7 +14,6 @@ mutable struct CausalTable
     graph::Graph
     summaries::NamedTuple
     function CausalTable(tbl, treatment, response, controls, graph, summaries)
-        cols = Tables.columns(tbl)
         if !isnothing(controls) && (treatment ∈ controls || response ∈ controls) 
             throw(ArgumentError("Treatment and/or response cannot be the same as controls.")) 
         elseif !isnothing(treatment) && !isnothing(response) && treatment == response

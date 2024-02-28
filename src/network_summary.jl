@@ -219,7 +219,7 @@ function apply_function_over_neighbors(x::CausalTable, var_to_summarize::Symbol,
     end
 end
 
-summarize(x::CausalTable, summary::Sum) = adjacency_matrix(x.graph) * Tables.getcolumn(x, summary.var_to_summarize) .+ (summary.include_self ? Tables.getcolumn(x, summary.var_to_summarize) : 0)
+summarize(x::CausalTable, summary::Sum) = adjacency_matrix(getgraph(x)) * Tables.getcolumn(x, summary.var_to_summarize) .+ (summary.include_self ? Tables.getcolumn(x, summary.var_to_summarize) : 0)
 
 function summarize(x::CausalTable, summary::Product)
     if all(Tables.getcolumn(x, summary.var_to_summarize) .> 0)

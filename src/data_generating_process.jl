@@ -147,7 +147,7 @@ Generate a random CausalTable using the specified DataGeneratingProcess.
 function Base.rand(dgp::DataGeneratingProcess, n::Int)
     # Initialize output
     net = dgp.networkgen(n)
-    if net isa SimpleGraph
+    if (typeof(net) <: AbstractGraph)
         ct = CausalTable((;), gettreatmentsymbol(dgp), getresponsesymbol(dgp), getcontrolssymbol(dgp), net, (;))
     else
         ct = CausalTable((;), gettreatmentsymbol(dgp), getresponsesymbol(dgp), getcontrolssymbol(dgp), Graph(), (;))

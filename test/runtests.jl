@@ -22,8 +22,11 @@ end
     foo2 =  (X = X, Y = Y, Z = Z)
     foo3 = Tables.rowtable(((X = 1, Y = "a", Z = 1.0), (X = 2, Y = "b", Z = 2.0), (X = 3, Y = "c", Z = 3.0)))
     
+
     # DataFrame form
     df = CausalTable(foo1)
+
+    Tables.istable(df)
     @test Tables.istable(df)
     @test df.tbl == foo1
     @test ncol(df) == 3
@@ -111,6 +114,9 @@ end
     ]
 
     dgp = DataGeneratingProcess(distseq);
+
+    typeof(dgp.networkgen(10))
+
     foo = rand(dgp, 10)
     
     @test typeof(foo) == CausalTable
@@ -182,9 +188,9 @@ end
 @testset "DataGeneratingProcess with graphs using dgp macro" begin
     distseq = @dgp(
         L1 ~ DiscreteUniform(1, 5),
-        L1_s = Sum(:L1),
+        L1_s = Sum(:L1, include_self = false),
         A ~ (@. Normal(:L1 + :L1_s, 1)),
-        A_s = Sum(:A),
+        A_s = Sum(:A, include_self = false),
         Y ~ (@. Normal(:A + :A_s + 0.2 * :L1 + 0.05 * :L1_s, 1))
     )
 
@@ -237,7 +243,7 @@ end
     @test gettable(data) == gettable(data2)
     @test TableOperations.select(data2, :A_sum, :A_sum2, :A_max, :A_max2, :A_min, :A_min2, :A_prod, :A_prod2, :F1, :F2, :B_mode, :B_mode2, :B_prod) |> Tables.columntable == tbl2
 
-
+    i = 1
     f = neighbors(data.graph, i)
     A = Tables.getcolumn(data, :A)
     A_samp = A[f]
