@@ -307,7 +307,4 @@ end
     bad2 = DataGeneratingProcess(n -> Graphs.path_graph(n), distseq, controls = [:L1_s2])
     badtab = rand(bad2, 5)
     @test_throws ErrorException condensity(bad2, badtab, :L1_s2)
-
-    good = DataGeneratingProcess(distseq; treatment = :A, response = :Y, controls = [:L1])
-    foo = rand(dgp, 10)
 end
