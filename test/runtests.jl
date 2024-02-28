@@ -270,6 +270,7 @@ end
 @testset "break the DGP" begin
 
     ### Test that the DGP macro throws an error when it should ###
+    
     # Test equality operator
     @test_throws ArgumentError CausalTables._parse_tilde(:(A = Normal(0, 1)))
 
@@ -280,4 +281,18 @@ end
     @test_throws ArgumentError CausalTables._parse_tilde(:(A; ~ Normal(0, 1)))
     @test_throws ArgumentError CausalTables._parse_tilde(:([]p23[p4] ~ Normal(0, 1)))
     
+
+    ### Test the DGP constructor
+    distseq = @dgp(
+        L1 ~ DiscreteUniform(1, 5),
+        L1_s = Sum(:L1, include_self = false),
+        A ~ (@. Normal(:L1 + :L1_s, 1)),
+        A_s = Sum(:A, include_self = false),
+        Y ~ (@. Normal(:A + :A_s + 0.2 * :L1 + 0.05 * :L1_s, 1))
+    )
+
+    @test_throws ArgumentError DataGeneratingProcess(distseq; treatment = :L1, controls = [:L1])
+    @test_throws ArgumentError DataGeneratingProcess(distseq; response = :L1, controls = [:L1])
+    @test_throws ArgumentError DataGeneratingProcess(distseq; treatment = :X, controls = [:Y])
+
 end

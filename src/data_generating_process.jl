@@ -77,9 +77,6 @@ end
 
 # Constructors
 function DataGeneratingProcess(networkgen::Function, distgen::Vector{Pair{Symbol, T}}; treatment::SymbolOrNothing = nothing, response::SymbolOrNothing = nothing, controls::VectorOfSymbolsOrNothing = nothing) where {T <: ValidDGPTypes}
-    if !isnothing(controls) && (treatment ∈ controls || response ∈ controls)
-        throw(ArgumentError("Treatment and/or response cannot be the same as controls."))
-    end
     return DataGeneratingProcess(networkgen, distgen, treatment, response, controls)
 end
 
