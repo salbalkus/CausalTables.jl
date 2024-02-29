@@ -47,8 +47,10 @@ nothing # hide
 
 Be warned: if you try to call `gettreatment` on a `CausalTable` that has not been summarized, you will get an error:
 
-```@example karateclub; strict = false
+```@example karateclub
+try  #hide
 gettreatment(ctbl)
+catch err; showerror(stderr, err); end  #hide
 ```
 
 If you wish to extract the treatment variable, you will first need to call `summarize` on the CausalTable object, which computes the summary variables over the network. Then, calling `gettreatment` will yield the summarized treatment variable, like so:
