@@ -14,7 +14,7 @@ using Random
     @test_throws ArgumentError convolve([Normal(0, 1), Uniform(0, 1)])
 end
 
-#@testset "CausalTables" begin
+@testset "CausalTables" begin
     X = [1, 2, 3]
     Y = ["a", "b", "c"]
     Z = [1.0, 2.0, 3.0]
@@ -215,7 +215,7 @@ end
     @test nv(baz.graph) == nv(foo.graph[indices])
 end
 
-#@testset "test all summary functions" begin
+@testset "test all summary functions" begin
     @test get_var_to_summarize(Sum(:A)) == :A
 
     Random.seed!(1)
