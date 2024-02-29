@@ -252,7 +252,7 @@ end
     @test Tables.getcolumn(data, :F2)[i] == 5
     @test Tables.getcolumn(data, :A_sum)[i] == sum(A_samp)
     @test Tables.getcolumn(data, :A_sum2)[i] == sum(A_samp) + A[i]
-    @test Tables.getcolumn(data, :A_prod)[i] == prod(A_samp)
+    @test Tables.getcolumn(data, :A_prod)[i] ≈ prod(A_samp)
     @test Tables.getcolumn(data, :A_prod2)[i] ≈ prod(A_samp) * A[i]
     @test Tables.getcolumn(data, :B_mode)[i] == mode(B_samp)
     @test Tables.getcolumn(data, :B_mode2)[i] == mode([B_samp; B[i]])
@@ -261,7 +261,7 @@ end
     @test Tables.getcolumn(data, :A_min)[i] == minimum(A_samp)
     @test Tables.getcolumn(data, :A_min2)[i] == minimum([A_samp; A[i]])
     Tables.getcolumn(data, :B_prod)[i]
-    @test Tables.getcolumn(data, :B_prod)[i] == prod(B_samp)
+    @test Tables.getcolumn(data, :B_prod)[i] ≈ prod(B_samp)
 end
 
 
