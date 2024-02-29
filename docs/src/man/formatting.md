@@ -6,7 +6,7 @@ One of the main purposes of CausalTables.jl is to wrap a Table of data in Julia 
 
 The code below demonstrates this on the Titanic dataset. This could be, for example, to use as input into some estimator of whether a passenger's sex caused them to survive the Titanic disaster, controlling for some baselineline covariates listed in `controls`.
 
-```jldoctest titanic; output = false, filter = r"(?<=.{11}).*"s
+```@example titanic
 using CausalTables
 using MLDatasets: Titanic
 using DataFrames
@@ -16,8 +16,7 @@ df = Titanic().dataframe
 # Wrapping the dataset in a CausalTable
 ctbl = CausalTable(df; treatment = :Sex, response = :Survived, controls = [:Pclass, :Age, :SibSp])
 
-# output
-CausalTable
+nothing # hide
 ```
 
 ## Tables with Network-Dependent Units
@@ -28,7 +27,7 @@ In this case, we can specify a `graph` argument to the `CausalTable` constructor
 
 Here's an example of how such a `CausalTable` might be constructed, using the Karate Club dataset. Treatment is defined as the number of friends a club member has, denoted by the summary function parameter `summaries = (friends = Friends(),)`. 
 
-```jldoctest karateclub; output = false, filter = r"(?<=.{11}).*"s
+```@example karateclub
 using CausalTables
 using MLDatasets
 using Graphs
@@ -43,17 +42,13 @@ g = SimpleGraphFromIterator([Edge(x...) for x in zip(data.graphs[1].edge_index..
 # Note that the input to summaries must be a NamedTuple, even if there is only one summary variable, so the trailing comma is necessary.
 ctbl = CausalTable(tbl; graph = g, treatment = :friends, response = :labels_clubs, summaries = (friends = Friends(),))
 
-# output
-CausalTable
+nothing # hide
 ```
 
 Be warned: if you try to call `gettreatment` on a `CausalTable` that has not been summarized, you will get an error:
 
-```jldoctest karateclub
+```@example karateclub
 gettreatment(ctbl)
-
-# output
-ERROR: Treatment variable not contained in the data. Note: If response is a summary over a network (contained within tbl.summaries), make sure that you call `summary(tbl::CausalTable)` on your table before calling `gettreatment`.
 ```
 
 If you wish to extract the treatment variable, you will first need to call `summarize` on the CausalTable object, which computes the summary variables over the network. Then, calling `gettreatment` will yield the summarized treatment variable, like so:
