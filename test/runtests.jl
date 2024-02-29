@@ -8,7 +8,7 @@ using Graphs
 using Distributions
 using Random
 
-@testset "convolve" begin
+@testset "convolve function" begin
     @test convolve([Normal(0, 1), Normal(0, 1)]) == Normal(0, sqrt(2))
     @test_throws ArgumentError convolve(Vector{Normal}(undef, 0))
     @test_throws ArgumentError convolve([Normal(0, 1), Uniform(0, 1)])
@@ -215,7 +215,7 @@ end
     @test nv(baz.graph) == nv(foo.graph[indices])
 end
 
-@testset "test all summary functions" begin
+@testset "Summary objects" begin
     @test get_var_to_summarize(Sum(:A)) == :A
 
     Random.seed!(1)
@@ -269,7 +269,7 @@ end
 end
 
 
-@testset "break the DGP" begin
+@testset "DGP Exception throwing" begin
 
     ### Test that the DGP macro throws an error when it should ###
     
@@ -283,7 +283,6 @@ end
     @test_throws ArgumentError CausalTables._parse_tilde(:(A; ~ Normal(0, 1)))
     @test_throws ArgumentError CausalTables._parse_tilde(:([]p23[p4] ~ Normal(0, 1)))
     
-
     ### Test the DGP constructor
 
     distseq = @dgp(
@@ -299,7 +298,7 @@ end
     @test_throws ArgumentError DataGeneratingProcess(distseq; response = :L1, controls = [:L1])
     @test_throws ArgumentError DataGeneratingProcess(distseq; treatment = :X, controls = [:Y])
 
-    # Test the LHS
+    # Test the RHS
     # TODO: Currently errors in DGP construct are deferred until rand or condensity is called.
     # Can we catch them earlier?
     bad = DataGeneratingProcess(@dgp(L ~ asdjfk))
@@ -313,4 +312,7 @@ end
     badtab = rand(bad2, 5)
     @test_throws ErrorException condensity(bad2, badtab, :L1_s)
     @test_throws ErrorException condensity(bad2, badtab, :L1_s2)
+
+    bad3 = DataGeneratingProcess(n -> throw(ErrorException("bad function")), distseq)
+    @test_throws ErrorException rand(bad3, 10)
 end
