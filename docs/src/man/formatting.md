@@ -58,27 +58,9 @@ ERROR: Treatment variable not contained in the data. Note: If response is a summ
 
 If you wish to extract the treatment variable, you will first need to call `summarize` on the CausalTable object, which computes the summary variables over the network. Then, calling `gettreatment` will yield the summarized treatment variable, like so:
 
-```jldoctest karateclub
+```@example karateclub
 ctbl_summarized = summarize(ctbl)
 gettreatment(ctbl_summarized)
-
-# output
-34-element Vector{Float64}:
- 16.0
-  9.0
- 10.0
-  6.0
-  3.0
-  4.0
-  4.0
-  ⋮
-  4.0
-  3.0
-  4.0
-  4.0
-  6.0
- 12.0
- 17.0
 ```
 
 The response and controls can also be extracted using `getresponse` and `getcontrols`, respectively. 
