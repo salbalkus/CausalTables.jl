@@ -47,7 +47,7 @@ nothing # hide
 
 Be warned: if you try to call `gettreatment` on a `CausalTable` that has not been summarized, you will get an error:
 
-```@example karateclub
+```@example karateclub; strict = false
 gettreatment(ctbl)
 ```
 
