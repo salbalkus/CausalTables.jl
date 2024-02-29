@@ -98,13 +98,11 @@ getresponsesymbol(dgp::DataGeneratingProcess) = dgp.response
 getcontrolssymbol(dgp::DataGeneratingProcess) = dgp.controls
 
 # Helper function to initialize the DGP step depending on its type using multiple dispatch
+# Note that the step_func from a DataGeneratingProcess must be either a NetworkSummary or Function (otherwise it won't construct);
+# this is an invariant, so we don't need to check for other types
 _initialize_dgp_step(label, step_func::NetworkSummary, ct) = step_func
 _initialize_dgp_step(label, step_func::Function, ct) = step_func(; ct.tbl...)
 
-# Fallback in case the step of the DGP is not of a valid type.
-function _initialize_dgp_step(label, step_func, ct)
-    error(DIST_ERR_MSG(label))
-end
 
 # Helper functions for drawing from the distribution or summarizing the data in a CausalTable using the `rand` function via multiple dispatch
 function _append_dgp_draw!(name::Symbol, step::UnivariateDistribution, ct::CausalTable, n)
@@ -151,10 +149,6 @@ end
 # Fallbacks in case of error
 function _get_conditional_distribution(label, varfunc::T, dgp::DataGeneratingProcess, ct::CausalTable) where {T <: NetworkSummary}
     error("NetworkSummary type not supported for computation over conditional distribution. Currently supported types are: $(SUPPORTED_SUMMARIES)")
-end
-
-function _get_conditional_distribution(label, varfunc, dgp::DataGeneratingProcess, ct::CausalTable)
-    error(DIST_ERR_MSG(label))
 end
 
 

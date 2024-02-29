@@ -108,45 +108,46 @@ end
 
 @testset "DataGeneratingProcess, no graphs" begin
     distseq = [
-        :L1 => (; O...) -> DiscreteUniform(1, 5),
+        :L1 => (; O...) -> Beta(1, 1),
+        :L2 => (; O...) -> Multinomial(length(O[:L1]), O[:L1] / sum(O[:L1])),
         :A => (; O...) -> (@. Normal(O[:L1], 1)),
-        :Y => (; O...) -> (@. Normal(O[:A] + 0.2 * O[:L1], 1))
+        :Y => (; O...) -> (@. Normal(O[:A] + 0.2 * O[:L2], 1))
     ]
 
     dgp = DataGeneratingProcess(distseq);
-
     foo = rand(dgp, 10)
     
     @test typeof(foo) == CausalTable
-    @test Tables.columnnames(foo.tbl) == (:L1, :A, :Y)
+    @test Tables.columnnames(foo.tbl) == (:L1, :L2, :A, :Y)
 
     bar = condensity(dgp, foo, :A)
     baz = conmean(dgp, foo, :Y)
     @test nrow(foo.tbl) == length(bar)
     @test typeof(bar) <: Vector{T} where {T <: UnivariateDistribution}
     @test typeof(baz) <: Vector{T} where {T <: Real}
-    @test baz == Tables.getcolumn(foo, :A) .+ 0.2 .* Tables.getcolumn(foo, :L1)
+    @test baz == Tables.getcolumn(foo, :A) .+ 0.2 .* Tables.getcolumn(foo, :L2)
 end
 
 @testset "DataGeneratingProcess using dgp macro, no graphs" begin
     distseq = @dgp(
-        L1 ~ DiscreteUniform(1, 5),
+        L1 ~ Beta(1,1),
+        L2 ~ Multinomial(length(:L1), :L1 / sum(:L1)),
         A ~ (@. Normal(:L1, 1)),
-        Y ~ (@. Normal(:A + 0.2 * :L1, 1))
+        Y ~ (@. Normal(:A + 0.2 * :L2, 1))
     )
 
     dgp = DataGeneratingProcess(distseq);
     foo = rand(dgp, 10)
     
     @test typeof(foo) == CausalTable
-    @test Tables.columnnames(foo.tbl) == (:L1, :A, :Y)
+    @test Tables.columnnames(foo.tbl) == (:L1, :L2, :A, :Y)
 
     bar = condensity(dgp, foo, :A)
     baz = conmean(dgp, foo, :Y)
     @test nrow(foo.tbl) == length(bar)
     @test typeof(bar) <: Vector{T} where {T <: UnivariateDistribution}
     @test typeof(baz) <: Vector{T} where {T <: Real}
-    @test baz == Tables.getcolumn(foo, :A) .+ 0.2 .* Tables.getcolumn(foo, :L1)
+    @test baz == Tables.getcolumn(foo, :A) .+ 0.2 .* Tables.getcolumn(foo, :L2)
 
 end
 
@@ -307,4 +308,9 @@ end
     bad2 = DataGeneratingProcess(n -> Graphs.path_graph(n), distseq, controls = [:L1_s2])
     badtab = rand(bad2, 5)
     @test_throws ErrorException condensity(bad2, badtab, :L1_s2)
+
+    #bad3 = DataGeneratingProcess([:A => x -> 1,])
+    #rand(bad3, 10)
+    #@test_throws ArgumentError rand(bad1, 10)
+    
 end
