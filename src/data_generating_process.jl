@@ -142,7 +142,7 @@ function _get_conditional_distribution(label, varfunc::Sum, dgp::DataGeneratingP
                 ]
         end
     catch
-        throw(ArgumentError("Sum cannot be computed over the specified distribution of $(label), likely because there is no closed-form convolution formula. Ensure that the distribution of $(label) adheres to the list given here: https://juliastats.org/Distributions.jl/stable/convolution/"))
+        error("Sum cannot be computed over the specified distribution of $(label), likely because there is no closed-form convolution formula. Ensure that the distribution of $(label) adheres to the list given here: https://juliastats.org/Distributions.jl/stable/convolution/")
     end
 end
 

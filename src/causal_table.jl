@@ -24,7 +24,7 @@ mutable struct CausalTable
     end
 end
 
-CausalTable(tbl, graph::Graph, summaries::NamedTuple) = CausalTable(tbl, nothing, nothing, nothing, graph, summaries)
+CausalTable(tbl, graph::T, summaries::NamedTuple) where {T <: AbstractGraph} = CausalTable(tbl, nothing, nothing, nothing, graph, summaries)
 
 # if controls not provided, assume all columns other than treatment and response are controls
 CausalTable(tbl, treatment::Union{Symbol, Nothing}, response::Union{Symbol, Nothing}) = CausalTable(tbl, treatment, response, setdiff(Tables.columnnames(Tables.columns(tbl)), [treatment, response]), Graph(), (;))
@@ -42,7 +42,6 @@ Tables.columns(x::CausalTable) = Tables.columns(x.tbl)
 
 # TODO: Is casting to Tables.columns too slow?
 # required Tables.AbstractColumns object methods
-Tables.getcolumn(x::CausalTable, ::Type{T}, col::Int, nm::Symbol) where {T} = Tables.getcolumn(Tables.columns(x.tbl), col)
 Tables.getcolumn(x::CausalTable, nm::Symbol) = Tables.getcolumn(Tables.columns(x.tbl), nm)
 Tables.getcolumn(x::CausalTable, col::Int) = Tables.getcolumn(Tables.columns(x.tbl), col)
 Tables.columnnames(x::CausalTable) = Tables.columnnames(Tables.columns(x.tbl))

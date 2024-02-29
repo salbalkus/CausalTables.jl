@@ -14,7 +14,7 @@ using Random
     @test_throws ArgumentError convolve([Normal(0, 1), Uniform(0, 1)])
 end
 
-@testset "CausalTables" begin
+#@testset "CausalTables" begin
     X = [1, 2, 3]
     Y = ["a", "b", "c"]
     Z = [1.0, 2.0, 3.0]
@@ -76,7 +76,10 @@ end
 
     # Other convenience
     baz = (X = [4, 5], Y = ["foo", "bar"], Z = [0.1, 0.2])
-    gettable(CausalTables.replace(rowtbl; tbl = baz))
+    
+    @test CausalTable(baz, path_graph(2), (X_s = Sum(:X),)) isa CausalTable
+    @test CausalTable(baz, :X, :Y) isa CausalTable
+
     @test gettable(CausalTables.replace(rowtbl; tbl = baz)) == baz
     @test gettable(Tables.subset(coltbl, 1:2)) == (X = X[1:2], Y = Y[1:2], Z = Z[1:2])
 
@@ -212,7 +215,7 @@ end
     @test nv(baz.graph) == nv(foo.graph[indices])
 end
 
-@testset "test all summary functions" begin
+#@testset "test all summary functions" begin
     @test get_var_to_summarize(Sum(:A)) == :A
 
     Random.seed!(1)
@@ -221,8 +224,8 @@ end
         A_sum = Sum(:A, include_self = false),
         A_sum2 = Sum(:A, include_self = true),
         A_max = Maximum(:A, include_self = false),
-        A_max2 = Maximum(:A, include_self = true),
-        A_min = Minimum(:A, include_self = false),
+        A_max2 = Maximum(:A, include_self = true, use_inneighbors = false),
+        A_min = Minimum(:A, include_self = false, use_inneighbors = false),
         A_min2 = Minimum(:A, include_self = true),
         A_prod = Product(:A, include_self = false),
         A_prod2 = Product(:A, include_self = true),
@@ -296,21 +299,18 @@ end
     @test_throws ArgumentError DataGeneratingProcess(distseq; response = :L1, controls = [:L1])
     @test_throws ArgumentError DataGeneratingProcess(distseq; treatment = :X, controls = [:Y])
 
-
     # Test the LHS
     # TODO: Currently errors in DGP construct are deferred until rand or condensity is called.
     # Can we catch them earlier?
     bad = DataGeneratingProcess(@dgp(L ~ asdjfk))
     @test_throws ErrorException rand(bad, 10)
+    tbl = CausalTable((L = [1, 2, 3],))
+    @test_throws ErrorException condensity(bad, tbl, :L)
 
     bad1 = DataGeneratingProcess(distseq; treatment = :A, response = :Y, controls = [:L1])
     @test_throws ArgumentError rand(bad1, 10)
     bad2 = DataGeneratingProcess(n -> Graphs.path_graph(n), distseq, controls = [:L1_s2])
     badtab = rand(bad2, 5)
+    @test_throws ErrorException condensity(bad2, badtab, :L1_s)
     @test_throws ErrorException condensity(bad2, badtab, :L1_s2)
-
-    #bad3 = DataGeneratingProcess([:A => x -> 1,])
-    #rand(bad3, 10)
-    #@test_throws ArgumentError rand(bad1, 10)
-    
 end
