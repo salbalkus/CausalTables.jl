@@ -11,7 +11,7 @@ mutable struct CausalTable
     treatment::Union{Symbol, Nothing}
     response::Union{Symbol, Nothing}
     controls::Union{Vector{Symbol}, Nothing}
-    graph::Graph
+    graph::AbstractGraph
     summaries::NamedTuple
     function CausalTable(tbl, treatment, response, controls, graph, summaries)
         if !isnothing(controls) && (treatment ∈ controls || response ∈ controls) 
