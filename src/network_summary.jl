@@ -191,8 +191,8 @@ function summarize(x::CausalTable; keep_original = true)
 end
 
 # Overload neighbor functions from Graphs
-Graphs.inneighbors(g::SimpleGraph, v::Int, include_self) = include_self ? [v; Graphs.inneighbors(g, v)] : Graphs.inneighbors(g, v)
-Graphs.outneighbors(g::SimpleGraph, v::Int, include_self) = include_self ? [v; Graphs.outneighbors(g, v)] : Graphs.outneighbors(g, v)
+Graphs.inneighbors(g::AbstractGraph, v::Int, include_self) = include_self ? [v; Graphs.inneighbors(g, v)] : Graphs.inneighbors(g, v)
+Graphs.outneighbors(g::AbstractGraph, v::Int, include_self) = include_self ? [v; Graphs.outneighbors(g, v)] : Graphs.outneighbors(g, v)
 
 # Warning: this function is very slow and should be used only when there are no better options.
 """
@@ -237,7 +237,6 @@ summarize(x::CausalTable, summary::Maximum) = apply_function_over_neighbors(x, s
 summarize(x::CausalTable, summary::Minimum) = apply_function_over_neighbors(x, summary.var_to_summarize, minimum; use_inneighbors = summary.use_inneighbors, include_self = summary.include_self)
 summarize(x::CausalTable, summary::Mode) = apply_function_over_neighbors(x, summary.var_to_summarize, StatsBase.mode; use_inneighbors = summary.use_inneighbors, include_self = summary.include_self)
 summarize(x::CausalTable, summary::Friends) = adjacency_matrix(x.graph) * ones(DataAPI.nrow(x))
-
 
 
 

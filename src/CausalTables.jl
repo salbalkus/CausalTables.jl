@@ -9,6 +9,7 @@ using DataAPI
 using StatsBase
 import Base: getindex
 import MacroTools: postwalk
+import LinearAlgebra: diag
 
 # Includes
 include("utilities.jl")
