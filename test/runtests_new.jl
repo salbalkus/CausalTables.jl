@@ -23,7 +23,7 @@ end
     foo3 = Tables.rowtable(foo1)
     
     # DataFrame form
-    df = CausalTable(foo1)
+    df = CausalTable(foo1, :X, :Y)
     @test Tables.istable(df)
     @test df.tbl == foo1
     @test ncol(df) == 3

@@ -1,10 +1,10 @@
 function _process_causal_variable_names(treatment, response, confounders)
     ## Process treatment and response variables into vectors, if they are not already vectors
-    if !(typeof(treatment) <: Symbol)
+    if typeof(treatment) <: Symbol
         treatment = [treatment]
     end
 
-    if !(typeof(response) <: Symbols)
+    if typeof(response) <: Symbol
         response = [response]
     end
 
