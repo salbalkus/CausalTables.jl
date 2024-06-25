@@ -36,7 +36,7 @@ mutable struct DataGeneratingProcess
 end
 
 DataGeneratingProcess(steps) = all(length(steps[1]) .== length.(arr[2:end])) ? DataGeneratingProcess(steps) : throw(ArgumentError("All step vectors must be the same length."))
-length(x::DataGeneratingProcess) = length(x.names)
+Base.length(x::DataGeneratingProcess) = length(x.names)
 
 # Helper function to parse each line in the dgp macro
 function _parse_step(expr)

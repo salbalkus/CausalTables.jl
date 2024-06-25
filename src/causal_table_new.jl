@@ -1,13 +1,10 @@
-Lookup = Dict{Symbol, Vector{Int}}
-Symbols = AbstractArray{Symbol, 1}
-
 function _process_causal_variable_names(treatment, response, confounders)
     ## Process treatment and response variables into vectors, if they are not already vectors
-    if !(typeof(treatment) <: AbstractArray{Symbol, 1})
+    if !(typeof(treatment) <: Symbol)
         treatment = [treatment]
     end
 
-    if !(typeof(response) <: AbstractArray{Symbol, 1})
+    if !(typeof(response) <: Symbols)
         response = [response]
     end
 

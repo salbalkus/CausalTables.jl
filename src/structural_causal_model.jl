@@ -30,7 +30,7 @@ mutable struct StructuralCausalModel
     end
 end
 
-length(scm::StructuralCausalModel) = length(scm.dgp)
+Base.length(scm::StructuralCausalModel) = length(scm.dgp)
 
 """
     rand(scm::StructuralCausalModel, n::Int)
