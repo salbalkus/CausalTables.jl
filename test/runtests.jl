@@ -19,6 +19,12 @@ a = [:A => 1, :B => 2, :C => 3]
 tag = [:data, :data, :arrays]
 a[tag .== :data]
 
+m = !=(0).([1 0 1; 0 1 0; 1 0 1])
+using Distributions
+a = [Normal(1, 1), Normal(2, 1), Normal(3, 1)]
+
+
+
 @testset "CausalTables" begin
     X = [1, 2, 3]
     Y = ["a", "b", "c"]

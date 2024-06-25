@@ -43,7 +43,7 @@ mutable struct CausalTable
         
         ## Process treatment and response variables into vectors, if they are not already vectors
         treatment, response, confounders = _process_causal_variable_names(treatment, response, confounders)
-        
+
         # Ensure data input is a Table
         !Tables.istable(data) && throw(ArgumentError("`data` must be a Table. See https://tables.juliadata.org/ for more information."))        
 
@@ -120,3 +120,6 @@ A new `CausalTable` object with the specified fields replaced.
 
 """
 replace(o::CausalTable; kwargs...) = CausalTable([field in keys(kwargs) ?  kwargs[field] : getfield(O, field) for field in fieldnames(typeof(O))]...)
+
+
+getscm(o::CausalTable) = merge(Tables.columntable(o.data), o.arrays)
