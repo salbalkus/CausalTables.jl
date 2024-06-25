@@ -30,9 +30,12 @@ end
 
 # Helper function to parse each line in the dgp macro
 function _parse_tilde(expr)
+    
     # If expr is of the form `var1 = NetworkSummary(var2)`, turn it into a Pair directly
     if expr.head == :(=) && (typeof(eval(expr.args[2])) <: NetworkSummary)
         return expr.args[1] => eval(expr.args[2])
+    
+    
     # If expr is of the form `var ~ distribution`, turn it into an anonymous function that returns said distribution
     elseif expr.args[1] == :~
         pair = expr.args[2] => eval(:((; O...) -> $(_parse_distribution(expr.args[3]))))
@@ -68,7 +71,6 @@ A mutable struct representing a data generating process.
 
 """
 mutable struct DataGeneratingProcess
-    networkgen::Function
     distgen::Vector{Pair{Symbol, ValidDGPTypes}}
     treatment::SymbolOrNothing
     response::SymbolOrNothing

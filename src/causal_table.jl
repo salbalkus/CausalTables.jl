@@ -1,3 +1,5 @@
+# Define a new type, a Vector of Symbols
+
 # Define Exception messages
 SUMMARY_NOTE = "Note: If response is a summary over a network (contained within tbl.summaries), make sure that you call `summary(tbl::CausalTable)` on your table before calling"
 
@@ -8,30 +10,21 @@ A mutable structure that contains a table (`tbl`), a graph (`graph`), and a name
 """
 mutable struct CausalTable
     tbl
-    treatment::Union{Symbol, Nothing}
-    response::Union{Symbol, Nothing}
-    controls::Union{Vector{Symbol}, Nothing}
-    graph::AbstractGraph
+    treatment::NamedTuple
+    response::NamedTuple
+    control::SymbolVector
+    net::SymbolVector
     summaries::NamedTuple
-    function CausalTable(tbl, treatment, response, controls, graph, summaries)
-        if !isnothing(controls) && (treatment ∈ controls || response ∈ controls) 
-            throw(ArgumentError("Treatment and/or response cannot be the same as controls.")) 
-        elseif !isnothing(treatment) && !isnothing(response) && treatment == response
-            throw(ArgumentError("Treatment cannot be the same as response"))
-        else 
-            new(tbl, treatment, response, controls, graph, summaries)
+    function CausalTable(tbl, treatment, response, control, net, summaries)
+        if length(intersect(treatment, response, control, net)) != 0
+            throw(ArgumentError("Treatment, response, controls, and networks must be different variables")) 
+            new(tbl, treatment, response, control, net, summaries)
         end
     end
 end
 
-CausalTable(tbl, graph::T, summaries::NamedTuple) where {T <: AbstractGraph} = CausalTable(tbl, nothing, nothing, nothing, graph, summaries)
-
-# if controls not provided, assume all columns other than treatment and response are controls
-CausalTable(tbl, treatment::Union{Symbol, Nothing}, response::Union{Symbol, Nothing}) = CausalTable(tbl, treatment, response, setdiff(Tables.columnnames(Tables.columns(tbl)), [treatment, response]), Graph(), (;))
-CausalTable(tbl, treatment::Union{Symbol, Nothing}, response::Union{Symbol, Nothing}, controls::Vector{Symbol}) = CausalTable(tbl, treatment, response, controls, Graph(), (;))
-
 # Construct using kwargs
-CausalTable(tbl = nothing; treatment = nothing, response = nothing, controls = nothing, graph = Graph(), summaries = (;)) = CausalTable(tbl, treatment, response, controls, graph, summaries)
+CausalTable(tbl = nothing; treatment = [], response = [], control = [], net = [], summaries = (;)) = CausalTable(tbl, treatment, response, control, net, summaries)
 
 # declare that CausalTable is a table
 Tables.istable(::Type{CausalTable}) = true
@@ -59,30 +52,58 @@ Base.getindex(x::CausalTable, i::Int, j::Int) = Base.getindex(x.tbl, i, j)
 """
     getresponse(x::CausalTable)
 
-Get the response variable from a CausalTable.
+Get the response from a CausalTable.
 
 # Arguments
 - `x::CausalTable`: The CausalTable object.
 
 # Returns
-The response variable from the CausalTable.
+The response variable(s) from the CausalTable.
 """
-getresponse(x::CausalTable) = try Tables.getcolumn(x, x.response) catch; error("Response variable not contained in the data. $(SUMMARY_NOTE) `getresponse`.") end 
+function getresponse(x::CausalTable; keepcausal = true)
+    try
+        L = TableOperations.select(x, getresponsesymbol(x)...) |> Tables.columntable
+    catch
+        error("One or more response variables not contained in the data. $(SUMMARY_NOTE) `getcontrols`.")
+    end 
+    if keepcausal
+        L = CausalTable(L, gettreatmentsymbol(x), 
+                        getresponsesymbol(x), 
+                        getcontrolsymbol(x), 
+                        getnetsymbol(x), 
+                        getsummaries(x))
+    end
+    return L
+end
+
 """
     gettreatment(x::CausalTable)
 
-Get the treatment column from a CausalTable.
+Get the treatment from a CausalTable.
 
 # Arguments
 - `x::CausalTable`: The CausalTable object.
 
 # Returns
-The treatment column of the CausalTable.
+The treatment variable(s) of the CausalTable.
 """
-gettreatment(x::CausalTable) = try Tables.getcolumn(x, gettreatmentsymbol(x)) catch; error("Treatment variable not contained in the data. $(SUMMARY_NOTE) `gettreatment`.") end 
-
+function gettreatment(x::CausalTable; keepcausal = true)
+    try
+        L = TableOperations.select(x, gettreatmentsymbol(x)...) |> Tables.columntable
+    catch
+        error("One or more treatment variables not contained in the data. $(SUMMARY_NOTE) `gettreatment`.")
+    end 
+    if keepcausal
+        L = CausalTable(L, gettreatmentsymbol(x), 
+                        getresponsesymbol(x), 
+                        getcontrolsymbol(x), 
+                        getnetsymbol(x), 
+                        getsummaries(x))
+    end
+    return L
+end
 """
-    getcontrols(x::CausalTable)
+    getcontrol(x::CausalTable)
 
 Selects the control variables from the given `CausalTable` object `x`.
 
@@ -94,17 +115,17 @@ Selects the control variables from the given `CausalTable` object `x`.
 A new `CausalTable` object containing only the control variables.
 
 """
-function getcontrols(x::CausalTable; keepcausal = true)
+function getcontrol(x::CausalTable; keepcausal = true)
     try
         L = TableOperations.select(x, x.controls...) |> Tables.columntable
     catch
-        error("One or more control variables not contained in the data. $(SUMMARY_NOTE) `getcontrols`.")
+        error("One or more control variables not contained in the data. $(SUMMARY_NOTE) `getcontrol`.")
     end 
     if keepcausal
         L = CausalTable(L, gettreatmentsymbol(x), 
                         getresponsesymbol(x), 
-                        getcontrolssymbols(x), 
-                        getgraph(x), 
+                        getcontrolsymbol(x), 
+                        getnetsymbol(x), 
                         getsummaries(x))
     end
     return L
@@ -112,7 +133,8 @@ end
 
 gettreatmentsymbol(x::CausalTable) = x.treatment
 getresponsesymbol(x::CausalTable) = x.response
-getcontrolssymbols(x::CausalTable) = x.controls
+getcontrolsymbol(x::CausalTable) = x.control
+getnetsymbol(x::CausalTable) = x.net
 
 
 # Network causal inference getters
@@ -127,17 +149,31 @@ An array of tables stored in the CausalTable `x`.
 """
 getsummaries(x::CausalTable) = x.summaries
 """
-    getgraph(x::CausalTable)
+    getnet(x::CausalTable)
 
-Get the graph associated with a CausalTable.
+Get the network(s) associated with a CausalTable.
 
 # Arguments
 - `x::CausalTable`: The CausalTable object.
 
 # Returns
-- The graph associated with the CausalTable.
+- The network(s) associated with the CausalTable.
 """
-getgraph(x::CausalTable) = x.graph
+function getnet(x::CausalTable; keepcausal = true)
+    try
+        L = TableOperations.select(x, getnetsymbol(x)...) |> Tables.columntable
+    catch
+        error("One or more control variables not contained in the data. $(SUMMARY_NOTE) `getcontrol`.")
+    end 
+    if keepcausal
+        L = CausalTable(L, gettreatmentsymbol(x), 
+                        getresponsesymbol(x), 
+                        getcontrolsymbol(x), 
+                        getnetsymbol(x), 
+                        getsummaries(x))
+    end
+    return L
+end
 
 
 """
@@ -165,7 +201,7 @@ Set the treatment variable for a CausalTable.
 - `treatment::Symbol`: The symbol representing the new treatment variable.
 
 """
-function settreatment!(x::CausalTable, treatment::Symbol)
+function settreatment!(x::CausalTable, treatment::SymbolVector)
     x.treatment = treatment
 end
 
@@ -179,7 +215,7 @@ Set the response variable for a CausalTable.
 - `response::Symbol`: The symbol representing the new response variable.
 
 """
-function setresponse!(x::CausalTable, response::Symbol)
+function setresponse!(x::CausalTable, response::SymbolVector)
     x.response = response
 end
 
@@ -193,8 +229,12 @@ Set the control variables for a CausalTable.
 - `controls::Vector{Symbol}`: The new control variables to be set.
 
 """
-function setcontrols!(x::CausalTable, controls::Vector{Symbol})
-    x.controls = controls
+function setcontrol!(x::CausalTable, control::SymbolVector)
+    x.control = control
+end
+
+function setnet!(x::CausalTable, net::SymbolVector)
+    x.net = net
 end
 
 """
@@ -208,15 +248,18 @@ Arguments:
 - `response=nothing`: The response variable.
 - `controls=nothing`: The control variables.
 """
-function setcausalvars!(x::CausalTable; treatment=nothing, response=nothing, controls=nothing)
+function setcausalvars!(x::CausalTable; treatment=nothing, response=nothing, control=nothing, net=nothing)
     if !isnothing(treatment)
         settreatment!(x, treatment)
     end
     if !isnothing(response)
         setresponse!(x, response)
     end
-    if !isnothing(controls)
+    if !isnothing(control)
         setcontrols!(x, controls)
+    end
+    if !isnothing(net)
+        setnet!(x, net)
     end
 end
 
@@ -238,7 +281,7 @@ Returns:
 - `CausalTable`: The modified CausalTable object.
 
 """
-function replace(x::CausalTable; tbl = nothing, treatment = nothing, response = nothing, controls = nothing, graph = nothing, summaries = nothing)
+function replace(x::CausalTable; tbl = nothing, treatment = nothing, response = nothing, control = nothing, graph = nothing, summaries = nothing)
     if isnothing(tbl)
         tbl = gettable(x)
     end
@@ -248,17 +291,17 @@ function replace(x::CausalTable; tbl = nothing, treatment = nothing, response = 
     if isnothing(response)
         response = getresponsesymbol(x)
     end
-    if isnothing(controls)
-        controls = getcontrolssymbols(x)
+    if isnothing(control)
+        control = getcontrolsymbol(x)
     end
-    if isnothing(graph)
-        graph = getgraph(x)
+    if isnothing(net)
+        net = getnetsymbol(x)
     end
     if isnothing(summaries)
         summaries = getsummaries(x)
     end
 
-    return CausalTable(tbl, treatment, response, controls, graph, summaries)
+    return CausalTable(tbl, treatment, response, control, net, summaries)
 end
 
 """
@@ -274,7 +317,7 @@ Conveniently replace the underlying table of a `CausalTable` with a new table.
 A new `CausalTable` object with the updated table.
 
 """
-replacetable(x::CausalTable, tbl) = CausalTable(tbl, x.treatment, x.response, x.controls, x.graph, x.summaries)
+replacetable(x::CausalTable, tbl) = CausalTable(tbl, x.treatment, x.response, x.controls, x.net, x.summaries)
 
 
 """
@@ -296,7 +339,7 @@ function Tables.subset(x::CausalTable, ind; viewhint = nothing)
         throw(ArgumentError("CausalTables do not support viewhinting. Remove `viewhint = true` argument from your call to Tables.subset"))
     end
 
-    graph_subset = getgraph(x) # default graph, for when graph has no edges
+    net_subset = 1:n # default graph, for when graph has no edges
 
     # Subset the table
     tbl_subset = Tables.subset(gettable(x), ind)

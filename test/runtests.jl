@@ -7,12 +7,17 @@ using DataFrames
 using Graphs
 using Distributions
 using Random
+using LinearAlgebra
 
 @testset "convolve function" begin
     @test convolve([Normal(0, 1), Normal(0, 1)]) == Normal(0, sqrt(2))
     @test_throws ArgumentError convolve(Vector{Normal}(undef, 0))
     @test_throws ArgumentError convolve([Normal(0, 1), Uniform(0, 1)])
 end
+
+a = [:A => 1, :B => 2, :C => 3]
+tag = [:data, :data, :arrays]
+a[tag .== :data]
 
 @testset "CausalTables" begin
     X = [1, 2, 3]
@@ -22,11 +27,9 @@ end
     foo2 =  (X = X, Y = Y, Z = Z)
     foo3 = Tables.rowtable(((X = 1, Y = "a", Z = 1.0), (X = 2, Y = "b", Z = 2.0), (X = 3, Y = "c", Z = 3.0)))
     
-
     # DataFrame form
     df = CausalTable(foo1)
 
-    Tables.istable(df)
     @test Tables.istable(df)
     @test df.tbl == foo1
     @test ncol(df) == 3
@@ -90,22 +93,6 @@ end
     @test_throws ArgumentError CausalTable(foo1, :X, :X, [:Z])
     @test_throws ArgumentError CausalTable(foo1, :X, :Z, [:Z])
     @test_throws ArgumentError CausalTable(foo1, :Z, :X, [:Z])
-
-    # Setters
-    setresponse!(coltbl, :Z)
-    @test getresponse(coltbl) == Z
-    settreatment!(coltbl, :Z)
-    @test gettreatment(coltbl) == Z
-    setcontrols!(coltbl, [:A, :B])
-    @test getcontrolssymbols(coltbl) == [:A, :B]
-    @test_throws ErrorException getcontrols(coltbl)
-
-    setcausalvars!(coltbl; treatment=:Q, response=:R, controls=[:S])
-    @test getcontrolssymbols(coltbl) == [:S]
-    @test gettreatmentsymbol(coltbl) == :Q
-    @test getresponsesymbol(coltbl) == :R
-
-    @test_throws ArgumentError Tables.subset(coltbl, 1:3, viewhint = true)
 
 end
 

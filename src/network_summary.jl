@@ -8,7 +8,6 @@ abstract type NetworkSummary end
 
 get_var_to_summarize(x::NetworkSummary) = x.var_to_summarize
 
-
 mutable struct Sum <: NetworkSummary 
     var_to_summarize::Symbol
     use_inneighbors::Bool
@@ -237,6 +236,5 @@ summarize(x::CausalTable, summary::Maximum) = apply_function_over_neighbors(x, s
 summarize(x::CausalTable, summary::Minimum) = apply_function_over_neighbors(x, summary.var_to_summarize, minimum; use_inneighbors = summary.use_inneighbors, include_self = summary.include_self)
 summarize(x::CausalTable, summary::Mode) = apply_function_over_neighbors(x, summary.var_to_summarize, StatsBase.mode; use_inneighbors = summary.use_inneighbors, include_self = summary.include_self)
 summarize(x::CausalTable, summary::Friends) = adjacency_matrix(x.graph) * ones(DataAPI.nrow(x))
-
 
 
