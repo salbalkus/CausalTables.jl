@@ -1,327 +1,154 @@
-# Define Exception messages
-SUMMARY_NOTE = "Note: If response is a summary over a network (contained within tbl.summaries), make sure that you call `summary(tbl::CausalTable)` on your table before calling"
+function _process_causal_variable_names(treatment, response, confounders)
+    ## Process treatment and response variables into vectors, if they are not already vectors
+    if typeof(treatment) <: Symbol
+        treatment = [treatment]
+    end
 
-"""
-    CausalTable
+    if typeof(response) <: Symbol
+        response = [response]
+    end
 
-A mutable structure that contains a table (`tbl`), a graph (`graph`), and a named tuple of summaries (`summaries`).
-"""
+    ## Error Handling ##
+
+    # Assume only univariate treatment and response
+    # TODO: Future code should allow for multivariate treatment and response
+    length(treatment) != 1 && throw(ArgumentError("Only univariate treatment is currently supported"))
+    length(response) != 1 && throw(ArgumentError("Only univariate response is currently supported"))
+
+    # Ensure treatment, response, and confounders do not overlap
+    name_occurrences = StatsBase.countmap(vcat(treatment, response, confounders))
+    name_repeats = filter(((k, v),) -> v > 1, name_occurrences)
+    length(name_repeats) > 0 && throw(ArgumentError("The following variable names are repeated across treatment, response, and confounder labels: $(keys(name_repeats))")) 
+    
+    # Return fully processed causal variable names
+    return treatment, response, confounders
+end
+
 mutable struct CausalTable
-    tbl
-    treatment::Union{Symbol, Nothing}
-    response::Union{Symbol, Nothing}
-    controls::Union{Vector{Symbol}, Nothing}
-    graph::AbstractGraph
+
+    # data storage
+    data::NamedTuple
+
+    # labels
+    treatment::Symbols
+    response::Symbols
+    confounders::Symbols
+
+    # other
+    arrays::NamedTuple
     summaries::NamedTuple
-    function CausalTable(tbl, treatment, response, controls, graph, summaries)
-        if !isnothing(controls) && (treatment ∈ controls || response ∈ controls) 
-            throw(ArgumentError("Treatment and/or response cannot be the same as controls.")) 
-        elseif !isnothing(treatment) && !isnothing(response) && treatment == response
-            throw(ArgumentError("Treatment cannot be the same as response"))
-        else 
-            new(tbl, treatment, response, controls, graph, summaries)
-        end
+
+    function CausalTable(data, treatment, response, confounders, arrays, summaries)
+        
+        ## Process treatment and response variables into vectors, if they are not already vectors
+        treatment, response, confounders = _process_causal_variable_names(treatment, response, confounders)
+
+        # Ensure data input is a Table
+        !Tables.istable(data) && throw(ArgumentError("`data` must be a Table. See https://tables.juliadata.org/ for more information."))        
+
+        # Ensure treatment, response, and confounders are contained within the data
+        names = (Tables.columnnames(Tables.columns(data))..., keys(summaries)...)
+        any(t ∉ names for t in treatment)   && throw(ArgumentError("Treatment variable(s) not found in data"))
+        any(r ∉ names for r in response)    && throw(ArgumentError("Response variable(s) not found in data"))
+        any(c ∉ names for c in confounders) && throw(ArgumentError("Confounder variable(s) not found in data"))
+
+        ## Construction ##
+
+        # store the names of the input data columns
+        names = Tables.columnnames(Tables.columns(data))  
+
+        # store a matrix of data from the input table  
+        data_table = Tables.columntable(data)
+        
+        # Construct a CausalTable with an underlying MatrixTable to store random vectors
+        new(data_table, treatment, response, confounders, arrays, summaries)
     end
 end
 
-CausalTable(tbl, graph::T, summaries::NamedTuple) where {T <: AbstractGraph} = CausalTable(tbl, nothing, nothing, nothing, graph, summaries)
+CausalTable(data, treatment, response; confounders = [], arrays = (;), summaries = (;)) = CausalTable(data, treatment, response, confounders, arrays, summaries)
+CausalTable(data, treatment, response, confounders; arrays = (;), summaries = (;)) = CausalTable(data, treatment, response, confounders, arrays, summaries)
+function CausalTable(data; treatment = nothing, response = nothing, confounders = [], arrays = (;), summaries = (;))
+    isnothing(treatment) && throw(ArgumentError("Treatment variable must be defined"))
+    isnothing(response) && throw(ArgumentError("Response variable must be defined"))
+    CausalTable(data, treatment, response, confounders, arrays, summaries)
+end
 
-# if controls not provided, assume all columns other than treatment and response are controls
-CausalTable(tbl, treatment::Union{Symbol, Nothing}, response::Union{Symbol, Nothing}) = CausalTable(tbl, treatment, response, setdiff(Tables.columnnames(Tables.columns(tbl)), [treatment, response]), Graph(), (;))
-CausalTable(tbl, treatment::Union{Symbol, Nothing}, response::Union{Symbol, Nothing}, controls::Vector{Symbol}) = CausalTable(tbl, treatment, response, controls, Graph(), (;))
-
-# Construct using kwargs
-CausalTable(tbl = nothing; treatment = nothing, response = nothing, controls = nothing, graph = Graph(), summaries = (;)) = CausalTable(tbl, treatment, response, controls, graph, summaries)
-
-# declare that CausalTable is a table
 Tables.istable(::Type{CausalTable}) = true
 
-# column interface
-Tables.columnaccess(::Type{<:CausalTable}) = true
-Tables.columns(x::CausalTable) = Tables.columns(x.tbl)
+### Column Interface ###
+# Currently only allow column access from fixed data table (not network)
 
-# TODO: Is casting to Tables.columns too slow?
-# required Tables.AbstractColumns object methods
-Tables.getcolumn(x::CausalTable, nm::Symbol) = Tables.getcolumn(Tables.columns(x.tbl), nm)
-Tables.getcolumn(x::CausalTable, col::Int) = Tables.getcolumn(Tables.columns(x.tbl), col)
-Tables.columnnames(x::CausalTable) = Tables.columnnames(Tables.columns(x.tbl))
+Tables.columnaccess(::Type{CausalTable}) = true
+Tables.columns(o::CausalTable) = Tables.columns(o.data)
+
+Tables.getcolumn(x::CausalTable, nm::Symbol) = Tables.getcolumn(Tables.columns(x.data), nm)
+Tables.getcolumn(x::CausalTable, col::Int) = Tables.getcolumn(Tables.columns(x.data), col)
+Tables.columnnames(x::CausalTable) = Tables.columnnames(Tables.columns(x.data))
 
 # fixing StackOverflow error with column indexing methods via overloading
-Tables.columnindex(x::CausalTable, nm::Symbol) = Tables.columnindex(x.tbl, nm)
-Tables.columntype(x::CausalTable, nm::Symbol) = Tables.columntype(x.tbl, nm)
+Tables.columnindex(x::CausalTable, nm::Symbol) = Tables.columnindex(x.data, nm)
+Tables.columntype(x::CausalTable, nm::Symbol) = Tables.columntype(x.data, nm)
 
-# Additional convenience functions from existing method
-DataAPI.ncol(x::CausalTable) = DataAPI.ncol(x.tbl)
-DataAPI.nrow(x::CausalTable) = DataAPI.nrow(x.tbl)
-Base.getindex(x::CausalTable, i::Int, j::Int) = Base.getindex(x.tbl, i, j)
+### Row Interface ###
+# Currently only allow row access from fixed data table (not network)
 
-# Basic causal inference getters and setters
-"""
-    getresponse(x::CausalTable)
+Tables.rowaccess(::Type{CausalTable}) = true
+rowaccess(::Type{<:CausalTable}) = true
+rows(o::CausalTable) = Tables.rows(o.data)
 
-Get the response variable from a CausalTable.
+### Other Tables Interface ###
 
-# Arguments
-- `x::CausalTable`: The CausalTable object.
+Tables.schema(o::CausalTable) = Tables.schema(o.data)
 
-# Returns
-The response variable from the CausalTable.
-"""
-getresponse(x::CausalTable) = try Tables.getcolumn(x, x.response) catch; error("Response variable not contained in the data. $(SUMMARY_NOTE) `getresponse`.") end 
-"""
-    gettreatment(x::CausalTable)
+# CausalTables do not permit materializers, because causal variable assignment is required via the constructor
+#Tables.materializer(::Type{CausalTable})
 
-Get the treatment column from a CausalTable.
+function Tables.subset(o::CausalTable, inds; viewhint=nothing)
+    data_subset = Tables.subset(o.data, inds; viewhint)
 
-# Arguments
-- `x::CausalTable`: The CausalTable object.
-
-# Returns
-The treatment column of the CausalTable.
-"""
-gettreatment(x::CausalTable) = try Tables.getcolumn(x, gettreatmentsymbol(x)) catch; error("Treatment variable not contained in the data. $(SUMMARY_NOTE) `gettreatment`.") end 
-
-"""
-    getcontrols(x::CausalTable)
-
-Selects the control variables from the given `CausalTable` object `x`.
-
-# Arguments
-- `x::CausalTable`: The `CausalTable` object from which to select the control variables.
-- `keepcausal::Bool`: Determines whether to keep the CausalTable wrapping or return a NamedTuple. Default is `true`.
-
-# Returns
-A new `CausalTable` object containing only the control variables.
-
-"""
-function getcontrols(x::CausalTable; keepcausal = true)
-    try
-        L = TableOperations.select(x, x.controls...) |> Tables.columntable
-    catch
-        error("One or more control variables not contained in the data. $(SUMMARY_NOTE) `getcontrols`.")
-    end 
-    if keepcausal
-        L = CausalTable(L, gettreatmentsymbol(x), 
-                        getresponsesymbol(x), 
-                        getcontrolssymbols(x), 
-                        getgraph(x), 
-                        getsummaries(x))
+    if isnothing(viewhint) || viewhint
+        arrays_subset = map(x -> view(x, repeat([inds], ndims(x))...), o.arrays)
+    else
+        arrays_subset = map(x -> getindex(x, repeat([inds], ndims(x))...), o.arrays)
     end
-    return L
+    CausalTable(data_subset, o.treatment, o.response, o.confounders, arrays_subset, o.summaries)
 end
 
-gettreatmentsymbol(x::CausalTable) = x.treatment
-getresponsesymbol(x::CausalTable) = x.response
-getcontrolssymbols(x::CausalTable) = x.controls
+DataAPI.nrow(o::CausalTable) = DataAPI.nrow(o.data)
+DataAPI.ncol(o::CausalTable) = DataAPI.ncol(o.data)
+### Causal-specific Features ###
 
 
-# Network causal inference getters
 """
-    getsummaries(x::CausalTable)
+    replace(o::CausalTable; kwargs...)
+
+Replace the fields of a `CausalTable` object with the provided keyword arguments.
 
 # Arguments
-- `x::CausalTable`: The CausalTable object.
+- `o::CausalTable`: The `CausalTable` object to be replaced.
+- `kwargs...`: Keyword arguments specifying the new values for the fields.
 
 # Returns
-An array of tables stored in the CausalTable `x`.
-"""
-getsummaries(x::CausalTable) = x.summaries
-"""
-    getgraph(x::CausalTable)
+A new `CausalTable` object with the specified fields replaced.
 
-Get the graph associated with a CausalTable.
+"""
+replace(o::CausalTable; kwargs...) = CausalTable([field in keys(kwargs) ?  kwargs[field] : getfield(o, field) for field in fieldnames(typeof(o))]...)
+
+
+"""
+    getscm(o::CausalTable)
+
+Get the structural causal model (SCM) of a `CausalTable` object.
+
+This function merges the column table of the `CausalTable` object with its arrays.
 
 # Arguments
-- `x::CausalTable`: The CausalTable object.
+- `o::CausalTable`: The `CausalTable` object.
 
 # Returns
-- The graph associated with the CausalTable.
-"""
-getgraph(x::CausalTable) = x.graph
-
+- A merged table containing the column table and arrays of the `CausalTable` object.
 
 """
-    gettable(x::CausalTable)
+getscm(o::CausalTable) = merge(Tables.columntable(o.data), o.arrays)
 
-Extracts the underlying table from a `CausalTable`.
-
-# Arguments
-- `x::CausalTable`: The `CausalTable` object.
-
-# Returns
-- The underlying table.
-
-"""
-gettable(x::CausalTable) = x.tbl
-
-
-"""
-    settreatment!(x::CausalTable, treatment::Symbol)
-
-Set the treatment variable for a CausalTable.
-
-# Arguments
-- `x::CausalTable`: The CausalTable object.
-- `treatment::Symbol`: The symbol representing the new treatment variable.
-
-"""
-function settreatment!(x::CausalTable, treatment::Symbol)
-    x.treatment = treatment
-end
-
-"""
-    setresponse!(x::CausalTable, response::Symbol)
-
-Set the response variable for a CausalTable.
-
-# Arguments
-- `x::CausalTable`: The CausalTable object.
-- `response::Symbol`: The symbol representing the new response variable.
-
-"""
-function setresponse!(x::CausalTable, response::Symbol)
-    x.response = response
-end
-
-"""
-    setcontrols!(x::CausalTable, controls::Vector{Symbol})
-
-Set the control variables for a CausalTable.
-
-# Arguments
-- `x::CausalTable`: The CausalTable object.
-- `controls::Vector{Symbol}`: The new control variables to be set.
-
-"""
-function setcontrols!(x::CausalTable, controls::Vector{Symbol})
-    x.controls = controls
-end
-
-"""
-    setcausalvars!(x::CausalTable; treatment=nothing, response=nothing, controls=nothing)
-
-Convenience function for setting new treatment, response, and controls variables for a CausalTable at once.
-
-Arguments:
-- `x::CausalTable`: The CausalTable object.
-- `treatment=nothing`: The treatment variable.
-- `response=nothing`: The response variable.
-- `controls=nothing`: The control variables.
-"""
-function setcausalvars!(x::CausalTable; treatment=nothing, response=nothing, controls=nothing)
-    if !isnothing(treatment)
-        settreatment!(x, treatment)
-    end
-    if !isnothing(response)
-        setresponse!(x, response)
-    end
-    if !isnothing(controls)
-        setcontrols!(x, controls)
-    end
-end
-
-"""
-    replace(x::CausalTable; tbl = nothing, treatment = nothing, response = nothing, controls = nothing, graph = nothing, summaries = nothing)
-
-Conviently replace several components of a CausalTable with new values.
-
-Arguments:
-- `x::CausalTable`: The CausalTable object to modify.
-- `tbl`: The new table to replace the existing table. If `nothing`, the current table is used.
-- `treatment`: The new treatment symbol to replace the existing treatment symbol. If `nothing`, the current treatment symbol is used.
-- `response`: The new response symbol to replace the existing response symbol. If `nothing`, the current response symbol is used.
-- `controls`: The new control symbols to replace the existing control symbols. If `nothing`, the current control symbols are used.
-- `graph`: The new graph to replace the existing graph. If `nothing`, the current graph is used.
-- `summaries`: The new summaries to replace the existing summaries. If `nothing`, the current summaries are used.
-
-Returns:
-- `CausalTable`: The modified CausalTable object.
-
-"""
-function replace(x::CausalTable; tbl = nothing, treatment = nothing, response = nothing, controls = nothing, graph = nothing, summaries = nothing)
-    if isnothing(tbl)
-        tbl = gettable(x)
-    end
-    if isnothing(treatment)
-        treatment = gettreatmentsymbol(x)
-    end
-    if isnothing(response)
-        response = getresponsesymbol(x)
-    end
-    if isnothing(controls)
-        controls = getcontrolssymbols(x)
-    end
-    if isnothing(graph)
-        graph = getgraph(x)
-    end
-    if isnothing(summaries)
-        summaries = getsummaries(x)
-    end
-
-    return CausalTable(tbl, treatment, response, controls, graph, summaries)
-end
-
-"""
-    replacetable(x::CausalTable, tbl)
-
-Conveniently replace the underlying table of a `CausalTable` with a new table.
-
-# Arguments
-- `x::CausalTable`: The `CausalTable` object to replace the table for.
-- `tbl`: The new table to replace the existing table with.
-
-# Returns
-A new `CausalTable` object with the updated table.
-
-"""
-replacetable(x::CausalTable, tbl) = CausalTable(tbl, x.treatment, x.response, x.controls, x.graph, x.summaries)
-
-
-"""
-    subset(x::CausalTable, ind)
-
-Subset a CausalTable `x` based on the given indices `ind`. Note that viewhinting is not supported; this function will return a *copy* of the CausalTable.
-
-# Arguments
-- `x`: The CausalTable to be subsetted.
-- `ind`: The indices to subset the table and graph.
-
-# Returns
-A new CausalTable with the subsetted table. If the `graph` attribute is not Nothing, then this function takes the subgraph induced by the subsetted indices using `induced`
-
-"""
-function Tables.subset(x::CausalTable, ind; viewhint = nothing)
-    # First check to see if user is trying to viewhint; Graphs do not support this, so we need to throw an error
-    if viewhint == true
-        throw(ArgumentError("CausalTables do not support viewhinting. Remove `viewhint = true` argument from your call to Tables.subset"))
-    end
-
-    graph_subset = getgraph(x) # default graph, for when graph has no edges
-
-    # Subset the table
-    tbl_subset = Tables.subset(gettable(x), ind)
-
-    # Subset the graph
-    if nv(graph_subset) > 0 # If the graph isn't empty...
-        if length(unique(ind)) != length(ind) # If there are duplicate indices...
-            throw(ArgumentError("Cannot subset CausalTable with non-unique indices."))
-        else
-            graph_subset = induced_subgraph(graph_subset, ind)[1] # Subset the graph
-        end
-    end
-
-    return replace(x; tbl = tbl_subset, graph = graph_subset)
-end
-
-
-
-
-
-
-
-
-
-
-
-
-
+Base.getindex(x::CausalTable, i::Int, j::Int) = Base.getindex(Tables.matrix(x.data), i, j)

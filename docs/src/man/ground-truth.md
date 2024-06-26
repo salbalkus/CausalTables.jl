@@ -9,33 +9,33 @@ using Graphs
 using CausalTables
 using Random
 
-distributions = @dgp(
+dgp = @dgp(
         W ~ Binomial(10, 0.3),
         X ~ (@. Normal(:W + 1)),
-        Xs = Sum(:X),
+        A = adjacency_matrix(barabasi_albert(length(:X), 2)),
+        Xs $ Sum(:X, :A),
         Y ~ (@. LogNormal(log(0.2 * :Xs + 4), 0.1 * :W + 1))
     )
 
-dgp = DataGeneratingProcess(
-    n -> erdos_renyi(n, 0.5),
-    distributions;
-    treatment = :Xs,
+scm = StructuralCausalModel(
+    dgp;
+    treatment = :X,
     response = :Y,
-    controls = [:W]
+    confounders = [:W]
 )
 
 # output
-DataGeneratingProcess
+StructuralCausalModel
 ```
 
 Now, let's generate some data and compute the ground truth conditional distributions of the variables in the data. Note that if the DGP attempts to summarize a variable with no neighbors in a graph, the resulting conditional distribution will currently be `Binomial(0, 0.5)`, which denotes a point-mass distribution at 0.
 
 ```jldoctest truthtest; output = false, filter = r"(?<=.{16}).*"s
 Random.seed!(1);
-data = rand(dgp, 5)
-W_distribution = condensity(dgp, data, :W)
-X_distribution = condensity(dgp, data, :X)
-Xs_distribution = condensity(dgp, data, :Xs)
+data = rand(scm, 5)
+W_distribution = condensity(scm, data, :W)
+X_distribution = condensity(scm, data, :X)
+Xs_distribution = condensity(scm, data, :Xs)
 
 # output
 5-element Vector
@@ -44,7 +44,7 @@ Xs_distribution = condensity(dgp, data, :Xs)
 One can also compute the ground truth conditional mean of a variable in a CausalTable using the `conmean` function:
 
 ```jldoctest truthtest; output = false, filter = r"(?<=.{16}).*"s
-Y = conmean(dgp, data, :Y)
+Y = conmean(scm, data, :Y)
 
 # output
 5-element Vector

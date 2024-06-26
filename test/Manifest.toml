@@ -1,8 +1,8 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.1"
+julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "8d5fe0a549aa3732b9f7def6653a21d1e15ab907"
+project_hash = "e3ee3f23cc5eb13e3423c8d8152caed2f22198cb"
 
 [[deps.ArgTools]]
 uuid = "0dad84c5-d112-42e6-8d28-ef12dabb789f"
@@ -25,6 +25,14 @@ deps = ["LinearAlgebra"]
 git-tree-sha1 = "f641eb0a4f00c343bbc32346e1217b86f3ce9dad"
 uuid = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
 version = "0.5.1"
+
+[[deps.CausalTables]]
+deps = ["DataAPI", "Distributions", "Graphs", "MacroTools", "StatsBase", "TableOperations", "Tables"]
+git-tree-sha1 = "fbcd8adb3a49be00f9ce901eacd3ad3f170de9d4"
+repo-rev = "summary-overhaul"
+repo-url = "https://github.com/salbalkus/CausalTables.jl.git"
+uuid = "6af48e0c-efc2-4bf7-a92f-a553ccf79fd6"
+version = "1.0.0-DEV"
 
 [[deps.Compat]]
 deps = ["TOML", "UUIDs"]

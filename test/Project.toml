@@ -1,4 +1,6 @@
 [deps]
+CausalTables = "6af48e0c-efc2-4bf7-a92f-a553ccf79fd6"
+DataAPI = "9a962f9c-6df0-11e9-0e5d-c546b8b5ee8a"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
