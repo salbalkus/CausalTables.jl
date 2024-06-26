@@ -16,7 +16,9 @@ function _process_causal_variable_names(treatment, response, confounders)
     length(response) != 1 && throw(ArgumentError("Only univariate response is currently supported"))
 
     # Ensure treatment, response, and confounders do not overlap
-    length(intersect(treatment, response, confounders)) != 0 && throw(ArgumentError("Treatment, response, and confounder sets must be disjoint")) 
+    name_occurrences = StatsBase.countmap(vcat(treatment, response, confounders))
+    name_repeats = filter(((k, v),) -> v > 1, name_occurrences)
+    length(name_repeats) > 0 && throw(ArgumentError("The following variable names are repeated across treatment, response, and confounder labels: $(keys(name_repeats))")) 
     
     # Return fully processed causal variable names
     return treatment, response, confounders
@@ -25,7 +27,7 @@ end
 mutable struct CausalTable
 
     # data storage
-    data::Tables.MatrixTable
+    data::NamedTuple
 
     # labels
     treatment::Symbols
@@ -45,7 +47,7 @@ mutable struct CausalTable
         !Tables.istable(data) && throw(ArgumentError("`data` must be a Table. See https://tables.juliadata.org/ for more information."))        
 
         # Ensure treatment, response, and confounders are contained within the data
-        names = columnnames(columns(data))
+        names = Tables.columnnames(Tables.columns(data))
         any(t ∉ names for t in treatment)   && throw(ArgumentError("Treatment variable(s) not found in data"))
         any(r ∉ names for r in response)    && throw(ArgumentError("Response variable(s) not found in data"))
         any(c ∉ names for c in confounders) && throw(ArgumentError("Confounder variable(s) not found in data"))
@@ -56,14 +58,20 @@ mutable struct CausalTable
         names = Tables.columnnames(Tables.columns(data))  
 
         # store a matrix of data from the input table  
-        data_matrix = Tables.matrix(data)
+        data_table = Tables.columntable(data)
         
         # Construct a CausalTable with an underlying MatrixTable to store random vectors
-        new(Tables.table(data_matrix; header = names), treatment, response, confounders, arrays, summaries)
+        new(data_table, treatment, response, confounders, arrays, summaries)
     end
 end
 
 CausalTable(data, treatment, response; confounders = [], arrays = (;), summaries = (;)) = CausalTable(data, treatment, response, confounders, arrays, summaries)
+CausalTable(data, treatment, response, confounders; arrays = (;), summaries = (;)) = CausalTable(data, treatment, response, confounders, arrays, summaries)
+function CausalTable(data; treatment = nothing, response = nothing, confounders = [], arrays = (;), summaries = (;))
+    isnothing(treatment) && throw(ArgumentError("Treatment variable must be defined"))
+    isnothing(response) && throw(ArgumentError("Response variable must be defined"))
+    CausalTable(data, treatment, response, confounders, arrays, summaries)
+end
 
 Tables.istable(::Type{CausalTable}) = true
 
@@ -72,6 +80,14 @@ Tables.istable(::Type{CausalTable}) = true
 
 Tables.columnaccess(::Type{CausalTable}) = true
 Tables.columns(o::CausalTable) = Tables.columns(o.data)
+
+Tables.getcolumn(x::CausalTable, nm::Symbol) = Tables.getcolumn(Tables.columns(x.data), nm)
+Tables.getcolumn(x::CausalTable, col::Int) = Tables.getcolumn(Tables.columns(x.data), col)
+Tables.columnnames(x::CausalTable) = Tables.columnnames(Tables.columns(x.data))
+
+# fixing StackOverflow error with column indexing methods via overloading
+Tables.columnindex(x::CausalTable, nm::Symbol) = Tables.columnindex(x.data, nm)
+Tables.columntype(x::CausalTable, nm::Symbol) = Tables.columntype(x.data, nm)
 
 ### Row Interface ###
 # Currently only allow row access from fixed data table (not network)
@@ -91,9 +107,9 @@ function Tables.subset(o::CausalTable, inds; viewhint=nothing)
     data_subset = Tables.subset(o.data, inds; viewhint)
 
     if isnothing(viewhint) || viewhint
-        arrays_subset = map(x -> view(x, inds, inds), o.arrays)
+        arrays_subset = map(x -> view(x, repeat([inds], ndims(x))...), o.arrays)
     else
-        arrays_subset = map(x -> getindex(x, inds, inds), o.arrays)
+        arrays_subset = map(x -> getindex(x, repeat([inds], ndims(x))...), o.arrays)
     end
     CausalTable(data_subset, o.treatment, o.response, o.confounders, arrays_subset, o.summaries)
 end
@@ -116,7 +132,23 @@ Replace the fields of a `CausalTable` object with the provided keyword arguments
 A new `CausalTable` object with the specified fields replaced.
 
 """
-replace(o::CausalTable; kwargs...) = CausalTable([field in keys(kwargs) ?  kwargs[field] : getfield(O, field) for field in fieldnames(typeof(O))]...)
+replace(o::CausalTable; kwargs...) = CausalTable([field in keys(kwargs) ?  kwargs[field] : getfield(o, field) for field in fieldnames(typeof(o))]...)
 
 
+"""
+    getscm(o::CausalTable)
+
+Get the structural causal model (SCM) of a `CausalTable` object.
+
+This function merges the column table of the `CausalTable` object with its arrays.
+
+# Arguments
+- `o::CausalTable`: The `CausalTable` object.
+
+# Returns
+- A merged table containing the column table and arrays of the `CausalTable` object.
+
+"""
 getscm(o::CausalTable) = merge(Tables.columntable(o.data), o.arrays)
+
+Base.getindex(x::CausalTable, i::Int, j::Int) = Base.getindex(Tables.matrix(x.data), i, j)

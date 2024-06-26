@@ -1,3 +1,4 @@
+
 """
     macro dgp(args...)
 
@@ -15,7 +16,7 @@ macro dgp(args...)
     parsed_result = [_parse_step(arg) for arg in args]
 
     # dump the vector of vectors into the DataGeneratingProcess constructor
-    return DataGeneratingProcess(zip(parsed_result...))
+    return DataGeneratingProcess(collect(map(collect, zip(parsed_result...)))...)
 end
 
 """
@@ -24,15 +25,15 @@ end
 A struct representing a data generating process.
 
 # Fields
-- `names::Vector{Symbol}`: A vector of symbols representing the names of the variables.
-- `types::Vector{Symbol}`: A vector of symbols representing the types of the variables.
-- `funcs::Vector{Function}`: A vector of functions representing the generating functions for each variable.
+- `names`: An array of symbols representing the names of the variables.
+- `types`: An array of symbols representing the types of the variables.
+- `funcs`: An array of functions representing the generating functions for each variable.
 
 """
 mutable struct DataGeneratingProcess
-    names::Vector{Symbol}
-    types::Vector{Symbol}
-    funcs::Vector{Function}
+    names::Symbols
+    types::Symbols
+    funcs::AbstractArray{Function, 1}
 end
 
 DataGeneratingProcess(steps) = all(length(steps[1]) .== length.(arr[2:end])) ? DataGeneratingProcess(steps) : throw(ArgumentError("All step vectors must be the same length."))
@@ -42,7 +43,7 @@ Base.length(x::DataGeneratingProcess) = length(x.names)
 function _parse_step(expr)
 
     ## 1) Parse the name
-    name = expr.args[2]
+    name = expr.args[length(expr.args)-1]
     if !(name isa String || name isa Symbol)
         throw(ArgumentError("Invalid variable name. Variable name must be a string or symbol."))
     end
@@ -52,24 +53,23 @@ function _parse_step(expr)
     # `=` means that the step is a transformation of a random variable
     # `~` indicates the step creates a distribution, which can either be sampled or used to compute a conditional density
 
-    if expr.args[1] == :(~)
+    if length(expr.args) == 3 && expr.args[1] == :(~)
         # construct a function representing the step at the DGP
         func = eval(:((; O...) -> $(_replace_symbols_with_index(expr.args[3]))))
         type = :distribution
-
-    elseif expr.args[1] == :(:=)
+    elseif length(expr.args) == 2
         # construct a function representing the step at the DGP
-        func = eval(:((; O...) -> $(_replace_symbols_with_index(expr.args[3]))))
+        func = eval(:((; O...) -> $(_replace_symbols_with_index(expr.args[2]))))
         type = :code
-    elseif expr.args[1] == :(=)
+    elseif length(expr.args) == 3 && expr.args[1] == :($)
         # construct a function representing the step at the DGP
         func = eval(:((; O...) -> $(expr.args[3])))
         type = :transformation
     else
-        throw(ArgumentError("Invalid expression. Each line in the dgp macro must be of the form `var ~ distribution`, `var := code`, or `var = transformation``."))
+        throw(ArgumentError("Invalid expression. Each line in the dgp macro must be of the form `var ~ distribution`, `var = code`, or `var \$ transformation`"))
     end
 
-    return (name, func, type)
+    return (name, type, func)
 end
 
 # Helper function to parse the dgp macro into anonymous functions

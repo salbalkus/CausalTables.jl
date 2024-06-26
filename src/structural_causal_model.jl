@@ -1,3 +1,14 @@
+DIST_ERR_MSG(node) = "Failed to generate a valid distribution for variable $(node). This is likely because the function provided to the 
+                      DataGeneratingProcess does not return a valid distribution object. If using the @dgp macro, ensure that the 
+                        right hand side of `$(node) ~ Distribution` returns either a valid distribution or a vector of distributions.
+                        Otherwise, ensure that the distribution functions are of the form (; O...) -> Distribution(...) where `O` is a 
+                        NamedTuple of the observed variables. Finally, ensure that when referencing previous variables in the DGP, 
+                        that they are preceded by a colon, as in `:X`"
+SUPPORTED_SUMMARIES = "Sum"
+
+# Helper function to check whether any elements of a vector are not contained in the DGP
+not_in_dgp(dgp, vec) = any(map(x -> x ∉ dgp.names, vec))
+
 """
     struct StructuralCausalModel
 
@@ -20,15 +31,33 @@ A struct representing a structural causal model (SCM).
 """
 mutable struct StructuralCausalModel
     dgp::DataGeneratingProcess
-    treatment::Vector{Symbol}
-    response::Vector{Symbol}
-    confounders::Vector{Symbol}
+    treatment::Symbols
+    response::Symbols
+    confounders::Symbols
+    arraynames::Symbols
 
-    function StructuralCausalModel(dgp, treatment, response, confounders)
+    function StructuralCausalModel(dgp, treatment, response, confounders, arraynames)
         treatment, response, confounders = _process_causal_variable_names(treatment, response, confounders)
-        new(dgp, treatment, response, confounders)
+
+        in_dgp_names = x -> x ∉ dgp.names
+        not_in_dgp(dgp, treatment) && throw(ArgumentError("One or more of treatment labels $(treatment) are not a variable in the DataGeneratingProcess."))
+        not_in_dgp(dgp, response) && throw(ArgumentError("One or more of response labels $(response) are not a variable in the DataGeneratingProcess."))
+        not_in_dgp(dgp, confounders) && throw(ArgumentError("One or more of confounder labels $(confounders) are not a variable in the DataGeneratingProcess."))
+        not_in_dgp(dgp, arraynames) && throw(ArgumentError("One or more of array labels $(arraynames) are not a variable in the DataGeneratingProcess."))
+
+        new(dgp, treatment, response, confounders, arraynames)
     end
 end
+
+StructuralCausalModel(dgp, treatment, response, confounders; arraynames = []) = StructuralCausalModel(dgp, treatment, response, confounders, arraynames)
+StructuralCausalModel(dgp, treatment, response; confounders = [], arraynames = []) = StructuralCausalModel(dgp, treatment, response, confounders, arraynames)
+
+function StructuralCausalModel(dgp; treatment = nothing, response = nothing, confounders = [], arraynames = [])
+    isnothing(treatment) && throw(ArgumentError("Treatment variable must be defined"))
+    isnothing(response) && throw(ArgumentError("Response variable must be defined"))
+    StructuralCausalModel(dgp, treatment, response, confounders, arraynames)
+end
+
 
 Base.length(scm::StructuralCausalModel) = length(scm.dgp)
 
@@ -48,44 +77,67 @@ A `CausalTable` object containing the generated data.
 function Base.rand(scm::StructuralCausalModel, n::Int)
 
     # Construct a Vector as subsequent inputs into each step function of the DGP
-    result = Vector{Pair{Symbol, Any}}(undef, length(scm))
+    result = (;)
     tag = Vector{Symbol}(undef, length(scm))
     summaries = (;)
 
     # Iterate through each step of the SCM
     for i_step in 1:length(scm)
-
         # Draw from the result of the step function
-        output_step = scm.funcs[i_step](output...)
-        result[i_step] = scm.dgp.names[i_step] => _scm_draw(output_step, output, n)
+        result_step = try
+            scm.dgp.funcs[i_step](; result...)
+        catch e
+            error(DIST_ERR_MSG(scm.dgp.names[i_step]))
+        end
+        result_draw =  CausalTables._scm_draw(result_step, result, n)
+
+        result = merge(result, NamedTuple{(scm.dgp.names[i_step],)}((result_draw,)))
         
         # Determine where the resulting output should be placed in the CausalTable
-        if result[i_step] <: AbstractVector{<:Number}
+        typeof_result_step = typeof(result_step)
+        if (typeof_result_step <: Distribution) || (typeof_result_step <: AbstractArray{<:Distribution})
             tag[i_step] = :data
-        elseif result[i_step] <: AbstractArray{<:Number, 2}
-            tag[i_step] = :arrays
         else
-            tag[i_step] = :nothing
+            tag[i_step] = :arrays
         end
-
         # If the initial output was a NetworkSummary, record this to include in the CausalTable
-        if output_step <: NetworkSummary
-            summaries = merge(summaries, NamedTuple{scm.name[i_step]}((output_step,)))
+        if typeof(result_step) <: CausalTables.NetworkSummary
+            summaries = merge(summaries, NamedTuple{(scm.dgp.names[i_step],)}((result_step,)))
         end    
     end
 
-    data = NamedTuple(result[tag .== :data])
-    arrays = NamedTuple(result[tag .== :arrays])
+    # Collect the data
+    data_tag = (tag .== :data)
+    data = NamedTuple{keys(result)[data_tag]}(values(result)[data_tag],)
+
+    # Collect extra arrays
+    array_tag = (tag .!= :data)
+    arrays = NamedTuple{keys(result)[array_tag]}(values(result)[array_tag],)
 
     # Store the recorded draws in a CausalTable format
     return CausalTable(data, scm.treatment, scm.response, scm.confounders, arrays, summaries)
 end
 
-# Helper functions for drawing a random CausalTable
-_scm_draw(x::Distribution,            o::CausalTable, n::Int64) = rand(x, n)
-_scm_draw(x::Vector{Distribution},    o::CausalTable, n::Int64) = length(x) == n ? rand.(x) : throw(ArgumentError("Length of vector of distributions in DataGeneratingProcess must be equal to n"))
-_scm_draw(x::NetworkSummary,          o::CausalTable, n::Int64) = summarize(o, x)
-_scm_draw(x::AbstractArray{<:Number}, o::CausalTable, n::Int64) = x
+### Helper functions for drawing a random CausalTable ###
+# Single Distributions: Draw n samples
+_scm_draw(x::T, o::NamedTuple, n::Int64) where {T <: UnivariateDistribution}     = rand(x, n)
+_scm_draw(x::T, o::NamedTuple, n::Int64) where {T <: MultivariateDistribution}   = rand(x)
+_scm_draw(x::T, o::NamedTuple, n::Int64) where {T <: MatrixDistribution}         = rand(x)
+
+# Vectors of Distributions: Draw a single sample (assumes user input sample n into the distribution)
+function _scm_draw(x::AbstractArray{<:Distribution}, o::NamedTuple, n::Int64)
+    if length(x) == n
+        return rand.(x)
+    else 
+        throw(ArgumentError("Length of vector of distributions in DataGeneratingProcess must be equal to n"))
+    end
+end
+
+# Summary Function: Compute the summary
+_scm_draw(x::T, o::NamedTuple, n::Int64) where {T<:NetworkSummary} = summarize(o, x)
+
+# Fallback: Pass previous result directly
+_scm_draw(x, o::NamedTuple, n::Int64) = x
 
 
 """
@@ -103,15 +155,22 @@ The conditional density of the variable `var` given the observed data.
 
 """
 function condensity(scm::StructuralCausalModel, ct::CausalTable, var::Symbol)
-    varpos = findfirst(scm.names .== var)
+    
+    varpos = findfirst(scm.dgp.names .== var)
+    isnothing(varpos) && throw(ArgumentError("Argument `var` is not contained within the StructuralCausalModel"))
+    
     scm_result = getscm(ct)
 
-    if scm.types[varpos] == :distribution
-        return scm.funcs[varpos](scm_result)
-    elseif scm.types[varpos] == :transformation
-        return get_conditional_distribution(scm.funcs[varpos](scm_result), scm_result)
-    else
-        throw(ArgumentError("Cannot get conditional density. Variable $var is not a distribution or transformation of distributions in the StructuralCausalModel."))
+    try
+        if scm.dgp.types[varpos] == :distribution
+            return scm.dgp.funcs[varpos](; scm_result...)
+        elseif scm.dgp.types[varpos] == :transformation
+            return get_conditional_distribution(scm.dgp.funcs[varpos](; scm_result...), scm, scm_result)
+        else
+            throw(ArgumentError("Cannot get conditional density. Variable $var is not a distribution or transformation of distributions in the StructuralCausalModel."))
+        end
+    catch e
+        error(DIST_ERR_MSG(var))
     end
 end
 
@@ -119,20 +178,20 @@ end
 function get_conditional_distribution(ns::Sum, scm::StructuralCausalModel, scm_result::NamedTuple)
     
     # Find the position of the target variable in the SCM
-    targetpos = findfirst(scm.names .== ns.target)
+    targetpos = findfirst(scm.dgp.names .== ns.target)
 
     # Get the distribution of the target variable
-    targetdist = scm.funcs[targetpos](scm_result)
+    targetdist = scm.dgp.funcs[targetpos](; scm_result...)
 
-    # Get the matrix involved in the sum
-    m = scm_result[ns.matrix]
+    # Cast the matrix involved in the sum to a Boolean matrix
+    m = .!(iszero.(scm_result[ns.matrix]))
 
     # Compute the conditional distribution of the sum using convolution formula defined in utilities.jl
     return [Distributions.convolve(targetdist[m[row, :]]) for row in 1:size(m, 1)]
 end
 
 # Fallback for when no closed-form distribution is implemented
-get_conditional_distribution(ns::T, scm_result::NamedTuple) where {T <: NetworkSummary} = throw(ArgumentError("No closed-form distribution is currently implemented for this NetworkSummary."))
+get_conditional_distribution(ns::T, scm::StructuralCausalModel, scm_result::NamedTuple) where {T <: NetworkSummary} = throw(ArgumentError("No closed-form distribution is currently implemented for this NetworkSummary."))
 
 
 """
@@ -149,4 +208,4 @@ Compute the conditional mean of a variable in a CausalTable based on a DataGener
 An array of conditional means for the specified variable.
 
 """
-conmean(dgp::DataGeneratingProcess, ct::CausalTable, var::Symbol) = mean.(condensity(dgp, ct, var))
+conmean(scm::StructuralCausalModel, ct::CausalTable, var::Symbol) = mean.(condensity(scm, ct, var))

@@ -150,7 +150,7 @@ end
 
 
 """
-    summarize(x::CausalTable, keep = true)
+    summarize(x::CausalTable, keep_original = true)
 
 Summarize a CausalTable by computing the summaries specified in the `summaries` field of the CausalTable and adding them to the existing data.
 
@@ -161,24 +161,6 @@ Summarize a CausalTable by computing the summaries specified in the `summaries` 
 # Returns
 - If `keep_original` is `true`, a new CausalTable with merged columns, treatment, response, graph, and summaries. Otherwise, NamedTuple of just variable summaries
 
-# Example
-```jldoctest
-using Graphs
-
-# Construct a CausalTable
-ctbl = CausalTable(
-    (A = [1, 2, 3],);
-    graph = Graphs.complete_graph(3),
-    summaries = (As = Sum(:A), Am = Maximum(:A))
-)
-
-# Compute the summaries of the CausalTable
-summarize(ctbl)
-
-# output
-CausalTable((A = [1, 2, 3], As = [5, 4, 3], Am = [3, 3, 2]), nothing, nothing, nothing, SimpleGraph{Int64}(3, [[2, 3], [1, 3], [1, 2]]), (As = Sum(:A, true), Am 
-= Maximum(:A, true)))
-```
 """
 function summarize(x::CausalTable; keep_original = true)
     sumtbl = (;zip(propertynames(x.summaries),  [summarize(x, s) for s in x.summaries])...)
