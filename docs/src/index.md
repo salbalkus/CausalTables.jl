@@ -14,7 +14,7 @@ Pkg> add CausalTables
 
 CausalTables.jl has three main functionalities:
 
-1. Generating simulation data using a `DataGeneratingProcess`
+1. Generating simulation data using a `StructuralCausalModel`
 2. Computing "ground truth" conditional distributions, means, and other functionals from a `DataGeneratingProcess` and a `CausalTable`
 3. Wrapping an existing Table to make it a `CausalTable` for use by external packages.
 
@@ -22,34 +22,36 @@ The examples below illustrate each of these three functionalities.
 
 ### Simulating Data from a DataGeneratingProcess
 
-To set up a statistical simulation using CausalTables.jl, we first define a `DataGeneratingProcess` (DGP). The easiest way to do this is using the `@dgp` macro, which takes a sequence of conditional distributions of the form `[variable name] ~ Distribution(args...)` and returns a `DataGeneratingProcess` object like so:
+To set up a statistical simulation using CausalTables.jl, we first define a `StructuralCausalModel` (SCM). This consists of two parts: a `DataGeneratingProcess` (DGP) that controls how the data is generated, and a list of variables to define the basic structure of the underlying causal diagram.
+
+A DataGeneratingProcess can be constructed using the `@dgp` macro, which takes a sequence of conditional distributions of the form `[variable name] ~ Distribution(args...)` and returns a `DataGeneratingProcess` object. Then, one can construct an StructuralCausalModel by passing the DGP to its construct, along with labels of the treatment and response variables.
 
 ```jldoctest quicktest; output = false, filter = r"(?<=.{21}).*"s
 using CausalTables
 using Random
 
-distributions = @dgp(
+dgp = @dgp(
         W ~ DiscreteUniform(1, 5),
         X ~ (@. Normal(:W, 1)),
         Y ~ (@. Normal(:X + 0.2 * :W, 1))
     )
 
-dgp = DataGeneratingProcess(
-    distributions;
+scm = StructuralCausalModel(
+    dgp;
     treatment = :X,
     response = :Y,
-    controls = [:W]
+    confounders = [:W]
 )
 
 # output
-DataGeneratingProcess
+StructuralCausalModel
 ```
 
 One we've defined our list of distribution functions, we can generate data from the DGP using the `rand` function:
 
 ```jldoctest quicktest; output = false, filter = r"(?<=.{11}).*"s
 Random.seed!(1);
-data = rand(dgp, 5)
+data = rand(scm, 5)
 
 # output
 CausalTable
@@ -62,7 +64,7 @@ For a more detailed guide of how to generate data please refer to [Generating Da
 Once we've defined a DGP and have some table of data with variables matching those of our DGP, we can compute the ground truth conditional distributions of any variable in a CausalTable (given a corresponding DGP) using the `condensity` function. This returns a Distribution object from the package [Distributions.jl](https://juliastats.org/Distributions.jl/stable/)
 
 ```jldoctest quicktest
-X_distribution = condensity(dgp, data, :X)
+X_distribution = condensity(scm, data, :X)
 
 # output
 5-element Vector{Distributions.Normal{Float64}}:
@@ -76,7 +78,7 @@ X_distribution = condensity(dgp, data, :X)
 For convenience, there also exists a `conmean` function that extracts the true conditional mean of a specific variable the CausalTable:
 
 ```jldoctest quicktest
-Y_mean = conmean(dgp, data, :Y)
+Y_mean = conmean(scm, data, :Y)
 
 # output
 5-element Vector{Float64}:
@@ -95,7 +97,7 @@ If you have a table of data that you would like to use with CausalTables.jl with
 
 ```jldoctest quicktest; output = false, filter = r"(?<=.{11}).*"s
 tbl = (W = rand(1:5, 10), X = randn(10), Y = randn(10))
-ctbl = CausalTable(tbl; treatment = :X, response = :Y, controls = [:W])
+ctbl = CausalTable(tbl; treatment = :X, response = :Y, confounders = [:W])
 
 # output
 CausalTable

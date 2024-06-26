@@ -19,47 +19,10 @@ Sum
 ```
 
 ```@docs
-Product
-```
-
-```@docs
-Maximum
-```
-
-```@docs
-Minimum
-```
-
-```@docs
-Mode
-```
-
-```@docs
 Friends
 ```
 
 ## Defining Your Own Summary Measures
 
-If you want to use a custom summary measure, you can define your own by creating a new type that is a subtype of `NetworkSummary`. The following example shows how to define a new summary measure that computes the mode of a variable over a unit's neighbors:
-
-```julia
-mutable struct Mode <: NetworkSummary 
-    var_to_summarize::Symbol
-    use_inneighbors::Bool
-    include_self::Bool
-    Mode(var_to_summarize::Symbol; use_inneighbors::Bool = true, include_self = true) = new(var_to_summarize, use_inneighbors, include_self)
-end
-```
-
-Then, simply add a new function to the `summarize` method by defining `summarize(x::CausalTable, summary::NetworkSummary)` function, but replacing the `NetworkSummary` with your new summary type. One easy way to define a new `summarize` function is to use `apply_function_over_neighbors`. This takes a function taking a vector as input and applies it to the variable specified in second argument, filtered to each unit's neighbors. 
-
-In this case, we can use `StatsBase.mode` to compute the mode of each unit's neighbors. 
-
-```@docs
-apply_function_over_neighbors
-```
-
-```julia
-summarize(x::CausalTable, summary::Mode) = apply_function_over_neighbors(x, summary.var_to_summarize, StatsBase.mode; use_inneighbors = summary.use_inneighbors)
-```
+Forthcoming.
 

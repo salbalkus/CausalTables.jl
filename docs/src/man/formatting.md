@@ -4,7 +4,7 @@ One of the main purposes of CausalTables.jl is to wrap a Table of data in Julia 
 
 ## Tables with Causally Independent Units
 
-The code below demonstrates this on the Titanic dataset. This could be, for example, to use as input into some estimator of whether a passenger's sex caused them to survive the Titanic disaster, controlling for some baselineline covariates listed in `controls`.
+The code below demonstrates this on the Titanic dataset. This could be, for example, to use as input into some estimator of whether a passenger's sex caused them to survive the Titanic disaster, controlling for some baselineline confounders listed in `confounders`.
 
 ```@example titanic
 using CausalTables
@@ -14,7 +14,7 @@ using DataFrames
 df = Titanic().dataframe
 
 # Wrapping the dataset in a CausalTable
-ctbl = CausalTable(df; treatment = :Sex, response = :Survived, controls = [:Pclass, :Age, :SibSp])
+ctbl = CausalTable(df; treatment = :Sex, response = :Survived, confounders = [:Pclass, :Age, :SibSp])
 
 nothing # hide
 ```
@@ -39,25 +39,13 @@ tbl = data.graphs[1].node_data
 # Convert the karate club data into a Graphs.jl graph object
 g = SimpleGraphFromIterator([Edge(x...) for x in zip(data.graphs[1].edge_index...)])
 
-# Note that the input to summaries must be a NamedTuple, even if there is only one summary variable, so the trailing comma is necessary.
-ctbl = CausalTable(tbl; graph = g, treatment = :friends, response = :labels_clubs, summaries = (friends = Friends(),))
+# Store the "friends" as an the adjacency matrix in a NamedTuple
+# Note that the input to arrays must be a NamedTuple, even if there is only one summary variable, 
+# so the trailing comma is necessary.
+m = (F = adjacency_matrix(g),)
+
+# Construct a CausalTable with the adjacency matrix stored in `arrays` and a summary variable recording the number of friends
+ctbl = CausalTable(tbl; treatment = :friends, response = :labels_clubs, arrays = m, summaries = (friends = Friends(:F),))
 
 nothing # hide
 ```
-
-Be warned: if you try to call `gettreatment` on a `CausalTable` that has not been summarized, you will get an error:
-
-```@example karateclub
-try  #hide
-gettreatment(ctbl)
-catch err; showerror(stderr, err); end  #hide
-```
-
-If you wish to extract the treatment variable, you will first need to call `summarize` on the CausalTable object, which computes the summary variables over the network. Then, calling `gettreatment` will yield the summarized treatment variable, like so:
-
-```@example karateclub
-ctbl_summarized = summarize(ctbl)
-gettreatment(ctbl_summarized)
-```
-
-The response and controls can also be extracted using `getresponse` and `getcontrols`, respectively. 
