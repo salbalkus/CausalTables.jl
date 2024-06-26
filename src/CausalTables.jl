@@ -31,7 +31,7 @@ export replace
 
 # network_summary.jl
 export NetworkSummary, 
-       Sum
+       Sum, Friends
 export summarize
 
 # data_generating_process.jl

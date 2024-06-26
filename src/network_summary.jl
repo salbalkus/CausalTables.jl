@@ -6,6 +6,16 @@ Abstract type representing a summary of a network.
 """
 abstract type NetworkSummary end
 
+"""
+    Sum <: NetworkSummary
+
+A NetworkSummary which sums the values of the target variable for each unit connected in the adjacency `matrix`.
+
+# Fields
+- `target::Symbol`: The target variable of the network.
+- `matrix::Symbol`: The matrix representation of the network.
+
+"""
 mutable struct Sum <: NetworkSummary
     target::Symbol
     matrix::Symbol
@@ -13,6 +23,15 @@ end
 
 summarize(o::NamedTuple, x::Sum) = o[x.matrix] * o[x.target]
 
+"""
+    mutable struct Friends <: NetworkSummary
+
+A NetworkSummary counting the number of connected individuals in an adjacency matrix, also known as the number of "friends"
+
+# Fields
+- `matrix::Symbol`: The matrix representing the network.
+
+"""
 mutable struct Friends <: NetworkSummary
     matrix::Symbol
 end

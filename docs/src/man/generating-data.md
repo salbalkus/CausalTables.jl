@@ -20,13 +20,14 @@ where `X` is the treatment, `Y` is the response, and `W` is a confounding variab
 
 ```jldoctest generation; output = false, filter = r"(?<=.{21}).*"s
 using Distributions
+using CausalTables
 
 DataGeneratingProcess(
     [:W, :X, :Y],
     [:distribution, :distribution, :distribution],
     [
         (; O...) -> DiscreteUniform(1, 5), 
-        (; O...) -> (@. Normal(O[:W], 1))
+        (; O...) -> (@. Normal(O[:W], 1)),
         (; O...) -> (@. Normal(O[:X] + 0.2 * O[:W], 1))
     ]
 )
@@ -58,7 +59,7 @@ In CausalTables.jl, a StructuralCausalModel is a data generating process endowed
 
 
 ```jldoctest generation; output = false, filter = r"(?<=.{21}).*"s
-dgp = DataGeneratingProcess(
+dgp = StructuralCausalModel(
     distributions;
     treatment = :X,
     response = :Y,
@@ -66,7 +67,7 @@ dgp = DataGeneratingProcess(
 )
 
 # output
-DataGeneratingProcess
+StructuralCausalModel
 ```
 
 ## Networks of Causally-Connected Units
