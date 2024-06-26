@@ -190,9 +190,9 @@ end
     )
     scm = CausalTables.StructuralCausalModel(dgp; treatment = :As, response = :Y)
     tbl = rand(scm, 5)
-    stbl = CausalTables.summarize(foo)
+    stbl = CausalTables.summarize(tbl)
     
     @test stbl.data.As ==  stbl.arrays.G * stbl.data.A
-    @test sdata.data.F == [3.0, 2.0, 1.0, 3.0, 1.0]
+    @test stbl.data.F == [3.0, 2.0, 1.0, 3.0, 1.0]
 
 end
