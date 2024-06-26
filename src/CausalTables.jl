@@ -15,11 +15,11 @@ Symbols = AbstractArray{Symbol, 1}
 
 # Includes
 include("utilities.jl")
-include("causal_table_new.jl")
-include("network_summary_new.jl")
+include("causal_table.jl")
+include("network_summary.jl")
 
 
-include("data_generating_process_new.jl")
+include("data_generating_process.jl")
 include("structural_causal_model.jl")
 
 # Exports
