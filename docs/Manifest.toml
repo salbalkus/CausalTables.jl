@@ -117,7 +117,7 @@ version = "0.5.1"
 
 [[deps.CausalTables]]
 deps = ["DataAPI", "Distributions", "Graphs", "MacroTools", "StatsBase", "TableOperations", "Tables"]
-git-tree-sha1 = "5d509cba03fdfb3659a2a6669354c3e57024d54b"
+git-tree-sha1 = "09356a0b9fcc8da7ebb568eaf72a7c90c6ea4623"
 repo-rev = "summary-overhaul"
 repo-url = "https://github.com/salbalkus/CausalTables.jl.git"
 uuid = "6af48e0c-efc2-4bf7-a92f-a553ccf79fd6"

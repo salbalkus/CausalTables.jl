@@ -14,13 +14,6 @@ summarize
 
 The following lists summary measures currently available off-the-shelf in CausalTables.jl. Examples on their use are provided in [Generating Data for Statistical Experiments](generating-data.md) and [Turning data into a `CausalTable`](formatting.md).
 
-```@docs
-Sum
-```
-
-```@docs
-Friends
-```
 
 ## Defining Your Own Summary Measures
 
