@@ -18,7 +18,6 @@ include("utilities.jl")
 include("causal_table.jl")
 include("network_summary.jl")
 
-
 include("data_generating_process.jl")
 include("structural_causal_model.jl")
 

@@ -177,3 +177,22 @@ end
     @test_throws ArgumentError CausalTables.condensity(bad, tbl, :not_in_dgp)
     @test_throws ErrorException CausalTables.condensity(bad, tbl, :A)
 end
+    
+@testset "NetworkSummary" begin
+    Random.seed!(1234)
+    dgp = CausalTables.@dgp(
+        A ~ Normal(0,1),
+        G = adjacency_matrix(erdos_renyi(length(:A), 0.3)),
+        As $ Sum(:A, :G),
+        F $ Friends(:G),
+        Y ~ Normal(0,1)
+
+    )
+    scm = CausalTables.StructuralCausalModel(dgp; treatment = :As, response = :Y)
+    tbl = rand(scm, 5)
+    stbl = CausalTables.summarize(foo)
+    
+    @test stbl.data.As ==  stbl.arrays.G * stbl.data.A
+    @test sdata.data.F == [3.0, 2.0, 1.0, 3.0, 1.0]
+
+end

@@ -36,7 +36,7 @@ mutable struct Friends <: NetworkSummary
     matrix::Symbol
 end
 
-summarize(o::NamedTuple, x::Sum) = o[x.matrix] * ones(size(o[x.matrix], 1))
+summarize(o::NamedTuple, x::Friends) = o[x.matrix] * ones(size(o[x.matrix], 1))
 
 
 

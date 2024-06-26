@@ -47,7 +47,7 @@ mutable struct CausalTable
         !Tables.istable(data) && throw(ArgumentError("`data` must be a Table. See https://tables.juliadata.org/ for more information."))        
 
         # Ensure treatment, response, and confounders are contained within the data
-        names = Tables.columnnames(Tables.columns(data))
+        names = (Tables.columnnames(Tables.columns(data))..., keys(summaries)...)
         any(t ∉ names for t in treatment)   && throw(ArgumentError("Treatment variable(s) not found in data"))
         any(r ∉ names for r in response)    && throw(ArgumentError("Response variable(s) not found in data"))
         any(c ∉ names for c in confounders) && throw(ArgumentError("Confounder variable(s) not found in data"))

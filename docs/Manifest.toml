@@ -2,7 +2,7 @@
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "980f914af7476320a65ba9433407f38ecc4206d1"
+project_hash = "5e8ca672c9477d117304f205dce850659f974c9f"
 
 [[deps.ANSIColoredPrinters]]
 git-tree-sha1 = "574baf8110975760d391c710b6341da1afa48d8c"
@@ -114,6 +114,14 @@ deps = ["LinearAlgebra"]
 git-tree-sha1 = "f641eb0a4f00c343bbc32346e1217b86f3ce9dad"
 uuid = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
 version = "0.5.1"
+
+[[deps.CausalTables]]
+deps = ["DataAPI", "Distributions", "Graphs", "MacroTools", "StatsBase", "TableOperations", "Tables"]
+git-tree-sha1 = "5d509cba03fdfb3659a2a6669354c3e57024d54b"
+repo-rev = "summary-overhaul"
+repo-url = "https://github.com/salbalkus/CausalTables.jl.git"
+uuid = "6af48e0c-efc2-4bf7-a92f-a553ccf79fd6"
+version = "1.0.0-DEV"
 
 [[deps.ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra"]
@@ -1147,6 +1155,12 @@ version = "7.2.1+1"
 deps = ["Dates"]
 uuid = "fa267f1f-6049-4f14-aa54-33bafae1ed76"
 version = "1.0.3"
+
+[[deps.TableOperations]]
+deps = ["SentinelArrays", "Tables", "Test"]
+git-tree-sha1 = "e383c87cf2a1dc41fa30c093b2a19877c83e1bc1"
+uuid = "ab02a1b2-a7df-11e8-156e-fb1833f50b87"
+version = "1.2.0"
 
 [[deps.TableTraits]]
 deps = ["IteratorInterfaceExtensions"]
