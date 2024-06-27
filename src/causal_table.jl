@@ -104,9 +104,11 @@ Tables.schema(o::CausalTable) = Tables.schema(o.data)
 #Tables.materializer(::Type{CausalTable})
 
 function Tables.subset(o::CausalTable, inds; viewhint=nothing)
+    viewhint = isnothing(viewhint) || viewhint
+    
     data_subset = Tables.subset(o.data, inds; viewhint)
 
-    if isnothing(viewhint) || viewhint
+    if viewhint
         arrays_subset = map(x -> view(x, repeat([inds], ndims(x))...), o.arrays)
     else
         arrays_subset = map(x -> getindex(x, repeat([inds], ndims(x))...), o.arrays)

@@ -68,6 +68,7 @@ end
     @test causalbaz isa CausalTables.CausalTable
     @test CausalTables.replace(rowtbl; data = baz).data == baz
     @test Tables.subset(coltbl, 1:2).data == (X = X[1:2], Y = Y[1:2], Z = Z[1:2])
+    @test Tables.subset(coltbl, 1:2; viewhint = false).data == (X = X[1:2], Y = Y[1:2], Z = Z[1:2])
     @test CausalTables.replace(rowtbl; treatment = :X).treatment == [:X]
 
     # Errors
