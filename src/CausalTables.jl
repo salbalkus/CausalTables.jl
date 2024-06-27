@@ -2,9 +2,7 @@ module CausalTables
 
 # Imports
 using Distributions
-using Graphs
 using Tables
-using TableOperations
 using DataAPI
 using StatsBase
 import Base: getindex
