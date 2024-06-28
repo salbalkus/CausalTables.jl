@@ -68,7 +68,7 @@ Once we've defined a DGP and have some table of data with variables matching tho
 X_distribution = condensity(scm, data, :X)
 
 # output
-5-element Vector{Distributions.Normal{Float64}}:
+5-element Vector{Normal{Float64}}:
  Distributions.Normal{Float64}(μ=1.0, σ=1.0)
  Distributions.Normal{Float64}(μ=2.0, σ=1.0)
  Distributions.Normal{Float64}(μ=4.0, σ=1.0)
