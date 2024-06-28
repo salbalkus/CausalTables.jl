@@ -58,12 +58,12 @@ end
     @test Tables.columnnames(coltbl) == (:X, :Y, :Z)
 
     # Extra causal-related functions
-    @test_throws ArgumentError CausalTables.parents(coltbl, :W)
-    @test Tables.columnnames(CausalTables.parents(coltbl, :Y)) == [:X, :Z]
-    @test Tables.columnnames(CausalTables.parents(coltbl, :X)) == [:Z]
-    @test Tables.columnnames(CausalTables.gettreatment(coltbl)) == [:X]
-    @test Tables.columnnames(CausalTables.getresponse(coltbl)) == [:Y]
-    @test Tables.columnnames(CausalTables.getconfounders(coltbl)) == [:Z]
+    @test CausalTables.treatmentnames(coltbl) == [:X]
+    @test CausalTables.confoundernames(coltbl) == [:Z]
+    @test CausalTables.responsenames(coltbl) == [:Y]
+    @test Tables.columnnames(CausalTables.treatment(coltbl)) == [:X]
+    @test Tables.columnnames(CausalTables.response(coltbl)) == [:Y]
+    @test Tables.columnnames(CausalTables.confounders(coltbl)) == [:Z]
     @test Tables.columnnames(CausalTables.treatmentparents(coltbl)) == [:Z]
     @test Tables.columnnames(CausalTables.responseparents(coltbl)) == [:X, :Z]
 

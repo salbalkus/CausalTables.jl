@@ -63,3 +63,6 @@ function summarize(o::CausalTable; keep_original = true)
         return sum_data
     end
 end
+
+gettarget(s::Friends) = nothing
+gettarget(s::NetworkSummary) = s.target

@@ -161,7 +161,7 @@ This function merges the column table of the `CausalTable` object with its array
 """
 getscm(o::CausalTable) = merge(Tables.columntable(o.data), o.arrays)
 
-Base.getindex(x::CausalTable, i::Int, j::Int) = Base.getindex(Tables.matrix(x.data), i, j)
+Base.getindex(o::CausalTable, i::Int, j::Int) = Base.getindex(Tables.matrix(o.data), i, j)
 
 function Base.show(io::IO, o::CausalTable)
     println(io, "CausalTable")
@@ -171,23 +171,25 @@ function Base.show(io::IO, o::CausalTable)
     println(io, "Arrays: $(arrays_trunc)")
 end
 
-function parents(x::CausalTable, name::Symbol)
-    if name in x.response
-        return x.data |> TableTransforms.Reject(x.response...)
-    elseif name in x.treatment
-        return x.data |> TableTransforms.Reject(x.treatment..., x.response...)
-    elseif name in Tables.columnnames(x.data)
-        throw(ArgumentError("Cannot find parents; $(name) is not a treatment or response variable"))
-    else
-        throw(ArgumentError("$(name) is not contained in the CausalTable"))
-    end
+# Functions to get names of causal variables, including summarized versions
+function _combine_summaries(o::CausalTable, symbols::AbstractArray{Symbol})
+    sumnames = map(x -> gettarget(x), o.summaries)
+    return vcat(symbols, [k for k in keys(sumnames)[values(sumnames) .∈ symbols]])
 end
 
-gettreatment(x::CausalTable) = x.data |> TableTransforms.Select(x.treatment...)
-getresponse(x::CausalTable) = x.data |> TableTransforms.Select(x.response...)
-getconfounders(x::CausalTable) = x.data |> TableTransforms.Select(x.confounders...)
+confoundernames(o::CausalTable) = _combine_summaries(o, o.confounders)
+treatmentnames(o::CausalTable) = _combine_summaries(o, o.treatment)
+responsenames(o::CausalTable) = _combine_summaries(o, o.response)
 
-treatmentparents(x::CausalTable) = x.data |> TableTransforms.Reject(x.treatment..., x.response...)
-responseparents(x::CausalTable) = x.data |> TableTransforms.Reject(x.response...)
+# Functions to select causal variables from the data
+_summarize_select(o::CausalTable, symbols::AbstractArray{Symbol}) = summarize(o).data |> TableTransforms.Select(symbols...)
+
+treatment(o::CausalTable) = _summarize_select(o, treatmentnames(o))
+confounders(o::CausalTable) = _summarize_select(o, confoundernames(o))
+response(o::CausalTable) = _summarize_select(o, responsenames(o))
+
+# Functions to select the "previous" causal variables in the data generating process
+treatmentparents(o::CausalTable) = summarize(o).data |> TableTransforms.Reject(treatmentnames(o)..., responsenames(o)...)
+responseparents(o::CausalTable) = summarize(o).data |> TableTransforms.Reject(responsenames(o)...)
 
 
