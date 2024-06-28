@@ -22,7 +22,6 @@ end
     
     # DataFrame form
     df = CausalTables.CausalTable(foo1, :X, :Y)    
-    Tables.columnnames(df) 
     @test Tables.istable(df)
     @test Tables.columntable(foo1) == df.data
 
@@ -33,6 +32,7 @@ end
     @test Tables.getcolumn(df, 1) == X
     @test Tables.columnindex(df, :X) == 1
     @test Tables.columntype(df, :X) == Int
+    @test df.confounders == [:Z]
 
     # Row table form
     rowtbl = CausalTables.CausalTable(foo3, :X, :Y; confounders = [:Z])

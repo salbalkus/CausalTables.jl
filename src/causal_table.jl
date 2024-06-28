@@ -41,7 +41,8 @@ mutable struct CausalTable
     function CausalTable(data, treatment, response, confounders, arrays, summaries)
         
         ## Process treatment and response variables into vectors, if they are not already vectors
-        treatment, response, confounders = _process_causal_variable_names(treatment, response, confounders)
+        confounders_replace_nothing = isnothing(confounders) ? [] : confounders
+        treatment, response, _ = _process_causal_variable_names(treatment, response, confounders_replace_nothing)
 
         # Ensure data input is a Table
         !Tables.istable(data) && throw(ArgumentError("`data` must be a Table. See https://tables.juliadata.org/ for more information."))        
@@ -50,7 +51,14 @@ mutable struct CausalTable
         names = (Tables.columnnames(Tables.columns(data))..., keys(summaries)...)
         any(t ∉ names for t in treatment)   && throw(ArgumentError("Treatment variable(s) not found in data"))
         any(r ∉ names for r in response)    && throw(ArgumentError("Response variable(s) not found in data"))
-        any(c ∉ names for c in confounders) && throw(ArgumentError("Confounder variable(s) not found in data"))
+        any(c ∉ names for c in confounders_replace_nothing) && throw(ArgumentError("Confounder variable(s) not found in data"))
+
+        # If confounders are Nothing, set them to be all columns (besides treatment and response) in the data by default
+        if isnothing(confounders) 
+            potential_confounders = union(Tables.columnnames(Tables.columns(data)), keys(summaries))
+            not_confounders = vcat(treatment, response)
+            confounders = setdiff(potential_confounders, not_confounders)
+        end
 
         ## Construction ##
 
@@ -65,9 +73,9 @@ mutable struct CausalTable
     end
 end
 
-CausalTable(data, treatment, response; confounders = [], arrays = (;), summaries = (;)) = CausalTable(data, treatment, response, confounders, arrays, summaries)
+CausalTable(data, treatment, response; confounders = nothing, arrays = (;), summaries = (;)) = CausalTable(data, treatment, response, confounders, arrays, summaries)
 CausalTable(data, treatment, response, confounders; arrays = (;), summaries = (;)) = CausalTable(data, treatment, response, confounders, arrays, summaries)
-function CausalTable(data; treatment = nothing, response = nothing, confounders = [], arrays = (;), summaries = (;))
+function CausalTable(data; treatment = nothing, response = nothing, confounders = nothing, arrays = (;), summaries = (;))
     isnothing(treatment) && throw(ArgumentError("Treatment variable must be defined"))
     isnothing(response) && throw(ArgumentError("Response variable must be defined"))
     CausalTable(data, treatment, response, confounders, arrays, summaries)
