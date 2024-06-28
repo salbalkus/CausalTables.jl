@@ -85,12 +85,11 @@ function Base.rand(scm::StructuralCausalModel, n::Int)
     for i_step in 1:length(scm)
         # Draw from the result of the step function
         result_step = try
-            scm.dgp.funcs[i_step](; result...)
+            scm.dgp.funcs[i_step](result)
         catch e
             error(DIST_ERR_MSG(scm.dgp.names[i_step]))
         end
         result_draw =  CausalTables._scm_draw(result_step, result, n)
-
         result = merge(result, NamedTuple{(scm.dgp.names[i_step],)}((result_draw,)))
         
         # Determine where the resulting output should be placed in the CausalTable
@@ -163,9 +162,9 @@ function condensity(scm::StructuralCausalModel, ct::CausalTable, var::Symbol)
 
     try
         if scm.dgp.types[varpos] == :distribution
-            return scm.dgp.funcs[varpos](; scm_result...)
+            return scm.dgp.funcs[varpos](scm_result)
         elseif scm.dgp.types[varpos] == :transformation
-            return get_conditional_distribution(scm.dgp.funcs[varpos](; scm_result...), scm, scm_result)
+            return get_conditional_distribution(scm.dgp.funcs[varpos](scm_result), scm, scm_result)
         else
             throw(ArgumentError("Cannot get conditional density. Variable $var is not a distribution or transformation of distributions in the StructuralCausalModel."))
         end
@@ -181,7 +180,7 @@ function get_conditional_distribution(ns::Sum, scm::StructuralCausalModel, scm_r
     targetpos = findfirst(scm.dgp.names .== ns.target)
 
     # Get the distribution of the target variable
-    targetdist = scm.dgp.funcs[targetpos](; scm_result...)
+    targetdist = scm.dgp.funcs[targetpos](scm_result)
 
     # Cast the matrix involved in the sum to a Boolean matrix
     m = .!(iszero.(scm_result[ns.matrix]))

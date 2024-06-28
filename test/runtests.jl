@@ -1,7 +1,6 @@
 using Test
 using CausalTables
 using Tables
-using TableOperations
 using DataFrames
 using Graphs
 using Distributions
@@ -76,21 +75,19 @@ end
     @test_throws ArgumentError CausalTables.CausalTable(foo1, :X, :Z, [:Z])
     @test_throws ArgumentError CausalTables.CausalTable(foo1, :Z, :X, [:Z])
 
-
 end
 
 @testset "DataGeneratingProcess using dgp macro, no graphs" begin
-
     dgp = CausalTables.@dgp(
         L1 ~ Beta(1,1),
-        N = length(:L1),
-        L1_norm = :L1 ./ sum(:L1),
-        L2 ~ Multinomial(:N, :L1_norm),
-        A ~ (@. Normal(:L1, 1)),
-        regr = (@. :A + 0.2 * :L2),
-        Y ~ Normal.(:regr, 1)
+        N = length(L1),
+        L1_norm = L1 ./ sum(L1),
+        L2 ~ Multinomial(N, L1_norm),
+        A ~ (@. Normal(L1, 1)),
+        regr = (@. A + 0.2 * L2),
+        Y ~ Normal.(regr, 1)
     )
-    
+
     scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L1, :L2])
     foo = rand(scm, 10)
 
@@ -107,18 +104,18 @@ end
 end
 
 @testset "DataGeneratingProcess with graphs using dgp macro" begin
-    dgp = CausalTables.@dgp(
+    dgp = @dgp(
         L1 ~ DiscreteUniform(1, 5),
-        ER = adjacency_matrix(erdos_renyi(length(:L1), 0.2)),
+        ER = adjacency_matrix(erdos_renyi(length(L1), 0.2)),
         L1_s $ Sum(:L1, :ER),
-        A ~ (@. Normal(:L1 + :L1_s, 1)),
+        A ~ (@. Normal(L1 + L1_s, 1)),
         A_s $ Sum(:A, :ER),
-        Y ~ (@. Normal(:A + :A_s + 0.2 * :L1 + 0.05 * :L1_s, 1))
+        Y ~ (@. Normal(A + A_s + 0.2 * L1 + 0.05 * L1_s, 1))
     )
-
+    
     scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L1])
-
-    foo = rand(scm, 100)    
+    foo = rand(scm, 100) 
+    
     @test typeof(foo) == CausalTables.CausalTable
     @test Tables.columnnames(foo.data) == (:L1, :A, :Y)
 
@@ -146,11 +143,11 @@ end
     ### Test that the DGP macro throws an error when it should ###
 
     # Test LHS
-    @test_throws ArgumentError CausalTables._parse_step(:(a() = Normal(0, 1))) 
-    @test_throws ArgumentError CausalTables._parse_step(:(1 ~ Normal(0, 1)))
-    @test_throws ArgumentError CausalTables._parse_step(:(1a ~ Normal(0, 1)))
-    @test_throws ArgumentError CausalTables._parse_step(:(A; ~ Normal(0, 1)))
-    @test_throws ArgumentError CausalTables._parse_step(:([]p23[p4] ~ Normal(0, 1)))
+    @test_throws ArgumentError CausalTables._parse_name(:(a() = Normal(0, 1))) 
+    @test_throws ArgumentError CausalTables._parse_name(:(1 ~ Normal(0, 1)))
+    @test_throws ArgumentError CausalTables._parse_name(:(1a ~ Normal(0, 1)))
+    @test_throws ArgumentError CausalTables._parse_name(:(A; ~ Normal(0, 1)))
+    @test_throws ArgumentError CausalTables._parse_name(:([]p23[p4] ~ Normal(0, 1)))
     
     ### Test the DGP constructor
 
@@ -183,7 +180,7 @@ end
     Random.seed!(1234)
     dgp = CausalTables.@dgp(
         A ~ Normal(0,1),
-        G = adjacency_matrix(erdos_renyi(length(:A), 0.3)),
+        G = adjacency_matrix(erdos_renyi(length(A), 0.3)),
         As $ Sum(:A, :G),
         F $ Friends(:G),
         Y ~ Normal(0,1)
@@ -195,5 +192,4 @@ end
     
     @test stbl.data.As ==  stbl.arrays.G * stbl.data.A
     @test stbl.data.F == [3.0, 2.0, 1.0, 3.0, 1.0]
-
 end
