@@ -79,6 +79,7 @@ Here's an example of how such a `DataGeneratingProcess` might be constructed:
 ```jldoctest network; output = false, filter = r"(?<=.{21}).*"s
 using Graphs
 using CausalTables
+using Distributions
 
 dgp = @dgp(
         W ~ DiscreteUniform(1, 5),
