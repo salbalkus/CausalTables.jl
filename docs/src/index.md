@@ -29,6 +29,7 @@ A DataGeneratingProcess can be constructed using the `@dgp` macro, which takes a
 ```jldoctest quicktest; output = false, filter = r"(?<=.{21}).*"s
 using CausalTables
 using Random
+using Distributions
 
 dgp = @dgp(
         W ~ DiscreteUniform(1, 5),
