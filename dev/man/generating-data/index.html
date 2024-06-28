@@ -11,14 +11,14 @@ DataGeneratingProcess(
     [:distribution, :distribution, :distribution],
     [
         (; O...) -&gt; DiscreteUniform(1, 5), 
-        (; O...) -&gt; (@. Normal(O[:W], 1)),
-        (; O...) -&gt; (@. Normal(O[:X] + 0.2 * O[:W], 1))
+        (; O...) -&gt; (@. Normal(O.W, 1)),
+        (; O...) -&gt; (@. Normal(O.X + 0.2 * O.W, 1))
     ]
 )</code></pre><p>where <code>; O...</code> syntax is a shorthand for a function that takes keyword arguments corresponding to the names of the variables in the DGP. </p><p>However, a much more convenient way to define this DGP is using the <code>@dgp</code> macro, which takes a sequence of conditional distributions of the form <code>[variable name] ~ Distribution(args...)</code> and deterministic variable assignments of the form <code>[variable name] = f(...)</code> and automatically generates a valid DataGeneratingProcess. For example, the <em>easier</em> way to define the DGP above is as follows:</p><pre><code class="language-julia hljs">using CausalTables
 distributions = @dgp(
         W ~ DiscreteUniform(1, 5),
-        X ~ (@. Normal(:W, 1)),
-        Y ~ (@. Normal(:X + 0.2 * :W, 1))
+        X ~ (@. Normal(W, 1)),
+        Y ~ (@. Normal(X + 0.2 * W, 1))
     )</code></pre><p>Note that with the <code>@dgp</code> macro, any symbol (that is, any string of characters prefixed by a colon, as in <code>:W</code> or <code>:X</code>) is automatically replaced with the corresponding previously-defined variable in the process. For instance, in <code>Normal(:W, 1)</code>, the <code>:W</code> will be replaced automatically with the distribution we defined as <code>W</code> earlier in the sequence. </p><h2 id="Defining-a-StructuralCausalModel"><a class="docs-heading-anchor" href="#Defining-a-StructuralCausalModel">Defining a StructuralCausalModel</a><a id="Defining-a-StructuralCausalModel-1"></a><a class="docs-heading-anchor-permalink" href="#Defining-a-StructuralCausalModel" title="Permalink"></a></h2><p>In CausalTables.jl, a StructuralCausalModel is a data generating process endowed with some causal interpretation. Constructing a StructuralCausalModel allows users to randomly draw a CausalTable with the necessary components from the DataGeneratingProcess they&#39;ve defined. With the above DataGeneratingProcess in hand, we can define a <code>StructuralCausalModel</code> object like so – treatment, response, and confounder variables in the causal model are specified as keyword arguments to the <code>DataGeneratingProcess</code> constructor:</p><pre><code class="language-julia hljs">dgp = StructuralCausalModel(
     distributions;
     treatment = :X,
@@ -26,15 +26,16 @@ distributions = @dgp(
     confounders = [:W]
 )</code></pre><h2 id="Networks-of-Causally-Connected-Units"><a class="docs-heading-anchor" href="#Networks-of-Causally-Connected-Units">Networks of Causally-Connected Units</a><a id="Networks-of-Causally-Connected-Units-1"></a><a class="docs-heading-anchor-permalink" href="#Networks-of-Causally-Connected-Units" title="Permalink"></a></h2><p>In some cases, we might work with data in which units may <em>not</em> be causally independent, but rather, in which one unit&#39;s variables could dependent on some summary function of its neighbors. Generating data from such a model can be done by adding lines of the form <code>Xs $ NetworkSummary</code> to the <code>@dgp</code> macro.</p><p>Here&#39;s an example of how such a <code>DataGeneratingProcess</code> might be constructed:</p><pre><code class="language-julia hljs">using Graphs
 using CausalTables
+using Distributions
 
 dgp = @dgp(
         W ~ DiscreteUniform(1, 5),
-        n = length(:W),
+        n = length(W),
         A = adjacency_matrix(erdos_renyi(n, 0.5)),
         Ws $ Sum(:W, :A),
-        X ~ (@. Normal(:Ws, 1)),
+        X ~ (@. Normal(Ws, 1)),
         Xs $ Sum(:X, :A),
-        Y ~ (@. Normal(:Xs + 0.2 * :Ws, 1))
+        Y ~ (@. Normal(Xs + 0.2 * Ws, 1))
     )
 
 scm = StructuralCausalModel(
@@ -42,4 +43,4 @@ scm = StructuralCausalModel(
     treatment = :X,
     response = :Y,
     confounders = [:W, :Ws]
-)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../formatting/">« Turning data into a <code>CausalTable</code></a><a class="docs-footer-nextpage" href="../ground-truth/">Computing Ground Truth of Causal Parameters »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Thursday 27 June 2024 14:37">Thursday 27 June 2024</span>. Using Julia version 1.9.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+)</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../formatting/">« Turning data into a <code>CausalTable</code></a><a class="docs-footer-nextpage" href="../ground-truth/">Computing Ground Truth of Causal Parameters »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.2.1 on <span class="colophon-date" title="Friday 28 June 2024 15:25">Friday 28 June 2024</span>. Using Julia version 1.9.4.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
