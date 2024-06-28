@@ -163,6 +163,14 @@ getscm(o::CausalTable) = merge(Tables.columntable(o.data), o.arrays)
 
 Base.getindex(x::CausalTable, i::Int, j::Int) = Base.getindex(Tables.matrix(x.data), i, j)
 
+function Base.show(io::IO, o::CausalTable)
+    println(io, "CausalTable")
+    PrettyTables.pretty_table(io, o, vcrop_mode=:middle, newline_at_end=false)
+    println(io, "\nSummaries: $(o.summaries)")
+    arrays_trunc = map(x -> typeof(x), o.arrays)
+    println(io, "Arrays: $(arrays_trunc)")
+end
+
 function parents(x::CausalTable, name::Symbol)
     if name in x.response
         return x.data |> TableTransforms.Reject(x.response...)
@@ -175,11 +183,11 @@ function parents(x::CausalTable, name::Symbol)
     end
 end
 
+gettreatment(x::CausalTable) = x.data |> TableTransforms.Select(x.treatment...)
+getresponse(x::CausalTable) = x.data |> TableTransforms.Select(x.response...)
+getconfounders(x::CausalTable) = x.data |> TableTransforms.Select(x.confounders...)
 
-function Base.show(io::IO, o::CausalTable)
-    println(io, "CausalTable")
-    PrettyTables.pretty_table(io, o, vcrop_mode=:middle, newline_at_end=false)
-    println(io, "\nSummaries: $(o.summaries)")
-    arrays_trunc = map(x -> typeof(x), o.arrays)
-    println(io, "Arrays: $(arrays_trunc)")
-end
+treatmentparents(x::CausalTable) = x.data |> TableTransforms.Reject(x.treatment..., x.response...)
+responseparents(x::CausalTable) = x.data |> TableTransforms.Reject(x.response...)
+
+

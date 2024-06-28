@@ -57,11 +57,15 @@ end
     @test Tables.columntype(rowtbl, :X) == Int
     @test Tables.columnnames(coltbl) == (:X, :Y, :Z)
 
-    # parent function
+    # Extra causal-related functions
     @test_throws ArgumentError CausalTables.parents(coltbl, :W)
     @test Tables.columnnames(CausalTables.parents(coltbl, :Y)) == [:X, :Z]
     @test Tables.columnnames(CausalTables.parents(coltbl, :X)) == [:Z]
-    
+    @test Tables.columnnames(CausalTables.gettreatment(coltbl)) == [:X]
+    @test Tables.columnnames(CausalTables.getresponse(coltbl)) == [:Y]
+    @test Tables.columnnames(CausalTables.getconfounders(coltbl)) == [:Z]
+    @test Tables.columnnames(CausalTables.treatmentparents(coltbl)) == [:Z]
+    @test Tables.columnnames(CausalTables.responseparents(coltbl)) == [:X, :Z]
 
     # Other convenience
     baz = (X = [4, 5], Y = ["foo", "bar"], Z = [0.1, 0.2])

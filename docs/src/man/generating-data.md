@@ -27,8 +27,8 @@ DataGeneratingProcess(
     [:distribution, :distribution, :distribution],
     [
         (; O...) -> DiscreteUniform(1, 5), 
-        (; O...) -> (@. Normal(O[:W], 1)),
-        (; O...) -> (@. Normal(O[:X] + 0.2 * O[:W], 1))
+        (; O...) -> (@. Normal(O.W, 1)),
+        (; O...) -> (@. Normal(O.X + 0.2 * O.W, 1))
     ]
 )
 
@@ -43,8 +43,8 @@ However, a much more convenient way to define this DGP is using the `@dgp` macro
 using CausalTables
 distributions = @dgp(
         W ~ DiscreteUniform(1, 5),
-        X ~ (@. Normal(:W, 1)),
-        Y ~ (@. Normal(:X + 0.2 * :W, 1))
+        X ~ (@. Normal(W, 1)),
+        Y ~ (@. Normal(X + 0.2 * W, 1))
     )
 
 # output
@@ -82,12 +82,12 @@ using CausalTables
 
 dgp = @dgp(
         W ~ DiscreteUniform(1, 5),
-        n = length(:W),
+        n = length(W),
         A = adjacency_matrix(erdos_renyi(n, 0.5)),
         Ws $ Sum(:W, :A),
-        X ~ (@. Normal(:Ws, 1)),
+        X ~ (@. Normal(Ws, 1)),
         Xs $ Sum(:X, :A),
-        Y ~ (@. Normal(:Xs + 0.2 * :Ws, 1))
+        Y ~ (@. Normal(Xs + 0.2 * Ws, 1))
     )
 
 scm = StructuralCausalModel(

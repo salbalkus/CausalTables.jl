@@ -32,8 +32,8 @@ using Random
 
 dgp = @dgp(
         W ~ DiscreteUniform(1, 5),
-        X ~ (@. Normal(:W, 1)),
-        Y ~ (@. Normal(:X + 0.2 * :W, 1))
+        X ~ (@. Normal(W, 1)),
+        Y ~ (@. Normal(X + 0.2 * W, 1))
     )
 
 scm = StructuralCausalModel(
