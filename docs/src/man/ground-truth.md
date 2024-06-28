@@ -8,6 +8,7 @@ Let's see an example. First, we'll define a DGP:
 using Graphs
 using CausalTables
 using Random
+using Distributions
 
 dgp = @dgp(
         W ~ Binomial(10, 0.3),

@@ -1,9 +1,8 @@
 DIST_ERR_MSG(node) = "Failed to generate a valid distribution for variable $(node). This is likely because the function provided to the 
                       DataGeneratingProcess does not return a valid distribution object. If using the @dgp macro, ensure that the 
                         right hand side of `$(node) ~ Distribution` returns either a valid distribution or a vector of distributions.
-                        Otherwise, ensure that the distribution functions are of the form (; O...) -> Distribution(...) where `O` is a 
-                        NamedTuple of the observed variables. Finally, ensure that when referencing previous variables in the DGP, 
-                        that they are preceded by a colon, as in `:X`"
+                        Otherwise, ensure that the distribution functions are of the form O -> Distribution(...) where `O` is a 
+                        NamedTuple of the observed variables."
 SUPPORTED_SUMMARIES = "Sum"
 
 # Helper function to check whether any elements of a vector are not contained in the DGP

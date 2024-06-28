@@ -152,12 +152,14 @@ end
     ### Test that the DGP macro throws an error when it should ###
 
     # Test LHS
-    @test_throws ArgumentError CausalTables._parse_name(:(a() = Normal(0, 1))) 
+    @test_throws ArgumentError CausalTables._parse_name(:(a() ~ Normal(0, 1))) 
     @test_throws ArgumentError CausalTables._parse_name(:(1 ~ Normal(0, 1)))
     @test_throws ArgumentError CausalTables._parse_name(:(1a ~ Normal(0, 1)))
-    @test_throws ArgumentError CausalTables._parse_name(:(A; ~ Normal(0, 1)))
     @test_throws ArgumentError CausalTables._parse_name(:([]p23[p4] ~ Normal(0, 1)))
-    
+
+    expr = :(A; ~ Normal(0, 1))
+    @test_throws ArgumentError CausalTables._parse_name(expr)
+
     ### Test the DGP constructor
 
     dgp = CausalTables.@dgp(
