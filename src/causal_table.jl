@@ -154,3 +154,24 @@ This function merges the column table of the `CausalTable` object with its array
 getscm(o::CausalTable) = merge(Tables.columntable(o.data), o.arrays)
 
 Base.getindex(x::CausalTable, i::Int, j::Int) = Base.getindex(Tables.matrix(x.data), i, j)
+
+function parents(x::CausalTable, name::Symbol)
+    if name in x.response
+        return x.data |> TableTransforms.Reject(x.response...)
+    elseif name in x.treatment
+        return x.data |> TableTransforms.Reject(x.treatment..., x.response...)
+    elseif name in Tables.columnnames(x.data)
+        throw(ArgumentError("Cannot find parents; $(name) is not a treatment or response variable"))
+    else
+        throw(ArgumentError("$(name) is not contained in the CausalTable"))
+    end
+end
+
+
+function Base.show(io::IO, o::CausalTable)
+    println(io, "CausalTable")
+    PrettyTables.pretty_table(io, o, vcrop_mode=:middle, newline_at_end=false)
+    println(io, "\nSummaries: $(o.summaries)")
+    arrays_trunc = map(x -> typeof(x), o.arrays)
+    println(io, "Arrays: $(arrays_trunc)")
+end

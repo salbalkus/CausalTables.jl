@@ -57,7 +57,10 @@ end
     @test Tables.columntype(rowtbl, :X) == Int
     @test Tables.columnnames(coltbl) == (:X, :Y, :Z)
 
-    # Causal Inference
+    # parent function
+    @test_throws ArgumentError CausalTables.parents(coltbl, :W)
+    @test Tables.columnnames(CausalTables.parents(coltbl, :Y)) == [:X, :Z]
+    @test Tables.columnnames(CausalTables.parents(coltbl, :X)) == [:Z]
     
 
     # Other convenience
@@ -76,6 +79,8 @@ end
     @test_throws ArgumentError CausalTables.CausalTable(foo1, :Z, :X, [:Z])
 
 end
+
+
 
 @testset "DataGeneratingProcess using dgp macro, no graphs" begin
     dgp = CausalTables.@dgp(

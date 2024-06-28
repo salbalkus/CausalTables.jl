@@ -3,6 +3,8 @@ module CausalTables
 # Imports
 using Distributions
 using Tables
+using TableTransforms
+using PrettyTables
 using DataAPI
 using StatsBase
 import Base: getindex
