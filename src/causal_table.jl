@@ -185,15 +185,19 @@ confoundernames(o::CausalTable; include_summary = true) = _combine_summaries(o, 
 treatmentnames(o::CausalTable; include_summary = true) = _combine_summaries(o, o.treatment, include_summary)
 responsenames(o::CausalTable; include_summary = true) =  _combine_summaries(o, o.response, include_summary)
 
-# Functions to select causal variables from the data
-_summarize_select(o::CausalTable, symbols::AbstractArray{Symbol}) = summarize(o).data |> TableTransforms.Select(symbols...)
+treatmentsummarynames(o::CausalTable) = _summarized_names(o, o.treatment)
+confoundersummarynames(o::CausalTable) = _summarized_names(o, o.confounders)
+responsesummarynames(o::CausalTable) = _summarized_names(o, o.response)
 
-treatment(o::CausalTable; include_summary = true) = replace(o; data = _summarize_select(o, treatmentnames(o; include_summary = include_summary)))
-confounders(o::CausalTable; include_summary = true) = replace(o; data = _summarize_select(o, confoundernames(o; include_summary = include_summary)))
-response(o::CausalTable; include_summary = true) = replace(o; data = _summarize_select(o, responsenames(o; include_summary = include_summary)))
+# Functions to select causal variables from the data
+_select_vars(o::CausalTable, symbols::AbstractArray{Symbol}) = o.data |> TableTransforms.Select(symbols...)
+
+treatment(o::CausalTable; include_summary = true) = replace(o; data = _select_vars(o, treatmentnames(o; include_summary = include_summary)))
+confounders(o::CausalTable; include_summary = true) = replace(o; data = _select_vars(o, confoundernames(o; include_summary = include_summary)))
+response(o::CausalTable; include_summary = true) = replace(o; data = _select_vars(o, responsenames(o; include_summary = include_summary)))
 
 # Functions to select the "previous" causal variables in the data generating process
-treatmentparents(o::CausalTable; include_summary = true) = replace(o; data = summarize(o).data |> TableTransforms.Reject(treatmentnames(o; include_summary = include_summary)..., responsenames(o; include_summary = include_summary)...))
-responseparents(o::CausalTable; include_summary = true) = replace(o; data = summarize(o).data |> TableTransforms.Reject(responsenames(o; include_summary = include_summary)...))
+treatmentparents(o::CausalTable; include_summary = true) = replace(o; data = o.data |> TableTransforms.Reject(treatmentnames(o; include_summary = include_summary)..., responsenames(o; include_summary = include_summary)...))
+responseparents(o::CausalTable; include_summary = true) = replace(o; data = o.data |> TableTransforms.Reject(responsenames(o; include_summary = include_summary)...))
 
 

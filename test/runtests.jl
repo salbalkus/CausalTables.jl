@@ -14,7 +14,7 @@ end
 
 @testset "CausalTables" begin
     X = [1, 2, 3]
-    Y = ["a", "b", "c"]
+    Y = [4, 5, 6]
     Z = [1.0, 2.0, 3.0]
     foo1 = DataFrame(X = X, Y = Y, Z = Z)
     foo2 = Tables.columntable(foo1)
@@ -26,7 +26,7 @@ end
     @test Tables.columntable(foo1) == df.data
     @test ncol(df) == 3
     @test nrow(df) == 3
-    @test getindex(df, 1, 2) == "a"
+    @test getindex(df, 1, 2) == 4
     @test Tables.getcolumn(df, :X) == X    
     @test Tables.getcolumn(df, 1) == X
     @test Tables.columnindex(df, :X) == 1
@@ -57,17 +57,21 @@ end
     @test Tables.columnnames(coltbl) == (:X, :Y, :Z)
 
     # Extra causal-related functions
-    coltbl2 = CausalTables.replace(coltbl, arrays = (G = [1 0 1; 0 1 1; 0 0 1],), summaries = (S = Sum(:X, :G), T = Sum(:Z, :G)))
+    coltbl2 = CausalTables.replace(coltbl, arrays = (G = [1 0 1; 0 1 1; 0 0 1],), summaries = (S = Sum(:X, :G), T = Sum(:Z, :G), U = Sum(:Y, :G)))
     coltbl2  = summarize(coltbl2)  
-
+    CausalTables.treatmentnames(coltbl2)
     @test CausalTables.treatmentnames(coltbl2) == [:X, :S]
     @test CausalTables.confoundernames(coltbl2) == [:Z, :T]
-    @test CausalTables.responsenames(coltbl2) == [:Y]
+    @test CausalTables.responsenames(coltbl2, include_summary = false) == [:Y]
     @test Tables.columnnames(CausalTables.treatment(coltbl2)) == (:X, :S)
-    @test Tables.columnnames(CausalTables.response(coltbl2)) == (:Y,)
+    @test Tables.columnnames(CausalTables.response(coltbl2, include_summary = false)) == (:Y,)
     @test Tables.columnnames(CausalTables.confounders(coltbl2)) == (:Z, :T)
     @test Tables.columnnames(CausalTables.treatmentparents(coltbl2)) == (:Z, :T)
+    Tables.columnnames(CausalTables.treatmentparents(coltbl2))
     @test Tables.columnnames(CausalTables.responseparents(coltbl2)) == (:X, :Z, :S, :T)
+    @test CausalTables.treatmentsummarynames(coltbl2) == [:S]
+    @test CausalTables.confoundersummarynames(coltbl2) == [:T]
+    @test CausalTables.responsesummarynames(coltbl2) == [:U]
 
     # Other convenience
     baz = (X = [4, 5], Y = ["foo", "bar"], Z = [0.1, 0.2])
