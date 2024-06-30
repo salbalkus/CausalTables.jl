@@ -26,11 +26,12 @@ include("structural_causal_model.jl")
 # causal_table.jl
 export CausalTable, istable, columns, columnaccess
 export nrow, ncol, subset
-export replace
+export replace, treatment, response, confounders
+export treatmentnames, responsenames, confoundernames 
+export treatmentparents, responseparents
 
 # network_summary.jl
-export NetworkSummary, 
-       Sum, Friends
+export NetworkSummary, Sum, Friends
 export summarize
 
 # data_generating_process.jl

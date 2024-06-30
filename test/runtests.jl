@@ -61,16 +61,13 @@ end
     coltbl2  = summarize(coltbl2)  
 
     @test CausalTables.treatmentnames(coltbl2) == [:X, :S]
-    @test CausalTables.confoundernames(coltbl) == [:Z]
-    @test CausalTables.responsenames(coltbl) == [:Y]
-    @test Tables.columnnames(CausalTables.treatment(coltbl)) == [:X]
-    @test Tables.columnnames(CausalTables.response(coltbl)) == [:Y]
-    @test Tables.columnnames(CausalTables.confounders(coltbl)) == [:Z]
-    @test Tables.columnnames(CausalTables.treatmentparents(coltbl)) == [:Z]
-    @test Tables.columnnames(CausalTables.responseparents(coltbl)) == [:X, :Z]
-
-    CausalTables.confounders(coltbl)
-
+    @test CausalTables.confoundernames(coltbl2) == [:Z, :T]
+    @test CausalTables.responsenames(coltbl2) == [:Y]
+    @test Tables.columnnames(CausalTables.treatment(coltbl2)) == [:X, :S]
+    @test Tables.columnnames(CausalTables.response(coltbl2)) == [:Y]
+    @test Tables.columnnames(CausalTables.confounders(coltbl2)) == [:Z, :T]
+    @test Tables.columnnames(CausalTables.treatmentparents(coltbl2)) == [:Z, :T]
+    @test Tables.columnnames(CausalTables.responseparents(coltbl2)) == [:X, :Z, :S, :T]
 
     # Other convenience
     baz = (X = [4, 5], Y = ["foo", "bar"], Z = [0.1, 0.2])
