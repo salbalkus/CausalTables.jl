@@ -185,12 +185,12 @@ responsenames(o::CausalTable) = _combine_summaries(o, o.response)
 # Functions to select causal variables from the data
 _summarize_select(o::CausalTable, symbols::AbstractArray{Symbol}) = summarize(o).data |> TableTransforms.Select(symbols...)
 
-treatment(o::CausalTable) = _summarize_select(o, treatmentnames(o))
-confounders(o::CausalTable) = _summarize_select(o, confoundernames(o))
-response(o::CausalTable) = _summarize_select(o, responsenames(o))
+treatment(o::CausalTable) = replace(o; data = _summarize_select(o, treatmentnames(o)))
+confounders(o::CausalTable) = replace(o; data = _summarize_select(o, confoundernames(o)))
+response(o::CausalTable) = replace(o; data = _summarize_select(o, responsenames(o)))
 
 # Functions to select the "previous" causal variables in the data generating process
-treatmentparents(o::CausalTable) = summarize(o).data |> TableTransforms.Reject(treatmentnames(o)..., responsenames(o)...)
-responseparents(o::CausalTable) = summarize(o).data |> TableTransforms.Reject(responsenames(o)...)
+treatmentparents(o::CausalTable) = replace(o; data = summarize(o).data |> TableTransforms.Reject(treatmentnames(o)..., responsenames(o)...))
+responseparents(o::CausalTable) = replace(o; data = summarize(o).data |> TableTransforms.Reject(responsenames(o)...))
 
 

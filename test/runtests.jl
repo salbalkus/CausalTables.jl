@@ -63,11 +63,11 @@ end
     @test CausalTables.treatmentnames(coltbl2) == [:X, :S]
     @test CausalTables.confoundernames(coltbl2) == [:Z, :T]
     @test CausalTables.responsenames(coltbl2) == [:Y]
-    @test Tables.columnnames(CausalTables.treatment(coltbl2)) == [:X, :S]
-    @test Tables.columnnames(CausalTables.response(coltbl2)) == [:Y]
-    @test Tables.columnnames(CausalTables.confounders(coltbl2)) == [:Z, :T]
-    @test Tables.columnnames(CausalTables.treatmentparents(coltbl2)) == [:Z, :T]
-    @test Tables.columnnames(CausalTables.responseparents(coltbl2)) == [:X, :Z, :S, :T]
+    @test Tables.columnnames(CausalTables.treatment(coltbl2)) == (:X, :S)
+    @test Tables.columnnames(CausalTables.response(coltbl2)) == (:Y,)
+    @test Tables.columnnames(CausalTables.confounders(coltbl2)) == (:Z, :T)
+    @test Tables.columnnames(CausalTables.treatmentparents(coltbl2)) == (:Z, :T)
+    @test Tables.columnnames(CausalTables.responseparents(coltbl2)) == (:X, :Z, :S, :T)
 
     # Other convenience
     baz = (X = [4, 5], Y = ["foo", "bar"], Z = [0.1, 0.2])
@@ -85,8 +85,6 @@ end
     @test_throws ArgumentError CausalTables.CausalTable(foo1, :Z, :X, [:Z])
 
 end
-
-
 
 @testset "DataGeneratingProcess using dgp macro, no graphs" begin
     dgp = CausalTables.@dgp(
