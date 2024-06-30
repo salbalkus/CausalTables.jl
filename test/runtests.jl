@@ -12,7 +12,7 @@ using Random
     @test_throws ArgumentError convolve([Normal(0, 1), Uniform(0, 1)])
 end
 
-#@testset "CausalTables" begin
+@testset "CausalTables" begin
     X = [1, 2, 3]
     Y = ["a", "b", "c"]
     Z = [1.0, 2.0, 3.0]

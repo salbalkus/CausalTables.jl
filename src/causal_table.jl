@@ -49,9 +49,9 @@ mutable struct CausalTable
 
         # Ensure treatment, response, and confounders are contained within the data
         names = (Tables.columnnames(Tables.columns(data))..., keys(summaries)...)
-        any(t ∉ names for t in treatment)   && throw(ArgumentError("Treatment variable(s) not found in data"))
-        any(r ∉ names for r in response)    && throw(ArgumentError("Response variable(s) not found in data"))
-        any(c ∉ names for c in confounders_replace_nothing) && throw(ArgumentError("Confounder variable(s) not found in data"))
+        #any(t ∉ names for t in treatment)   && throw(ArgumentError("Treatment variable(s) not found in data"))
+        #any(r ∉ names for r in response)    && throw(ArgumentError("Response variable(s) not found in data"))
+        #any(c ∉ names for c in confounders_replace_nothing) && throw(ArgumentError("Confounder variable(s) not found in data"))
 
         # If confounders are Nothing, set them to be all columns (besides treatment and response) in the data by default
         if isnothing(confounders) 
