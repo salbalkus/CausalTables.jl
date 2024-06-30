@@ -12,7 +12,7 @@ using Random
     @test_throws ArgumentError convolve([Normal(0, 1), Uniform(0, 1)])
 end
 
-@testset "CausalTables" begin
+#@testset "CausalTables" begin
     X = [1, 2, 3]
     Y = ["a", "b", "c"]
     Z = [1.0, 2.0, 3.0]
@@ -24,7 +24,6 @@ end
     df = CausalTables.CausalTable(foo1, :X, :Y)    
     @test Tables.istable(df)
     @test Tables.columntable(foo1) == df.data
-
     @test ncol(df) == 3
     @test nrow(df) == 3
     @test getindex(df, 1, 2) == "a"
@@ -58,7 +57,10 @@ end
     @test Tables.columnnames(coltbl) == (:X, :Y, :Z)
 
     # Extra causal-related functions
-    @test CausalTables.treatmentnames(coltbl) == [:X]
+    coltbl2 = CausalTables.replace(coltbl, arrays = (G = [1 0 1; 0 1 1; 0 0 1],), summaries = (S = Sum(:X, :G), T = Sum(:Z, :G)))
+    coltbl2  = summarize(coltbl2)  
+
+    @test CausalTables.treatmentnames(coltbl2) == [:X, :S]
     @test CausalTables.confoundernames(coltbl) == [:Z]
     @test CausalTables.responsenames(coltbl) == [:Y]
     @test Tables.columnnames(CausalTables.treatment(coltbl)) == [:X]
@@ -66,6 +68,9 @@ end
     @test Tables.columnnames(CausalTables.confounders(coltbl)) == [:Z]
     @test Tables.columnnames(CausalTables.treatmentparents(coltbl)) == [:Z]
     @test Tables.columnnames(CausalTables.responseparents(coltbl)) == [:X, :Z]
+
+    CausalTables.confounders(coltbl)
+
 
     # Other convenience
     baz = (X = [4, 5], Y = ["foo", "bar"], Z = [0.1, 0.2])

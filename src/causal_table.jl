@@ -174,7 +174,8 @@ end
 # Functions to get names of causal variables, including summarized versions
 function _combine_summaries(o::CausalTable, symbols::AbstractArray{Symbol})
     sumnames = map(x -> gettarget(x), o.summaries)
-    return vcat(symbols, [k for k in keys(sumnames)[values(sumnames) .∈ symbols]])
+    sumnames_in_symbols = [x ∈ symbols for x in values(sumnames)]
+    return vcat(symbols, [k for k in keys(sumnames)[sumnames_in_symbols]])
 end
 
 confoundernames(o::CausalTable) = _combine_summaries(o, o.confounders)
