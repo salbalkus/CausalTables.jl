@@ -7,6 +7,7 @@ using TableTransforms
 using PrettyTables
 using DataAPI
 using StatsBase
+using LinearAlgebra
 import Base: getindex
 import MacroTools: postwalk
 
