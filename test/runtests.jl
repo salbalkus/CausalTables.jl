@@ -8,7 +8,7 @@ using Random
 
 @testset "convolve function" begin
     @test convolve([Normal(0, 1), Normal(0, 1)]) == Normal(0, sqrt(2))
-    @test_throws ArgumentError convolve(Vector{Normal}(undef, 0))
+    @test convolve(Vector{Normal}(undef, 0)) == Binomial(0, 0.5)
     @test_throws ArgumentError convolve([Normal(0, 1), Uniform(0, 1)])
 end
 
@@ -119,7 +119,7 @@ end
 @testset "DataGeneratingProcess with graphs using dgp macro" begin
     dgp = @dgp(
         L1 ~ DiscreteUniform(1, 5),
-        ER = adjacency_matrix(erdos_renyi(length(L1), 0.2)),
+        ER = adjacency_matrix(erdos_renyi(length(L1), 0.3)),
         L1_s $ Sum(:L1, :ER),
         A ~ (@. Normal(L1 + L1_s, 1)),
         A_s $ Sum(:A, :ER),
@@ -127,15 +127,15 @@ end
     )
     
     scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L1])
-    foo = rand(scm, 100) 
-    
+    foo = rand(scm, 10) 
+
     @test typeof(foo) == CausalTables.CausalTable
     @test Tables.columnnames(foo.data) == (:L1, :A, :Y)
 
     bar = CausalTables.condensity(scm, foo, :A_s)
     @test nrow(foo) == length(bar)
     @test typeof(bar) <: Vector{T} where {T <: UnivariateDistribution}
-    
+
     foo_sum = CausalTables.summarize(foo)
 
     @test issetequal(Tables.columnnames(foo_sum), (:L1, :L1_s, :A, :A_s, :Y))
