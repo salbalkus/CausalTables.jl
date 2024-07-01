@@ -209,11 +209,25 @@ function dependency_matrix(O::CausalTable)
     
     # Create a matrix where nonzero entries indicate that the two observations are dependent
     if length(summary_matrix_names) > 0
-        dependencies = sum(values(O.arrays[summary_matrix_names])) .+ LinearAlgebra.I(DataAPI.nrow(O)) .> 0
+
+        # extract adjacency matrices from CausalTables
+        adj_matrices = values(O.arrays[summary_matrix_names])
+
+        # each unit to itself
+        zero_hop = LinearAlgebra.I(DataAPI.nrow(O))
+
+        # units that are neighbors
+        one_hop = sum(adj_matrices)
+
+        # units sharing a neighbor
+        two_hop = sum(map(X -> X * X, adj_matrices))
+
+        dependencies = (zero_hop + one_hop + two_hop) .> 0
+
     else
         dependencies = LinearAlgebra.I(DataAPI.nrow(O))
     end
     
     # map nonzero entires to 1
-    return dependencies .> 0
+    return dependencies
 end
