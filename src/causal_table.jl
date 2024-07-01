@@ -183,7 +183,7 @@ _combine_summaries(o::CausalTable, symbols::AbstractArray{Symbol}, include_summa
 
 confoundernames(o::CausalTable; include_summary = true) = _combine_summaries(o, o.confounders, include_summary)
 treatmentnames(o::CausalTable; include_summary = true) = _combine_summaries(o, o.treatment, include_summary)
-responsenames(o::CausalTable; include_summary = true) =  _combine_summaries(o, o.response, include_summary)
+responsenames(o::CausalTable; include_summary = true) = _combine_summaries(o, o.response, include_summary)
 
 treatmentsummarynames(o::CausalTable) = _summarized_names(o, o.treatment)
 confoundersummarynames(o::CausalTable) = _summarized_names(o, o.confounders)
@@ -200,4 +200,5 @@ response(o::CausalTable; include_summary = true) = replace(o; data = _select_var
 treatmentparents(o::CausalTable; include_summary = true) = replace(o; data = o.data |> TableTransforms.Reject(treatmentnames(o; include_summary = include_summary)..., responsenames(o; include_summary = include_summary)...))
 responseparents(o::CausalTable; include_summary = true) = replace(o; data = o.data |> TableTransforms.Reject(responsenames(o; include_summary = include_summary)...))
 
-
+# Other getters
+data(o::CausalTable) = o.data
