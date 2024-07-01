@@ -202,3 +202,18 @@ responseparents(o::CausalTable; include_summary = true) = replace(o; data = o.da
 
 # Other getters
 data(o::CausalTable) = o.data
+
+function dependency_matrix(O::CausalTable)
+    # Get the matrices used to summarize across observations in the table
+    summary_matrix_names = unique([s.matrix for s in O.summaries if hasfield(typeof(s), :matrix)])
+    
+    # Create a matrix where nonzero entries indicate that the two observations are dependent
+    if length(summary_matrix_names) > 0
+        dependencies = sum(values(O.arrays[summary_matrix_names])) .+ LinearAlgebra.I(DataAPI.nrow(O)) .> 0
+    else
+        dependencies = LinearAlgebra.I(DataAPI.nrow(O))
+    end
+    
+    # map nonzero entires to 1
+    return dependencies .> 0
+end
