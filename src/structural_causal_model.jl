@@ -193,12 +193,12 @@ get_conditional_distribution(ns::T, scm::StructuralCausalModel, scm_result::Name
 
 
 """
-    conmean(dgp::DataGeneratingProcess, ct::CausalTable, var::Symbol)
+    conmean(scm::StructuralCausalModel, ct::CausalTable, var::Symbol)
 
 Compute the conditional mean of a variable in a CausalTable based on a DataGeneratingProcess.
 
 # Arguments
-- `dgp::DataGeneratingProcess`: The DataGeneratingProcess object representing the data generating process.
+- `scm::StructuralCausalModel`: The StructuralCausalModel object representing the data generating process.
 - `ct::CausalTable`: The CausalTable object representing the data.
 - `var::Symbol`: The variable for which to compute the conditional mean.
 
