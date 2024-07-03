@@ -179,7 +179,7 @@ function _summarized_names(o::CausalTable, symbols::AbstractArray{Symbol})
 end
 
 # Functions to get names of causal variables, including summarized versions
-_combine_summaries(o::CausalTable, symbols::AbstractArray{Symbol}, include_summary = true) = include_summary ? vcat(symbols, _summarized_names(o, symbols)) : symbols
+_combine_summaries(o::CausalTable, symbols::AbstractArray{Symbol}, include_summary = true) = include_summary ? union(symbols, _summarized_names(o, symbols)) : symbols
 
 confoundernames(o::CausalTable; include_summary = true) = _combine_summaries(o, o.confounders, include_summary)
 treatmentnames(o::CausalTable; include_summary = true) = _combine_summaries(o, o.treatment, include_summary)

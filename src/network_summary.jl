@@ -30,6 +30,7 @@ mutable struct Mean <: NetworkSummary
     matrix::Symbol
     weights::Union{Symbol, Nothing}
 end
+
 Mean(target::Symbol, matrix::Symbol) = Mean(target, matrix, nothing)
 function summarize(o::NamedTuple, x::Mean)
     denom = Base.replace(vec(sum(o[x.matrix], dims = 2)), Inf => 0)
