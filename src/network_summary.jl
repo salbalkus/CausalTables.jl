@@ -19,9 +19,12 @@ A NetworkSummary which sums the values of the target variable for each unit conn
 mutable struct Sum <: NetworkSummary
     target::Symbol
     matrix::Symbol
+    weights::Union{Symbol, Nothing}
 end
+Sum(target::Symbol, matrix::Symbol) = Sum(target, matrix, nothing)
 
-summarize(o::NamedTuple, x::Sum) = o[x.matrix] * o[x.target]
+summarize(o::NamedTuple, x::Sum) = o[x.matrix] * (isnothing(x.weights) ? o[x.target] : o[x.target] .* o[x.weights])
+
 
 """
     mutable struct Friends <: NetworkSummary
