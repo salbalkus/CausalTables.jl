@@ -33,9 +33,9 @@ end
 
 Mean(target::Symbol, matrix::Symbol) = Mean(target, matrix, nothing)
 function summarize(o::NamedTuple, x::Mean)
-    denom = Base.replace(vec(sum(o[x.matrix], dims = 2)), Inf => 0)
+    denom = Base.replace(1 ./ vec(sum(o[x.matrix], dims = 2)), Inf => 0)
     v = o[x.matrix] * (isnothing(x.weights) ? o[x.target] : o[x.target] .* o[x.weights])
-    return v ./ denom
+    return v .* denom
 end
 
 
