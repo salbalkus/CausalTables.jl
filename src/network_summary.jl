@@ -22,8 +22,20 @@ mutable struct Sum <: NetworkSummary
     weights::Union{Symbol, Nothing}
 end
 Sum(target::Symbol, matrix::Symbol) = Sum(target, matrix, nothing)
-
 summarize(o::NamedTuple, x::Sum) = o[x.matrix] * (isnothing(x.weights) ? o[x.target] : o[x.target] .* o[x.weights])
+
+
+mutable struct Mean <: NetworkSummary
+    target::Symbol
+    matrix::Symbol
+    weights::Union{Symbol, Nothing}
+end
+Mean(target::Symbol, matrix::Symbol) = Mean(target, matrix, nothing)
+function summarize(o::NamedTuple, x::Mean)
+    denom = Base.replace(vec(sum(G, dims = 2)), Inf => 0)
+    v = o[x.matrix] * (isnothing(x.weights) ? o[x.target] : o[x.target] .* o[x.weights])
+    return v ./ denom
+end
 
 
 """
