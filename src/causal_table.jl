@@ -111,15 +111,22 @@ Tables.schema(o::CausalTable) = Tables.schema(o.data)
 # CausalTables do not permit materializers, because causal variable assignment is required via the constructor
 #Tables.materializer(::Type{CausalTable})
 
+_view_help(x::T, inds) where {T <: AbstractArray} = view(x, repeat([inds], ndims(x))...)
+_view_help(x, inds) = x
+_index_help(x::T, inds) where {T <: AbstractArray} = getindex(x, repeat([inds], ndims(x))...)
+_index_help(x, inds) = x
+
+
+
 function Tables.subset(o::CausalTable, inds; viewhint=nothing)
     viewhint = isnothing(viewhint) || viewhint
     
     data_subset = Tables.subset(o.data, inds; viewhint)
 
     if viewhint
-        arrays_subset = map(x -> view(x, repeat([inds], ndims(x))...), o.arrays)
+        arrays_subset = map(x -> _view_help(x, inds), o.arrays)
     else
-        arrays_subset = map(x -> getindex(x, repeat([inds], ndims(x))...), o.arrays)
+        arrays_subset = map(x -> _index_help(x, inds), o.arrays)
     end
     CausalTable(data_subset, o.treatment, o.response, o.confounders, arrays_subset, o.summaries)
 end

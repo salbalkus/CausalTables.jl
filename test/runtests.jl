@@ -119,7 +119,8 @@ end
 @testset "DataGeneratingProcess with graphs using dgp macro" begin
     dgp = @dgp(
         L1 ~ DiscreteUniform(1, 5),
-        ER = adjacency_matrix(erdos_renyi(length(L1), 0.3)),
+        n = length(L1),
+        ER = adjacency_matrix(erdos_renyi(n, 0.3)),
         L1_s $ Sum(:L1, :ER),
         A ~ (@. Normal(L1 + L1_s, 1)),
         A_s $ Sum(:A, :ER),
@@ -144,11 +145,11 @@ end
 
     
     # Test the graph subsetting capabilities of CausalTable
-    indices = 1:10
+    indices = [1, 3, 7, 8]
 
     baz = Tables.subset(foo, indices)
     @test baz.data == Tables.subset(foo.data, indices)
-    @test size(baz.arrays.ER) == (10, 10)
+    @test size(baz.arrays.ER) == (length(indices), length(indices))
 end
 
 @testset "DGP Exception throwing" begin
