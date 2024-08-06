@@ -12,8 +12,9 @@ function _process_causal_variable_names(treatment, response, confounders)
 
     # Assume only univariate treatment and response
     # TODO: Future code should allow for multivariate treatment and response
-    length(treatment) != 1 && throw(ArgumentError("Only univariate treatment is currently supported"))
-    length(response) != 1 && throw(ArgumentError("Only univariate response is currently supported"))
+    # TODO: Undo temporary disabled line of code by checking for either 1 treatment/response or 2 treatments/response with 1 summarized
+    #length(treatment) > 1 && throw(ArgumentError("Only univariate treatment is currently supported"))
+    #length(response) > 1 && throw(ArgumentError("Only univariate response is currently supported"))
 
     # Ensure treatment, response, and confounders do not overlap
     name_occurrences = StatsBase.countmap(vcat(treatment, response, confounders))
@@ -178,6 +179,10 @@ function Base.show(io::IO, o::CausalTable)
     println(io, "Arrays: $(arrays_trunc)")
 end
 
+
+### BELOW NEEDS TO BE REMOVED
+
+
 # Function to get names of summarized versions of a given set of Causal variables
 function _summarized_names(o::CausalTable, symbols::AbstractArray{Symbol})
     sumnames = map(x -> gettarget(x), o.summaries)
@@ -186,26 +191,40 @@ function _summarized_names(o::CausalTable, symbols::AbstractArray{Symbol})
 end
 
 # Functions to get names of causal variables, including summarized versions
-_combine_summaries(o::CausalTable, symbols::AbstractArray{Symbol}, include_summary = true) = include_summary ? union(symbols, _summarized_names(o, symbols)) : symbols
+#_combine_summaries(o::CausalTable, symbols::AbstractArray{Symbol}, include_summary = true) = include_summary ? union(symbols, _summarized_names(o, symbols)) : symbols
 
-confoundernames(o::CausalTable; include_summary = true) = _combine_summaries(o, o.confounders, include_summary)
-treatmentnames(o::CausalTable; include_summary = true) = _combine_summaries(o, o.treatment, include_summary)
-responsenames(o::CausalTable; include_summary = true) = _combine_summaries(o, o.response, include_summary)
+#confoundernames(o::CausalTable; include_summary = true) = _combine_summaries(o, o.confounders, include_summary)
+#treatmentnames(o::CausalTable; include_summary = true) = _combine_summaries(o, o.treatment, include_summary)
+#responsenames(o::CausalTable; include_summary = true) = _combine_summaries(o, o.response, include_summary)
 
-treatmentsummarynames(o::CausalTable) = _summarized_names(o, o.treatment)
-confoundersummarynames(o::CausalTable) = _summarized_names(o, o.confounders)
-responsesummarynames(o::CausalTable) = _summarized_names(o, o.response)
+#treatmentsummarynames(o::CausalTable) = _summarized_names(o, o.treatment)
+#confoundersummarynames(o::CausalTable) = _summarized_names(o, o.confounders)
+#responsesummarynames(o::CausalTable) = _summarized_names(o, o.response)
 
 # Functions to select causal variables from the data
-_select_vars(o::CausalTable, symbols::AbstractArray{Symbol}) = o.data |> TableTransforms.Select(symbols...)
+select(o::CausalTable, symbols::AbstractArray{Symbol}) = replace(o; data = o.data |> TableTransforms.Select(symbols...))
+reject(o::CausalTable, symbols::AbstractArray{Symbol}) = replace(o; data = o.data |> TableTransforms.Reject(symbols...))
 
-treatment(o::CausalTable; include_summary = true) = replace(o; data = _select_vars(o, treatmentnames(o; include_summary = include_summary)))
-confounders(o::CausalTable; include_summary = true) = replace(o; data = _select_vars(o, confoundernames(o; include_summary = include_summary)))
-response(o::CausalTable; include_summary = true) = replace(o; data = _select_vars(o, responsenames(o; include_summary = include_summary)))
+treatment(o::CausalTable) = select(o, o.treatment)
+confounders(o::CausalTable) = select(o, o.confounders)
+response(o::CausalTable) = select(o, o.response)
+
+treatmentparents(o::CausalTable) = reject(o, union(o.treatment, o.response))
+responseparents(o::CausalTable) = reject(o, o.response)
+
+#treatment(o::CausalTable; include_summary = true) = replace(o; data = _select_vars(o, treatmentnames(o; include_summary = include_summary)))
+#confounders(o::CausalTable; include_summary = true) = replace(o; data = _select_vars(o, confoundernames(o; include_summary = include_summary)))
+#response(o::CausalTable; include_summary = true) = replace(o; data = _select_vars(o, responsenames(o; include_summary = include_summary)))
 
 # Functions to select the "previous" causal variables in the data generating process
-treatmentparents(o::CausalTable; include_summary = true) = replace(o; data = o.data |> TableTransforms.Reject(treatmentnames(o; include_summary = include_summary)..., responsenames(o; include_summary = include_summary)...))
-responseparents(o::CausalTable; include_summary = true) = replace(o; data = o.data |> TableTransforms.Reject(responsenames(o; include_summary = include_summary)...))
+#treatmentparents(o::CausalTable; include_summary = true) = replace(o; data = o.data |> TableTransforms.Reject(treatmentnames(o; include_summary = include_summary)..., responsenames(o; include_summary = include_summary)...))
+#responseparents(o::CausalTable; include_summary = true) = replace(o; data = o.data |> TableTransforms.Reject(responsenames(o; include_summary = include_summary)...))
+
+
+
+
+###
+
 
 # Other getters
 data(o::CausalTable) = o.data

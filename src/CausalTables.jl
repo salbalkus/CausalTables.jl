@@ -8,6 +8,8 @@ using PrettyTables
 using DataAPI
 using StatsBase
 using LinearAlgebra
+using SparseArrays
+using Missings
 import Base: getindex
 import MacroTools: postwalk
 
@@ -32,7 +34,7 @@ export treatmentnames, responsenames, confoundernames
 export treatmentparents, responseparents
 
 # network_summary.jl
-export NetworkSummary, Sum, Friends, Mean
+export NetworkSummary, Sum, Friends, Mean, AllOrderStatistics
 export summarize
 
 # data_generating_process.jl

@@ -38,7 +38,6 @@ mutable struct StructuralCausalModel
     function StructuralCausalModel(dgp, treatment, response, confounders, arraynames)
         treatment, response, confounders = _process_causal_variable_names(treatment, response, confounders)
 
-        in_dgp_names = x -> x ∉ dgp.names
         not_in_dgp(dgp, treatment) && throw(ArgumentError("One or more of treatment labels $(treatment) are not a variable in the DataGeneratingProcess."))
         not_in_dgp(dgp, response) && throw(ArgumentError("One or more of response labels $(response) are not a variable in the DataGeneratingProcess."))
         not_in_dgp(dgp, confounders) && throw(ArgumentError("One or more of confounder labels $(confounders) are not a variable in the DataGeneratingProcess."))
@@ -110,7 +109,7 @@ function Base.rand(scm::StructuralCausalModel, n::Int)
 
     # Collect extra arrays
     array_tag = (tag .!= :data)
-    arrays = NamedTuple{keys(result)[array_tag]}(values(result)[array_tag],)
+    arrays = NamedTuple{keys(result)[array_tag]}(values(result)[array_tag],)    
 
     # Store the recorded draws in a CausalTable format
     return CausalTable(data, scm.treatment, scm.response, scm.confounders, arrays, summaries)

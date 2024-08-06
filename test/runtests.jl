@@ -1,4 +1,6 @@
 using Test
+using Revise
+
 using CausalTables
 using Tables
 using DataFrames
@@ -57,21 +59,20 @@ end
     @test Tables.columnnames(coltbl) == (:X, :Y, :Z)
 
     # Extra causal-related functions
-    coltbl2 = CausalTables.replace(coltbl, arrays = (G = [1 0 1; 0 1 1; 0 0 1],), summaries = (S = Sum(:X, :G), T = Sum(:Z, :G), U = Sum(:Y, :G)))
-    coltbl2  = summarize(coltbl2)  
-    CausalTables.treatmentnames(coltbl2)
-    @test CausalTables.treatmentnames(coltbl2) == [:X, :S]
-    @test CausalTables.confoundernames(coltbl2) == [:Z, :T]
-    @test CausalTables.responsenames(coltbl2, include_summary = false) == [:Y]
+    coltbl.response
+    more_sums = (S = Sum(:X, :G), T = Sum(:Z, :G), U = Sum(:Y, :G))
+    coltbl2 = CausalTables.replace(coltbl, arrays = (G = [1 0 1; 0 1 1; 0 0 1],), summaries = more_sums)
+    coltbl2  = summarize(coltbl2) 
+    coltbl2.treatment
+
+    @test coltbl2.treatment == [:X, :S]
+    @test coltbl2.confounders == [:Z, :T]
+    @test coltbl2.response == [:Y, :U]
     @test Tables.columnnames(CausalTables.treatment(coltbl2)) == (:X, :S)
-    @test Tables.columnnames(CausalTables.response(coltbl2, include_summary = false)) == (:Y,)
+    @test Tables.columnnames(CausalTables.response(coltbl2)) == (:Y, :U)
     @test Tables.columnnames(CausalTables.confounders(coltbl2)) == (:Z, :T)
     @test Tables.columnnames(CausalTables.treatmentparents(coltbl2)) == (:Z, :T)
-    Tables.columnnames(CausalTables.treatmentparents(coltbl2))
     @test Tables.columnnames(CausalTables.responseparents(coltbl2)) == (:X, :Z, :S, :T)
-    @test CausalTables.treatmentsummarynames(coltbl2) == [:S]
-    @test CausalTables.confoundersummarynames(coltbl2) == [:T]
-    @test CausalTables.responsesummarynames(coltbl2) == [:U]
 
     # Other convenience
     baz = (X = [4, 5], Y = ["foo", "bar"], Z = [0.1, 0.2])
@@ -196,16 +197,21 @@ end
     Random.seed!(1234)
     dgp = CausalTables.@dgp(
         A ~ Normal(0,1),
+        L ~ Binomial(1, 0.5),
         G = adjacency_matrix(erdos_renyi(length(A), 0.3)),
         As $ Sum(:A, :G),
+        Ao $ AllOrderStatistics(:A, :G),
         F $ Friends(:G),
+        Lm $ Mean(:L, :G),
         Y ~ Normal(0,1)
-
     )
-    scm = CausalTables.StructuralCausalModel(dgp; treatment = :As, response = :Y)
+    scm = CausalTables.StructuralCausalModel(dgp; treatment = :A, response = :Y, confounders = [:L])
     tbl = rand(scm, 5)
     stbl = CausalTables.summarize(tbl)
-    
+    stbl.data.F
     @test stbl.data.As ==  stbl.arrays.G * stbl.data.A
-    @test stbl.data.F == [3.0, 2.0, 1.0, 3.0, 1.0]
+    @test stbl.data.F == [3.0, 2.0, 2.0, 3.0, 2.0]
+    @test Tables.columnnames(stbl) == (:A, :L, :Y, :As, :Ao1, :Ao2, :Ao3, :F, :Lm)
+    @test stbl.treatment == [:A, :As, :Ao1, :Ao2, :Ao3]
+    @test stbl.confounders == [:L, :Lm]
 end
