@@ -126,11 +126,11 @@ function summarize(o::CausalTable)
 
         origin = gettarget(sm)
         if origin ∈ o.treatment
-            append!(new_treatment, header)
+            new_treatment = union(new_treatment, header)
         elseif origin ∈ o.confounders
-            append!(new_confounders, header)
+            new_confounders = union(new_confounders, header)
         elseif origin ∈ o.response
-            append!(new_response, header)
+            new_response = union(new_response, header)
         end
     end
 
