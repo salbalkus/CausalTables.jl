@@ -1,6 +1,4 @@
 using Test
-using Revise
-
 using CausalTables
 using Tables
 using DataFrames
