@@ -50,15 +50,15 @@ summarize(o::NamedTuple, x::AllOrderStatistics) = order_statistic_matrix(o[x.tar
 function order_statistic_matrix(X::AbstractArray, G::SparseMatrixCSC)
     n = length(X)
     max_k = Int(maximum(G * ones(n)))
-    Xmat = Missings.missings(Float64, (n, max_k))
+    Xvec = map(x -> Missings.missings(Float64, max_k), 1:n)
     r = rowvals(G)
 
     for i in 1:n
         ind = r[nzrange(G, i)]
-        Xmat[i, 1:length(ind)] = sort(X[ind], rev = true)
+        Xvec[i][1:length(ind)] = sort(X[ind], rev = true)
     end
 
-    return(Xmat)
+    return(Xvec)
 end
 
 """
@@ -111,9 +111,9 @@ function summarize(o::CausalTable)
         output_array = summarize(scm_result, sm)
 
         # construct a table, including header of names based on the summary name
-        if ndims(output_array) == 2
-            header = map(x -> Symbol(string(nm, x)), (1:size(output_array, 2)))
-            tables[i] = Tables.columntable(Tables.table(output_array; header = header))
+        if eltype(output_array) <: AbstractArray
+            header = map(x -> Symbol(string(nm, x)), (1:length(output_array[1])))
+            tables[i] = Tables.columntable(Tables.table(mapreduce(permutedims, vcat, output_array); header = header))
         elseif ndims(output_array) == 1
             header = [nm]
             tables[i] = NamedTuple{(header...,)}((output_array,))

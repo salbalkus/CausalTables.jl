@@ -196,7 +196,7 @@ end
     dgp = CausalTables.@dgp(
         A ~ Normal(0,1),
         L ~ Binomial(1, 0.5),
-        G = adjacency_matrix(erdos_renyi(length(A), 0.3)),
+        G = adjacency_matrix(erdos_renyi(length(A), 0.5)),
         As $ Sum(:A, :G),
         Ao $ AllOrderStatistics(:A, :G),
         F $ Friends(:G),
@@ -205,11 +205,16 @@ end
     )
     scm = CausalTables.StructuralCausalModel(dgp; treatment = :A, response = :Y, confounders = [:L])
     tbl = rand(scm, 5)
+
     stbl = CausalTables.summarize(tbl)
-    stbl.data.F
+
     @test stbl.data.As ==  stbl.arrays.G * stbl.data.A
     @test stbl.data.F == [3.0, 2.0, 2.0, 3.0, 2.0]
     @test Tables.columnnames(stbl) == (:A, :L, :Y, :As, :Ao1, :Ao2, :Ao3, :F, :Lm)
     @test stbl.treatment == [:A, :As, :Ao1, :Ao2, :Ao3]
     @test stbl.confounders == [:L, :Lm]
+    
+    sub = Tables.subset(stbl, 1:3)
+    @test nrow(sub) == 3
+    @test size(sub.arrays.G) == (3, 3)
 end
