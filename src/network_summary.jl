@@ -49,7 +49,7 @@ summarize(o::NamedTuple, x::AllOrderStatistics) = order_statistic_matrix(o[x.tar
 
 function order_statistic_matrix(X::AbstractArray, G::SparseMatrixCSC)
     n = length(X)
-    max_k = Int(maximum(G * ones(n)))
+    max_k = Int(maximum(sum(G, dims = 2)))
     Xvec = map(x -> Missings.missings(Float64, max_k), 1:n)
     r = rowvals(G)
 
