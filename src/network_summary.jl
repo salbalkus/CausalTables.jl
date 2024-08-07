@@ -113,7 +113,7 @@ function summarize(o::CausalTable)
         # construct a table, including header of names based on the summary name
         if eltype(output_array) <: AbstractArray
             header = map(x -> Symbol(string(nm, x)), (1:length(output_array[1])))
-            tables[i] = Tables.columntable(Tables.table(mapreduce(permutedims, vcat, output_array); header = header))
+            tables[i] = Tables.columntable(Tables.table(transpose(reduce(hcat, output_array)); header = header))
         elseif ndims(output_array) == 1
             header = [nm]
             tables[i] = NamedTuple{(header...,)}((output_array,))

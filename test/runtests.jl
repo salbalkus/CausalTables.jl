@@ -193,10 +193,11 @@ end
     
 @testset "NetworkSummary" begin
     Random.seed!(1234)
+
     dgp = CausalTables.@dgp(
         A ~ Normal(0,1),
         L ~ Binomial(1, 0.5),
-        G = adjacency_matrix(erdos_renyi(length(A), 0.5)),
+        G = adjacency_matrix(erdos_renyi(length(L), 0.5)),
         As $ Sum(:A, :G),
         Ao $ AllOrderStatistics(:A, :G),
         F $ Friends(:G),
