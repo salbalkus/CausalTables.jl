@@ -232,9 +232,12 @@ data(o::CausalTable) = o.data
 function adjacency_matrix(O::CausalTable)
     # Get the matrices used to summarize across observations in the table
     summary_matrix_names = unique([s.matrix for s in O.summaries if hasfield(typeof(s), :matrix)])
-    adj_matrices = values(O.arrays[summary_matrix_names])
-
-    return(sum(adj_matrices))
+    if length(summary_matrix_names) > 0
+        adj_matrices = values(O.arrays[summary_matrix_names])
+        return(sum(adj_matrices))
+    else
+        return(LinearAlgebra.I(DataAPI.nrow(O)))
+    end
 end
 
 function dependency_matrix(O::CausalTable)

@@ -191,17 +191,18 @@ end
     @test_throws ErrorException CausalTables.condensity(bad, tbl, :A)
 end
     
-@testset "NetworkSummary" begin
+#@testset "NetworkSummary" begin
     Random.seed!(1234)
 
     dgp = CausalTables.@dgp(
         A ~ Normal(0,1),
         L ~ Binomial(1, 0.5),
         G = adjacency_matrix(erdos_renyi(length(L), 0.5)),
+        H = adjacency_matrix(erdos_renyi(length(L), 0.5)),
         As $ Sum(:A, :G),
-        Ao $ AllOrderStatistics(:A, :G),
+        Lo $ AllOrderStatistics(:L, :G),
         F $ Friends(:G),
-        Lm $ Mean(:L, :G),
+        Lm $ Mean(:L, :H),
         Y ~ Normal(0,1)
     )
     scm = CausalTables.StructuralCausalModel(dgp; treatment = :A, response = :Y, confounders = [:L])
@@ -211,9 +212,9 @@ end
 
     @test stbl.data.As ==  stbl.arrays.G * stbl.data.A
     @test stbl.data.F == [3.0, 2.0, 2.0, 3.0, 2.0]
-    @test Tables.columnnames(stbl) == (:A, :L, :Y, :As, :Ao1, :Ao2, :Ao3, :F, :Lm)
-    @test stbl.treatment == [:A, :As, :Ao1, :Ao2, :Ao3]
-    @test stbl.confounders == [:L, :Lm]
+    @test Tables.columnnames(stbl) == (:A, :L, :Y, :As, :Lo1, :Lo2, :Lo3, :F, :Lm)
+    @test stbl.treatment == [:A, :As]
+    @test stbl.confounders == [:L, :Lo1, :Lo2, :Lo3, :Lm]
     
     sub = Tables.subset(stbl, 1:3)
     @test nrow(sub) == 3
