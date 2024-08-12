@@ -191,14 +191,14 @@ end
     @test_throws ErrorException CausalTables.condensity(bad, tbl, :A)
 end
     
-#@testset "NetworkSummary" begin
+@testset "NetworkSummary" begin
     Random.seed!(1234)
 
     dgp = CausalTables.@dgp(
         A ~ Normal(0,1),
         L ~ Binomial(1, 0.5),
-        G = adjacency_matrix(erdos_renyi(length(L), 0.5)),
-        H = adjacency_matrix(erdos_renyi(length(L), 0.5)),
+        G = Graphs.adjacency_matrix(erdos_renyi(length(L), 0.5)),
+        H = Graphs.adjacency_matrix(erdos_renyi(length(L), 0.5)),
         As $ Sum(:A, :G),
         Lo $ AllOrderStatistics(:L, :G),
         F $ Friends(:G),
@@ -219,4 +219,8 @@ end
     sub = Tables.subset(stbl, 1:3)
     @test nrow(sub) == 3
     @test size(sub.arrays.G) == (3, 3)
+
+    adj = CausalTables.adjacency_matrix(tbl)
+    @test sum(adj) == 14
+    @test all(map(x -> x ∈ [0.0, 1.0], vec(adj)))
 end

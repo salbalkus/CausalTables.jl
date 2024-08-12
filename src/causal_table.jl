@@ -234,7 +234,7 @@ function adjacency_matrix(O::CausalTable)
     summary_matrix_names = unique([s.matrix for s in O.summaries if hasfield(typeof(s), :matrix)])
     if length(summary_matrix_names) > 0
         adj_matrices = values(O.arrays[summary_matrix_names])
-        return(sum(adj_matrices))
+        return(sum(adj_matrices) .!= 0.0)
     else
         return(LinearAlgebra.I(DataAPI.nrow(O)))
     end
