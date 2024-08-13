@@ -196,11 +196,11 @@ end
 
     dgp = CausalTables.@dgp(
         A ~ Normal(0,1),
-        L ~ Binomial(1, 0.5),
+        L ~ Binomial(6, 0.5),
         G = Graphs.adjacency_matrix(erdos_renyi(length(L), 0.5)),
         H = Graphs.adjacency_matrix(erdos_renyi(length(L), 0.5)),
         As $ Sum(:A, :G),
-        Lo $ AllOrderStatistics(:L, :G),
+        Lo $ KOrderStatistics(:L, :G, 2),
         F $ Friends(:G),
         Lm $ Mean(:L, :H),
         Y ~ Normal(0,1)
@@ -211,16 +211,16 @@ end
     stbl = CausalTables.summarize(tbl)
 
     @test stbl.data.As ==  stbl.arrays.G * stbl.data.A
-    @test stbl.data.F == [3.0, 2.0, 2.0, 3.0, 2.0]
-    @test Tables.columnnames(stbl) == (:A, :L, :Y, :As, :Lo1, :Lo2, :Lo3, :F, :Lm)
+    @test stbl.data.F == [2.0, 2.0, 3.0, 3.0, 2.0]
+    @test Tables.columnnames(stbl) == (:A, :L, :Y, :As, :Lo1, :Lo2, :F, :Lm)
     @test stbl.treatment == [:A, :As]
-    @test stbl.confounders == [:L, :Lo1, :Lo2, :Lo3, :Lm]
+    @test stbl.confounders == [:L, :Lo1, :Lo2, :Lm]
     
     sub = Tables.subset(stbl, 1:3)
     @test nrow(sub) == 3
     @test size(sub.arrays.G) == (3, 3)
 
     adj = CausalTables.adjacency_matrix(tbl)
-    @test sum(adj) == 14
+    @test sum(adj) == 18
     @test all(map(x -> x ∈ [0.0, 1.0], vec(adj)))
 end

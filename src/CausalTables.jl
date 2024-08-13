@@ -34,7 +34,7 @@ export treatmentnames, responsenames, confoundernames
 export treatmentparents, responseparents
 
 # network_summary.jl
-export NetworkSummary, Sum, Friends, Mean, AllOrderStatistics
+export NetworkSummary, Sum, Friends, Mean, AllOrderStatistics, KOrderStatistics
 export summarize
 
 # data_generating_process.jl

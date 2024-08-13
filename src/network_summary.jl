@@ -45,17 +45,30 @@ mutable struct AllOrderStatistics <: NetworkSummaryMultivariate
     matrix::Symbol
 end
 
-summarize(o::NamedTuple, x::AllOrderStatistics) = order_statistic_matrix(o[x.target], o[x.matrix])
+summarize(o::NamedTuple, x::AllOrderStatistics) = order_statistic_matrix(o[x.target], o[x.matrix] .!= 0, Int(maximum(sum(G .!= 0, dims = 2))), true)
 
-function order_statistic_matrix(X::AbstractArray, G::SparseMatrixCSC)
+mutable struct KOrderStatistics <: NetworkSummaryMultivariate
+    target::Symbol
+    matrix::Symbol
+    K::Int
+    is_maximum::Bool
+end
+KOrderStatistics(target, matrix, K) = KOrderStatistics(target, matrix, K, true)
+
+
+summarize(o::NamedTuple, x::KOrderStatistics) = order_statistic_matrix(o[x.target], o[x.matrix], x.K, x.is_maximum)
+
+function order_statistic_matrix(X::AbstractArray, G::SparseMatrixCSC, max_k::Int, is_maximum::Bool)
     n = length(X)
-    max_k = Int(maximum(sum(G, dims = 2)))
     Xvec = map(x -> Missings.missings(Float64, max_k), 1:n)
     r = rowvals(G)
 
     for i in 1:n
         ind = r[nzrange(G, i)]
-        Xvec[i][1:length(ind)] = sort(X[ind], rev = true)
+        println(ind)
+        cur_Xvec = sort(X[ind], rev = is_maximum)
+
+        Xvec[i][1:minimum([length(cur_Xvec), max_k])] = (length(cur_Xvec) ≤ max_k ? cur_Xvec : cur_Xvec[1:max_k])
     end
 
     return(Xvec)
