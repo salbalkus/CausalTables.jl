@@ -55,7 +55,6 @@ mutable struct KOrderStatistics <: NetworkSummaryMultivariate
 end
 KOrderStatistics(target, matrix, K) = KOrderStatistics(target, matrix, K, true)
 
-
 summarize(o::NamedTuple, x::KOrderStatistics) = order_statistic_matrix(o[x.target], o[x.matrix], x.K, x.is_maximum)
 
 function order_statistic_matrix(X::AbstractArray, G::SparseMatrixCSC, max_k::Int, is_maximum::Bool)
