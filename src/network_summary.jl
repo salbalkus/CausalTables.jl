@@ -64,7 +64,6 @@ function order_statistic_matrix(X::AbstractArray, G::SparseMatrixCSC, max_k::Int
 
     for i in 1:n
         ind = r[nzrange(G, i)]
-        println(ind)
         cur_Xvec = sort(X[ind], rev = is_maximum)
 
         Xvec[i][1:minimum([length(cur_Xvec), max_k])] = (length(cur_Xvec) ≤ max_k ? cur_Xvec : cur_Xvec[1:max_k])

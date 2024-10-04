@@ -89,7 +89,7 @@ end
 
 end
 
-@testset "DataGeneratingProcess using dgp macro, no graphs" begin
+#@testset "DataGeneratingProcess using dgp macro, no graphs" begin
     dgp = CausalTables.@dgp(
         L1 ~ Beta(1,1),
         N = length(L1),
@@ -108,11 +108,14 @@ end
 
     bar = CausalTables.condensity(scm, foo, :A)
     baz = CausalTables.conmean(scm, foo, :Y)
+    qux = CausalTables.convar(scm, foo, :Y)
+
     @test nrow(foo.data) == length(bar)
     @test typeof(bar) <: Vector{T} where {T <: UnivariateDistribution}
     @test typeof(baz) <: Vector{T} where {T <: Real}
+    @test typeof(qux) <: Vector{T} where {T <: Real}
     @test baz == Tables.getcolumn(foo, :A) .+ 0.2 .* Tables.getcolumn(foo, :L2)
-
+    @test all(qux .== 1)
 end
 
 @testset "DataGeneratingProcess with graphs using dgp macro" begin

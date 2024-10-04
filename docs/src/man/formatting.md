@@ -4,17 +4,17 @@ One of the main purposes of CausalTables.jl is to wrap a Table of data in Julia 
 
 ## Tables with Causally Independent Units
 
-The code below demonstrates this on the Titanic dataset. This could be, for example, to use as input into some estimator of whether a passenger's sex caused them to survive the Titanic disaster, controlling for some baselineline confounders listed in `confounders`.
+The code below provides an example of how to wrap the Boston Housing dataset as a `CausalTable` to answer causal questions of the form "How would changing nitrous oxide air pollution (`NOX`) within Boston-area towns affect median home value (`MEDV`)?" 
 
 ```@example titanic
 using CausalTables
-using MLDatasets: Titanic
+using MLDatasets: BostonHousing
 using DataFrames
 
-df = Titanic().dataframe
+df = BostonHousing().dataframe
 
 # Wrapping the dataset in a CausalTable
-ctbl = CausalTable(df; treatment = :Sex, response = :Survived, confounders = [:Pclass, :Age, :SibSp])
+ctbl = CausalTable(df; treatment = :NOX, response = :MEDV, confounders = [:CRIM, :ZN, :INDUS, :CHAS, :B, :DIS, :LSTAT])
 
 nothing # hide
 ```
@@ -23,9 +23,9 @@ nothing # hide
 
 The previous example assumes that each unit (row in the Table, in this case `df`), is "causally independent" of every other unit -- that is, the treatment of one unit does not affect the response of any other unit. In some cases, however, we might work with data in which units may *not* be causally independent, but rather, in which one unit's variables could dependent on some summary function of its neighbors. 
 
-In this case, we can specify a `graph` argument to the `CausalTable` constructor, a Graph object from Graphs.jl which will be used to determine which units are neighbors of one another. We would also specify a `summaries` argument, a `NamedTuple` of `NetworkSummary` objects representing variables summarized over each unit's neighbors in the graph. More detail on the types of `NetworkSummary` that can be used in a dependent-data `CausalTable` can be found in [Network Summaries](network-summaries.md)
+Each `CausalTable` has an "arrays" argument, a `NamedTuple` that can store adjacency matrices and other miscellaneous parameters that denote the causal relationships between variables. The code below provides an example of how such a `CausalTable` might be constructed using the Karate Club dataset. Treatment is defined as the number of friends a club member has, denoted by the summary function parameter `summaries = (friends = Friends(:F),)`. Hence, this answers the causal question "how would changing a subject's number of friends (`friends`) affect which club they are likely to join (`labels_clubs`)?" 
 
-Here's an example of how such a `CausalTable` might be constructed, using the Karate Club dataset. Treatment is defined as the number of friends a club member has, denoted by the summary function parameter `summaries = (friends = Friends(),)`. 
+We store the network relationships between units as an adjacency matrix `F` by assigning it to the `arrays` parameters. This allows the `Friends(:F)` summary function to access it when calling `summarize(ctbl)`. More detail on the types of `NetworkSummary` that can be used in a dependent-data `CausalTable` can be found in [Network Summaries](network-summaries.md)
 
 ```@example karateclub
 using CausalTables

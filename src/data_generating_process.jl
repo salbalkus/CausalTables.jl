@@ -2,7 +2,21 @@
 """
     macro dgp(args...)
 
-A macro to construct a DataGeneratingProcess from a sequence of distributions and transformations.
+A macro to construct a DataGeneratingProcess (DGP) from a sequence of distributions and transformations. A data generating process is a sequence of steps that generates a dataset. It can be used to encode the causal structure of a given statistical problem; for instance, if \$Y=f(X)\$ where \$f\$ is some function of \$X\$, then it can be said that \$X\$ *causes* \$Y\$. 
+
+Each line in the `dgp` macro is treated as a discrete step of the DGP. In `CausalTables.jl`, a DGP object is required as an input to a StructuralCausalModel object. These generally have two uses: (a) randomly generating a dataset with a particular causal structure, and (b) computing the ground truth value of functions of the data. 
+
+Each line generates one variable in the dataset using an assignment operator. When `rand` is called on a StructuralCausalModel that contains a DGP constructed via this macro, each line is computed in sequence depending on the assignment operator. Three assignment operators are available:
+
+1. The standard `=` symbol, which evaluates the value of the right-hand side directly. This often denotes a **fixed** variable; i.e. `X = 0.5`. 
+2. The `~` symbol, which constructs a Distribution object. This is used to denote a **random** variable; i.e. `X ~ Normal()`.
+3. The `\$` symbol, which denotes a **summary** of random variables in previous steps; i.e. `X \$ Friends(:A)`.
+
+Of course, one can always randomly generate random variables by calling a function on the right-hand side of `=`. The `~` operator serves two purposes. First, it allows a DGP to be expressed more concisely, by allowing just the distribution to be specified instead of needing to call `rand` at each step. Second, it allows the analytic computation of closed-form conditional densities, which can then be used to compute the ground truth value of statistical functionals that depend on the DGP. 
+
+Lines with `\$` tell the `rand` function to generate the random variable at that step by summarizing the vector of previous vectors according to the NetworkSummary object on the right-hand side. Again, while this could be performed with `=`, the `\$` operator allows the closed-form conditional density of the summary function to be computed for certain summaries and random variables, such as sums of normal distributions. 
+
+## Example
 
 ## Arguments
 - `args...`: Variable number of arguments representing the steps of the data generating process.

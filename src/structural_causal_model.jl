@@ -138,22 +138,22 @@ _scm_draw(x, o::NamedTuple, n::Int64) = x
 
 
 """
-    condensity(scm::StructuralCausalModel, ct::CausalTable, var::Symbol)
+    condensity(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
 
 Compute the conditional density of a variable in a StructuralCausalModel given a CausalTable.
 
 # Arguments
 - `scm::StructuralCausalModel`: The StructuralCausalModel representing the data generating process.
 - `ct::CausalTable`: The CausalTable containing the observed data.
-- `var::Symbol`: The variable for which to compute the conditional density.
+- `name::Symbol`: The variable for which to compute the conditional density.
 
 # Returns
 The conditional density of the variable `var` given the observed data.
 
 """
-function condensity(scm::StructuralCausalModel, ct::CausalTable, var::Symbol)
+function condensity(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
     
-    varpos = findfirst(scm.dgp.names .== var)
+    varpos = findfirst(scm.dgp.names .== name)
     isnothing(varpos) && throw(ArgumentError("Argument `var` is not contained within the StructuralCausalModel"))
     
     scm_result = getscm(ct)
@@ -164,10 +164,10 @@ function condensity(scm::StructuralCausalModel, ct::CausalTable, var::Symbol)
         elseif scm.dgp.types[varpos] == :transformation
             return get_conditional_distribution(scm.dgp.funcs[varpos](scm_result), scm, scm_result)
         else
-            throw(ArgumentError("Cannot get conditional density. Variable $var is not a distribution or transformation of distributions in the StructuralCausalModel."))
+            throw(ArgumentError("Cannot get conditional density. Variable $name is not a distribution or transformation of distributions in the StructuralCausalModel."))
         end
     catch e
-        error(DIST_ERR_MSG(var))
+        error(DIST_ERR_MSG(name))
     end
 end
 
@@ -192,17 +192,33 @@ get_conditional_distribution(ns::T, scm::StructuralCausalModel, scm_result::Name
 
 
 """
-    conmean(scm::StructuralCausalModel, ct::CausalTable, var::Symbol)
+    conmean(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
 
 Compute the conditional mean of a variable in a CausalTable based on a DataGeneratingProcess.
 
 # Arguments
 - `scm::StructuralCausalModel`: The StructuralCausalModel object representing the data generating process.
 - `ct::CausalTable`: The CausalTable object representing the data.
-- `var::Symbol`: The variable for which to compute the conditional mean.
+- `name::Symbol`: The variable for which to compute the conditional mean.
 
 # Returns
 An array of conditional means for the specified variable.
 
 """
-conmean(scm::StructuralCausalModel, ct::CausalTable, var::Symbol) = mean.(condensity(scm, ct, var))
+conmean(scm::StructuralCausalModel, ct::CausalTable, name::Symbol) = mean.(condensity(scm, ct, name))
+
+"""
+    convariance(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
+
+Compute the conditional variance of a variable in a CausalTable based on a DataGeneratingProcess.
+
+# Arguments
+- `scm::StructuralCausalModel`: The StructuralCausalModel object representing the data generating process.
+- `ct::CausalTable`: The CausalTable object representing the data.
+- `name::Symbol`: The variable for which to compute the conditional mean.
+
+# Returns
+An array of conditional variances for the specified variable.
+
+"""
+convar(scm::StructuralCausalModel, ct::CausalTable, name::Symbol) = var.(condensity(scm, ct, name))
