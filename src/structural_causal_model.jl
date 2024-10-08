@@ -11,22 +11,15 @@ not_in_dgp(dgp, vec) = any(map(x -> x ∉ dgp.names, vec))
 """
     struct StructuralCausalModel
 
-A struct representing a structural causal model (SCM).
-
-# Fields
-- `dgp::DataGeneratingProcess`: The data generating process associated with the structural causal model.
-- `treatment::Vector{Symbol}`: The variables representing the treatment in the structural causal model.
-- `response::Vector{Symbol}`: The variables representing the response in the structural causal model.
-- `confounders::Vector{Symbol}`: The variables representing the confounders in the structural causal model.
-
-# Constructors
-- `StructuralCausalModel(dgp, treatment, response, confounders)`: Constructs a new `StructuralCausalModel` object.
+A struct representing a structural causal model (SCM). This includes a DataGeneratingProcess 
 
 # Arguments
-- `dgp`: The data generating process associated with the structural causal model.
-- `treatment`: The variables representing the treatment in the structural causal model.
-- `response`: The variables representing the response in the structural causal model.
-- `confounders`: The variables representing the confounders in the structural causal model.
+- `dgp::DataGeneratingProcess`: The data generating process from which random data will be drawn.
+- `treatment::Vector{Symbol}`: The variables representing the treatment.
+- `response::Vector{Symbol}`: The variables representing the response.
+- `confounders::Vector{Symbol}`: The variables representing the confounders.
+- `arraynames`: Names of auxiliary variables used in the DataGeneratingProcess that are not included as "tabular" variables. Most commonly used to denote names of adjacency matrices used to compute summary functions of previous steps. 
+
 """
 mutable struct StructuralCausalModel
     dgp::DataGeneratingProcess

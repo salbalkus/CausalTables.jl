@@ -12,19 +12,32 @@ Each line generates one variable in the dataset using an assignment operator. Wh
 2. The `~` symbol, which constructs a Distribution object. This is used to denote a **random** variable; i.e. `X ~ Normal()`.
 3. The `\$` symbol, which denotes a **summary** of random variables in previous steps; i.e. `X \$ Friends(:A)`.
 
-Of course, one can always randomly generate random variables by calling a function on the right-hand side of `=`. The `~` operator serves two purposes. First, it allows a DGP to be expressed more concisely, by allowing just the distribution to be specified instead of needing to call `rand` at each step. Second, it allows the analytic computation of closed-form conditional densities, which can then be used to compute the ground truth value of statistical functionals that depend on the DGP. 
+Of course, one can always randomly generate random variables by calling a function on the right-hand side of `=`. The `~` operator serves two purposes. First, it allows a DGP to be expressed more concisely, by allowing just the distribution to be specified instead of needing to call `rand` at each step. Second, it allows the analytic computation of closed-form conditional densities, which can then be used to compute the ground truth value of statistical functionals that depend on the DGP. If `=` is used instead of `~`, the conditional density of the step will not be available.
 
-Lines with `\$` tell the `rand` function to generate the random variable at that step by summarizing the vector of previous vectors according to the NetworkSummary object on the right-hand side. Again, while this could be performed with `=`, the `\$` operator allows the closed-form conditional density of the summary function to be computed for certain summaries and random variables, such as sums of normal distributions. 
+Lines with `\$` tell the `rand` function to generate the random variable at that step by summarizing the vector of previous vectors according to the NetworkSummary object on the right-hand side. Again, while this could be performed with `=`, denoting the step with the `\$` operator allows the closed-form conditional density of the summary function to be computed for certain summaries and random variables, such as sums of normal distributions. 
 
-## Example
-
-## Arguments
+# Arguments
 - `args...`: Variable number of arguments representing the steps of the data generating process.
 
-## Returns
-- `DataGeneratingProcess`: An instance of the `DataGeneratingProcess` type.
+# Returns
+An instance of the `DataGeneratingProcess` type.
+
+# Example
+
+```@example
+using Distributions
+distributions = @dgp(
+    W ~ DiscreteUniform(1, 5),
+    X ~ (@. Normal(W, 1)),
+    Y ~ (@. Normal(X + 0.2 * W, 1))
+)
+
+nothing # hide
+````
 
 """
+
+
 macro dgp(args...)
     names = [_parse_name(arg) for arg in args]
     # parse each line of the input into a vector of vectors

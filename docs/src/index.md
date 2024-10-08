@@ -14,9 +14,9 @@ Pkg> add CausalTables
 
 CausalTables.jl has three main functionalities:
 
-1. Generating simulation data using a `StructuralCausalModel`
-2. Computing "ground truth" conditional distributions, means, and other functionals from a `DataGeneratingProcess` and a `CausalTable`
-3. Wrapping an existing Table to make it a `CausalTable` for use by external packages.
+1. Generating simulation data using a `StructuralCausalModel`.
+2. Computing "ground truth" conditional distributions, moments, counterfactuals, and counterfactual functionals from a `StructuralCausalModel` and a `CausalTable`.
+3. Wrapping an existing Table as a `CausalTable` object for use by external packages.
 
 The examples below illustrate each of these three functionalities.
 

@@ -212,20 +212,6 @@ response(o::CausalTable) = select(o, o.response)
 treatmentparents(o::CausalTable) = reject(o, union(o.treatment, o.response))
 responseparents(o::CausalTable) = reject(o, o.response)
 
-#treatment(o::CausalTable; include_summary = true) = replace(o; data = _select_vars(o, treatmentnames(o; include_summary = include_summary)))
-#confounders(o::CausalTable; include_summary = true) = replace(o; data = _select_vars(o, confoundernames(o; include_summary = include_summary)))
-#response(o::CausalTable; include_summary = true) = replace(o; data = _select_vars(o, responsenames(o; include_summary = include_summary)))
-
-# Functions to select the "previous" causal variables in the data generating process
-#treatmentparents(o::CausalTable; include_summary = true) = replace(o; data = o.data |> TableTransforms.Reject(treatmentnames(o; include_summary = include_summary)..., responsenames(o; include_summary = include_summary)...))
-#responseparents(o::CausalTable; include_summary = true) = replace(o; data = o.data |> TableTransforms.Reject(responsenames(o; include_summary = include_summary)...))
-
-
-
-
-###
-
-
 # Other getters
 data(o::CausalTable) = o.data
 

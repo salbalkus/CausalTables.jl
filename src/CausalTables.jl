@@ -23,6 +23,8 @@ include("network_summary.jl")
 
 include("data_generating_process.jl")
 include("structural_causal_model.jl")
+include("estimands.jl")
+
 
 # Exports
 
@@ -44,5 +46,10 @@ export @dgp
 # structural_causal_model.jl
 export StructuralCausalModel, getscm
 export rand, condensity, conmean
+
+# estimands.jl
+export draw_counterfactual
+export cfmean, cfdiff, ate, att, atu, ape
+export treat_all, treat_none, cast_matrix_to_table_function
 
 end
