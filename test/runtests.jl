@@ -227,3 +227,16 @@ end
     @test sum(adj) == 18
     @test all(map(x -> x ∈ [0.0, 1.0], vec(adj)))
 end
+
+@testset "G-Formula approximation" begin
+    # Test binary random variables
+    dgp = CausalTables.@dgp(
+        L ~ Beta(2, 4),
+        A ~ @.(Bernoulli(L)),
+        Y ~ @.(Normal(A + 2 * L + 1))
+    )
+
+    scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L])
+
+end
+

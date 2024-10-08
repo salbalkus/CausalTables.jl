@@ -202,8 +202,8 @@ end
 #responsesummarynames(o::CausalTable) = _summarized_names(o, o.response)
 
 # Functions to select causal variables from the data
-select(o::CausalTable, symbols::AbstractArray{Symbol}) = replace(o; data = o.data |> TableTransforms.Select(symbols...))
-reject(o::CausalTable, symbols::AbstractArray{Symbol}) = replace(o; data = o.data |> TableTransforms.Reject(symbols...))
+select(o::CausalTable, symbols) = replace(o; data = o.data |> TableTransforms.Select(symbols...))
+reject(o::CausalTable, symbols) = replace(o; data = o.data |> TableTransforms.Reject(symbols...))
 
 treatment(o::CausalTable) = select(o, o.treatment)
 confounders(o::CausalTable) = select(o, o.confounders)
