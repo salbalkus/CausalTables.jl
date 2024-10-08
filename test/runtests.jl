@@ -231,6 +231,8 @@ end
 end
 
 @testset "Counterfactual estimand approximation" begin
+    Random.seed!(1234)
+
     # Test binary random variables
     dgp = CausalTables.@dgp(
         L ~ Beta(2, 4),
@@ -256,6 +258,7 @@ end
     @test within(est_atu.μ - 1, ε)
     @test within(est_atu.eff_bound - 2, ε)
 
+    # Test continuous random variables
     dgp = CausalTables.@dgp(
         L ~ Beta(2, 4),
         A ~ @.(Normal(L)),

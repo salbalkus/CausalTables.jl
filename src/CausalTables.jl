@@ -45,10 +45,10 @@ export @dgp
 
 # structural_causal_model.jl
 export StructuralCausalModel, getscm
-export rand, condensity, conmean
+export rand, condensity, conmean, convar
 
 # estimands.jl
-export draw_counterfactual
+export draw_counterfactual, additive_mtp, multiplicative_mtp
 export cfmean, cfdiff, ate, att, atu, ape
 export treat_all, treat_none, cast_matrix_to_table_function
 

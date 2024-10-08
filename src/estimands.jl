@@ -6,7 +6,7 @@ check_response(scm) = (length(scm.response) != 1 && throw(ArgumentError("More th
 check_treatment(scm) = (length(scm.treatment) != 1 && throw(ArgumentError("More than one treatment not allowed")))
 
 
-function draw_counterfactual(parents, intervention)
+function draw_counterfactual(scm, parents, intervention)
     intervened = intervention(parents) 
 
     if DataAPI.ncol(intervened) != DataAPI.ncol(treatment(parents))
@@ -21,19 +21,19 @@ end
 
 
 function cfmean(scm::StructuralCausalModel, intervention::Function; samples = 10^6)
-    check_input(scm)
+    check_response(scm)
     ct = rand(scm, samples)
     parents = responseparents(ct)
-    Y_counterfactual = draw_counterfactual(parents, intervention)
+    Y_counterfactual = draw_counterfactual(scm, parents, intervention)
     return((μ = mean(Y_counterfactual), eff_bound = var(Y_counterfactual)))
 end
 
 function cfdiff(scm::StructuralCausalModel, intervention1::Function, intervention2::Function; samples = 10^6)
-    check_input(scm)
+    check_response(scm)
     ct = rand(scm, samples)
     parents = responseparents(ct)
-    Y_cf1 = draw_counterfactual(parents, intervention1)
-    Y_cf2 = draw_counterfactual(parents, intervention2)
+    Y_cf1 = draw_counterfactual(scm, parents, intervention1)
+    Y_cf2 = draw_counterfactual(scm, parents, intervention2)
     diff_cf = Y_cf1 .- Y_cf2
     return((μ = mean(diff_cf), eff_bound = var(diff_cf)))
 end
@@ -53,8 +53,8 @@ function att(scm::StructuralCausalModel; samples = 10^6)
     ct = rand(scm, samples)
     ct_treated = Tables.subset(ct, Tables.getcolumn(treatment(ct), 1))
     parents = responseparents(ct_treated)
-    Y_cf1 = draw_counterfactual(parents, treat_all)
-    Y_cf2 = draw_counterfactual(parents, treat_none)
+    Y_cf1 = draw_counterfactual(scm, parents, treat_all)
+    Y_cf2 = draw_counterfactual(scm, parents, treat_none)
     diff_cf = Y_cf1 .- Y_cf2
     return((μ = mean(diff_cf), eff_bound = var(diff_cf)))
 end
@@ -66,8 +66,8 @@ function atu(scm::StructuralCausalModel; samples = 10^6)
     ct = rand(scm, samples)
     ct_treated = Tables.subset(ct, .!(Tables.getcolumn(treatment(ct), 1)))
     parents = responseparents(ct_treated)
-    Y_cf1 = draw_counterfactual(parents, treat_all)
-    Y_cf2 = draw_counterfactual(parents, treat_none)
+    Y_cf1 = draw_counterfactual(scm, parents, treat_all)
+    Y_cf2 = draw_counterfactual(scm, parents, treat_none)
     diff_cf = Y_cf1 .- Y_cf2
     return((μ = mean(diff_cf), eff_bound = var(diff_cf)))
 end

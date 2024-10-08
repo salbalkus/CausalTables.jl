@@ -201,7 +201,7 @@ An array of conditional means for the specified variable.
 conmean(scm::StructuralCausalModel, ct::CausalTable, name::Symbol) = mean.(condensity(scm, ct, name))
 
 """
-    convariance(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
+    convar(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
 
 Compute the conditional variance of a variable in a CausalTable based on a DataGeneratingProcess.
 
