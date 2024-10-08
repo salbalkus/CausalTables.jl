@@ -91,7 +91,7 @@ end
 
 end
 
-#@testset "DataGeneratingProcess using dgp macro, no graphs" begin
+@testset "DataGeneratingProcess using dgp macro, no graphs" begin
     dgp = CausalTables.@dgp(
         L1 ~ Beta(1,1),
         N = length(L1),
