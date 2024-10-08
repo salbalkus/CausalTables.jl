@@ -6,6 +6,8 @@ using Graphs
 using Distributions
 using Random
 
+within(x, ε) = abs(x) < ε
+
 @testset "convolve function" begin
     @test convolve([Normal(0, 1), Normal(0, 1)]) == Normal(0, sqrt(2))
     @test convolve(Vector{Normal}(undef, 0)) == Binomial(0, 0.5)
@@ -228,7 +230,7 @@ end
     @test all(map(x -> x ∈ [0.0, 1.0], vec(adj)))
 end
 
-@testset "G-Formula approximation" begin
+@testset "Counterfactual estimand approximation" begin
     # Test binary random variables
     dgp = CausalTables.@dgp(
         L ~ Beta(2, 4),
@@ -238,5 +240,38 @@ end
 
     scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L])
 
+    ε = 0.05
+    # ATE
+    est_ate = ate(scm)
+    @test within(est_ate.μ - 1, ε)
+    @test within(est_ate.eff_bound - 2, ε)
+
+    # ATT
+    est_att = att(scm)
+    est_att.μ - 1
+    @test within(est_att.μ - 1, ε)
+    @test within(est_att.eff_bound - 2, ε)
+    # ATU
+    est_atu = atu(scm)
+    @test within(est_atu.μ - 1, ε)
+    @test within(est_atu.eff_bound - 2, ε)
+
+    dgp = CausalTables.@dgp(
+        L ~ Beta(2, 4),
+        A ~ @.(Normal(L)),
+        Y ~ @.(Normal(A + 2 * L + 1))
+    )
+
+    scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L])
+    # Modified Treatment Policy / Average Policy Effect
+    
+    est_ape_a = ape(scm, additive_mtp(1.0))
+    @test within(est_ape_a.μ - 1, ε)
+    @test within(est_ape_a.eff_bound - 2, ε)
+    
+    est_ape_m = ape(scm, multiplicative_mtp(1.0))
+    @test within(est_ape_m.μ, ε)
+    @test within(est_ape_m.eff_bound - 2, ε)
+    
 end
 
