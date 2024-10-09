@@ -6,7 +6,8 @@ makedocs(
         "Home" => "index.md",
         "Turning data into a `CausalTable`" =>              "man/formatting.md",
         "Generating Data for Statistical Experiments" =>    "man/generating-data.md",
-        "Computing Ground Truth of Causal Parameters" =>    "man/ground-truth.md",
+        "Computing Ground Truth Conditional Distributions" =>    "man/ground-truth.md",
+        "Approximating Ground Truth Causal Estimands" =>    "man/estimands.md",
         "Network Summaries" =>                 "man/network-summaries.md",
         "API" =>                                "man/api.md",
     ]
