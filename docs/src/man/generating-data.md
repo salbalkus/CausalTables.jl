@@ -102,5 +102,13 @@ scm = StructuralCausalModel(
 StructuralCausalModel
 ```
 
+## `StructuralCausalModel` API
+
+```@autodocs
+Modules = [CausalTables]
+Order   = [:type, :function]
+Pages = = ["data_generating_process.jl", "structural_causal_model.jl"]
+```
+
 
 

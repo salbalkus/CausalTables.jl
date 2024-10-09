@@ -49,3 +49,11 @@ ctbl = CausalTable(tbl; treatment = :friends, response = :labels_clubs, arrays =
 
 nothing # hide
 ```
+
+## `CausalTable` API
+
+```@autodocs
+Modules = [CausalTables]
+Order   = [:type, :function]
+Pages = = ["causal_table.jl"]
+```

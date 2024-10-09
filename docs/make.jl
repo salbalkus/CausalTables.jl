@@ -5,11 +5,10 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "Turning data into a `CausalTable`" =>              "man/formatting.md",
-        "Generating Data for Statistical Experiments" =>    "man/generating-data.md",
-        "Computing Ground Truth Conditional Distributions" =>    "man/ground-truth.md",
-        "Approximating Ground Truth Causal Estimands" =>    "man/estimands.md",
-        "Network Summaries" =>                 "man/network-summaries.md",
-        "API" =>                                "man/api.md",
+        "Generating data for statistical experiments" =>    "man/generating-data.md",
+        "Computing ground truth conditional distributions" =>    "man/ground-truth.md",
+        "Approximating ground truth causal estimands" =>    "man/estimands.md",
+        "Network summaries" =>                 "man/network-summaries.md",
     ]
 )
 

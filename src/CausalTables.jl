@@ -23,6 +23,7 @@ include("network_summary.jl")
 
 include("data_generating_process.jl")
 include("structural_causal_model.jl")
+include("conditional_density.jl")
 include("estimands.jl")
 
 

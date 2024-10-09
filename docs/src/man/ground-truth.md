@@ -50,3 +50,11 @@ Y = conmean(scm, data, :Y)
 # output
 5-element Vector
 ```
+
+### Ground Truth Conditional Distributions API
+
+```@autodocs
+Modules = [CausalTables]
+Order   = [:type, :function]
+Pages = = ["conditional_density.jl"]
+```
