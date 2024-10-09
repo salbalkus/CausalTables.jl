@@ -24,7 +24,7 @@ The examples below illustrate each of these three functionalities.
 
 To set up a statistical simulation using CausalTables.jl, we first define a `StructuralCausalModel` (SCM). This consists of two parts: a `DataGeneratingProcess` (DGP) that controls how the data is generated, and a list of variables to define the basic structure of the underlying causal diagram.
 
-A DataGeneratingProcess can be constructed using the `@dgp` macro, which takes a sequence of conditional distributions of the form `[variable name] ~ Distribution(args...)` and returns a `DataGeneratingProcess` object. Then, one can construct an StructuralCausalModel by passing the DGP to its construct, along with labels of the treatment and response variables.
+A DataGeneratingProcess can be constructed using the `@dgp` macro, which takes a sequence of conditional distributions of the form `[variable name] ~ Distribution(args...)` and returns a `DataGeneratingProcess` object. Then, one can construct an StructuralCausalModel by passing the DGP to its construct, along with labels of the treatment and response variables. Note that `using Distributions` is almost always required before defining a DGP, since the package [Distributions.jl](https://juliastats.org/Distributions.jl/stable/) is used to define the conditional distribution of random components at each step.
 
 ```jldoctest quicktest; output = false, filter = r"(?<=.{21}).*"s
 using CausalTables
@@ -60,9 +60,25 @@ CausalTable
 
 For a more detailed guide of how to generate data please refer to [Generating Data](man/generating-data.md).
 
-### Computing Ground Truth Conditional Distributions
+### Computing Ground Truth Functionals
 
-Once we've defined a DGP and have some table of data with variables matching those of our DGP, we can compute the ground truth conditional distributions of any variable in a CausalTable (given a corresponding DGP) using the `condensity` function. This returns a Distribution object from the package [Distributions.jl](https://juliastats.org/Distributions.jl/stable/)
+Once we've defined a DGP, we can approximate ground truth statistical functionals along with their efficiency bounds (variance of the counterfactual outcome) for a specified SCM using built-in functions. In general, these include
+
+- Counterfactual Means (`cfmean`)
+- Counterfactual Differences (`cfdiff`)
+- Average Treatment Effect (`ate`), including among the Treated (`att`) and Untreated (`atu`)
+- Average Policy Effect (`ape`), also known as the causal effect of a Modified Treatment Policy. 
+
+For the complete API of available ground truth causal estimands, see [Estimands](man/estimands.md)
+
+```jldoctest quicktest
+cfmean(scm, additive_mtp(1))
+
+# output
+(μ = 4.599337273915866, eff_bound = 4.881412474779794)
+```
+
+For problems that involving functionals not available through CausalTables.jl or that require more fine-grained knowledge of the true conditional distributions for a given dataset, this package also implements the `condensity` function. This function computes the true conditional distributions of any variable in a CausalTable (given a corresponding DGP). This returns a vector of Distribution objects from the package [Distributions.jl](https://juliastats.org/Distributions.jl/stable/)
 
 ```jldoctest quicktest
 X_distribution = condensity(scm, data, :X)
@@ -76,9 +92,10 @@ X_distribution = condensity(scm, data, :X)
  Distributions.Normal{Float64}(μ=5.0, σ=1.0)
 ```
 
-For convenience, there also exists a `conmean` function that extracts the true conditional mean of a specific variable the CausalTable:
+For convenience, there also exists `conmean` and `convar` functions that extracts the true conditional mean and variance of a specific variable the CausalTable:
 
 ```jldoctest quicktest
+Y_var = convar(scm, data, :Y)
 Y_mean = conmean(scm, data, :Y)
 
 # output
@@ -94,7 +111,7 @@ For a more detailed guide of how to compute ground truth conditional distributio
 
 ### Wrapping an existing Table as a CausalTable
 
-If you have a table of data that you would like to use with CausalTables.jl without defining a corresponding DataGeneratingProcess (i.e. to use with another package) you can wrap it as a `CausalTable` using the corresponding constructor:
+If you have a table of data that you would like to use with CausalTables.jl without defining a corresponding DataGeneratingProcess (i.e. to use with another package) you can wrap it as a `CausalTable` using the corresponding constructor.
 
 ```jldoctest quicktest; output = false, filter = r"(?<=.{11}).*"s
 tbl = (W = rand(1:5, 10), X = randn(10), Y = randn(10))

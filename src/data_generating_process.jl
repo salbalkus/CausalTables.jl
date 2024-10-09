@@ -84,9 +84,9 @@ end
 # Helper function to parse each line in the dgp macro
 function _parse_step(expr, names)
 
-    # `:=` means that the step is arbitrary code output that cannot be described in terms of a probability distribution
-    # `=` means that the step is a transformation of a random variable
+    # `=` means that the step is a transformation of a random variable or a deterministic function
     # `~` indicates the step creates a distribution, which can either be sampled or used to compute a conditional density
+    # `$` indicates the step is a summary of distributions which may itself admit a closed-form conditional density
 
     if length(expr.args) == 3 && expr.args[1] == :(~)
         # construct a function representing the step at the DGP

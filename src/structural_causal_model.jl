@@ -40,6 +40,9 @@ mutable struct StructuralCausalModel
     end
 end
 
+StructuralCausalModel(dgp, treatment::Symbol, response::Symbol, confounders::Symbols; arraynames = []) = StructuralCausalModel(dgp, [treatment], [response], confounders, arraynames)
+StructuralCausalModel(dgp, treatment::Symbol, response::Symbols, confounders::Symbols; arraynames = []) = StructuralCausalModel(dgp, [treatment], response, confounders, arraynames)
+StructuralCausalModel(dgp, treatment::Symbols, response::Symbol, confounders::Symbols; arraynames = []) = StructuralCausalModel(dgp, treatment, [response], confounders, arraynames)
 StructuralCausalModel(dgp, treatment, response, confounders; arraynames = []) = StructuralCausalModel(dgp, treatment, response, confounders, arraynames)
 StructuralCausalModel(dgp, treatment, response; confounders = [], arraynames = []) = StructuralCausalModel(dgp, treatment, response, confounders, arraynames)
 

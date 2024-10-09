@@ -51,12 +51,13 @@ A named tuple containing:
 
 # Example
 ```@example
-dgp = CausalTables.@dgp(
+using Distributions
+dgp = @dgp(
     L ~ Beta(2, 4),
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = StructuralCausalModel(dgp, [:A], [:Y], [:L])
 cfmean(scm, treat_all)
 cfmean(scm, treat_none)
 ```
@@ -87,12 +88,13 @@ A named tuple containing:
 
 # Example
 ```@example
-dgp = CausalTables.@dgp(
+using Distributions
+dgp = @dgp(
     L ~ Beta(2, 4),
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = StructuralCausalModel(dgp, [:A], [:Y], [:L])
 cfdiff(scm, treat_all, treat_none)
 ```
 """
@@ -126,12 +128,13 @@ A named tuple containing:
 
 # Example
 ```@example
-dgp = CausalTables.@dgp(
+using Distributions
+dgp = @dgp(
     L ~ Beta(2, 4),
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = StructuralCausalModel(dgp, [:A], [:Y], [:L])
 ate(scm, treat_all, treat_none)
 ```
 """
@@ -155,12 +158,13 @@ A named tuple containing:
 
 # Example
 ```@example
-dgp = CausalTables.@dgp(
+using Distributions
+dgp = @dgp(
     L ~ Beta(2, 4),
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = StructuralCausalModel(dgp, [:A], [:Y], [:L])
 att(scm, treat_all, treat_none)
 ```
 """
@@ -193,12 +197,13 @@ A named tuple containing:
 
 # Example
 ```@example
-dgp = CausalTables.@dgp(
+using Distributions
+dgp = @dgp(
     L ~ Beta(2, 4),
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = StructuralCausalModel(dgp, [:A], [:Y], [:L])
 atu(scm, treat_all, treat_none)
 ```
 """
@@ -251,12 +256,13 @@ Constructs a function that adds a constant (or constant vector) δ to the treatm
 
 # Example
 ```@example
-dgp = CausalTables.@dgp(
+using Distributions
+dgp = @dgp(
     L ~ Beta(2, 4),
     A ~ @.(Normal(L)),
     Y ~ @.(Normal(A + 2 * L + 1))
 )
-scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = StructuralCausalModel(dgp, [:A], [:Y], [:L])
 ape(scm, additive_mtp(0.5))
 ```
 """
@@ -278,6 +284,7 @@ Constructs a function that scales the treatment variable(s) in a `CausalTable` o
 
 # Example
 ```@example
+using Distributions
 dgp = CausalTables.@dgp(
     L ~ Beta(2, 4),
     A ~ @.(Normal(L)),
@@ -311,6 +318,7 @@ A named tuple containing:
 
 # Example
 ```@example
+using Distributions
 dgp = CausalTables.@dgp(
     L ~ Beta(2, 4),
     A ~ @.(Normal(L)),
