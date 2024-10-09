@@ -11,11 +11,12 @@ abstract type NetworkSummaryMultivariate <: NetworkSummary end
 """
     Sum <: NetworkSummary
 
-A NetworkSummary which sums the values of the target variable for each unit connected in the adjacency `matrix`.
+A NetworkSummary which sums the values of the target variable for each unit connected in the adjacency `matrix` of a `StructuralCausalModel` or `CausalTable`
 
 # Fields
-- `target::Symbol`: The target variable of the network.
-- `matrix::Symbol`: The matrix representation of the network.
+- `target::Symbol`: A key denoting the target variable to be summarized in the `DataGeneratingProcess` of the `StructuralCausalModel`; or, alternatively, the target variable to be summarized in the `data` attribute of a `CausalTable`.
+- `matrix::Symbol`: A key denoting the adjacency matrix over which summary is computed in the `DataGeneratingProcess` of the `StructuralCausalModel`; or, alternatively, the key of the adjacency matrix in the `arrays` attribute of a `CausalTable`.
+- `weights::Union{Symbol, Nothing}`: An optional variable by which each unit may be weighted in the summary.
 
 """
 mutable struct Sum <: NetworkSummaryUnivariate
@@ -23,10 +24,21 @@ mutable struct Sum <: NetworkSummaryUnivariate
     matrix::Symbol
     weights::Union{Symbol, Nothing}
 end
+
 Sum(target::Symbol, matrix::Symbol) = Sum(target, matrix, nothing)
 summarize(o::NamedTuple, x::Sum) = o[x.matrix] * (isnothing(x.weights) ? o[x.target] : o[x.target] .* o[x.weights])
 
+"""
+    Mean <: NetworkSummary
 
+A NetworkSummary which computes the mean of the target variable among each unit connected in the adjacency `matrix`.
+
+# Fields
+- `target::Symbol`: A key denoting the target variable to be summarized in the `DataGeneratingProcess` of the `StructuralCausalModel`; or, alternatively, the target variable to be summarized in the `data` attribute of a `CausalTable`.
+- `matrix::Symbol`: A key denoting the adjacency matrix over which summary is computed in the `DataGeneratingProcess` of the `StructuralCausalModel`; or, alternatively, the key of the adjacency matrix in the `arrays` attribute of a `CausalTable`.
+- `weights::Union{Symbol, Nothing}`: An optional variable by which each unit may be weighted in the summary.
+
+"""
 mutable struct Mean <: NetworkSummaryUnivariate
     target::Symbol
     matrix::Symbol
@@ -40,6 +52,17 @@ function summarize(o::NamedTuple, x::Mean)
     return v .* denom
 end
 
+"""
+    AllOrderStatistics <: NetworkSummary
+
+A NetworkSummary which computes all ordered values of the target variable among each unit's connected neighbors in the adjacency `matrix`.
+
+# Fields
+- `target::Symbol`: A key denoting the target variable to be summarized in the `DataGeneratingProcess` of the `StructuralCausalModel`; or, alternatively, the target variable to be summarized in the `data` attribute of a `CausalTable`.
+- `matrix::Symbol`: A key denoting the adjacency matrix over which summary is computed in the `DataGeneratingProcess` of the `StructuralCausalModel`; or, alternatively, the key of the adjacency matrix in the `arrays` attribute of a `CausalTable`.
+- `weights::Union{Symbol, Nothing}`: An optional variable by which each unit may be weighted in the summary.
+
+"""
 mutable struct AllOrderStatistics <: NetworkSummaryMultivariate
     target::Symbol
     matrix::Symbol
@@ -47,6 +70,17 @@ end
 
 summarize(o::NamedTuple, x::AllOrderStatistics) = order_statistic_matrix(o[x.target], o[x.matrix] .!= 0, Int(maximum(sum(G .!= 0, dims = 2))), true)
 
+"""
+    KOrderStatistics <: NetworkSummary
+
+A NetworkSummary which computes the top K ordered values of the target variable among each unit's connected neighbors in the adjacency `matrix`.
+
+# Fields
+- `target::Symbol`: A key denoting the target variable to be summarized in the `DataGeneratingProcess` of the `StructuralCausalModel`; or, alternatively, the target variable to be summarized in the `data` attribute of a `CausalTable`.
+- `matrix::Symbol`: A key denoting the adjacency matrix over which summary is computed in the `DataGeneratingProcess` of the `StructuralCausalModel`; or, alternatively, the key of the adjacency matrix in the `arrays` attribute of a `CausalTable`.
+- `weights::Union{Symbol, Nothing}`: An optional variable by which each unit may be weighted in the summary.
+
+"""
 mutable struct KOrderStatistics <: NetworkSummaryMultivariate
     target::Symbol
     matrix::Symbol
@@ -75,10 +109,10 @@ end
 """
     mutable struct Friends <: NetworkSummary
 
-A NetworkSummary counting the number of connected individuals in an adjacency matrix, also known as the number of "friends"
+A NetworkSummary counting the number of connected individuals in an adjacency matrix, also known as the number of "friends".
 
 # Fields
-- `matrix::Symbol`: The matrix representing the network.
+- `matrix::Symbol`: A key denoting the adjacency matrix over which summary is computed in the `DataGeneratingProcess` of the `StructuralCausalModel`; or, alternatively, the key of the adjacency matrix in the `arrays` attribute of a `CausalTable`.
 
 """
 mutable struct Friends <: NetworkSummary
@@ -92,7 +126,7 @@ summarize(o::NamedTuple, x::Friends) = o[x.matrix] * ones(size(o[x.matrix], 1))
 """
     summarize(o::CausalTable)
 
-Summarizes the data in a `CausalTable` object.
+Summarizes the data in a `CausalTable` object according to the NetworkSummary objects stored in its `summaries` attribute.
 
 # Arguments
 - `o::CausalTable`: The `CausalTable` object to be summarized.

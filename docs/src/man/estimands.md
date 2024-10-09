@@ -13,6 +13,6 @@ treat_all
 treat_none
 ape
 additive_mtp
-multiplicatve_mtp
+multiplicative_mtp
 ```
 
