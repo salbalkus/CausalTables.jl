@@ -53,8 +53,8 @@ Y = conmean(scm, data, :Y)
 
 ### Ground Truth Conditional Distributions API
 
-```@autodocs
+```@autodocs; canonical=false
 Modules = [CausalTables]
 Order   = [:type, :function]
-Pages = = ["conditional_density.jl"]
+Pages = ["conditional_density.jl"]
 ```

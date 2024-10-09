@@ -104,10 +104,10 @@ StructuralCausalModel
 
 ## `StructuralCausalModel` API
 
-```@autodocs
+```@autodocs; canonical=false
 Modules = [CausalTables]
 Order   = [:type, :function]
-Pages = = ["data_generating_process.jl", "structural_causal_model.jl"]
+Pages = ["data_generating_process.jl", "structural_causal_model.jl"]
 ```
 
 

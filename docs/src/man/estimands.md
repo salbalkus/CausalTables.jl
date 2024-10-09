@@ -5,9 +5,9 @@ In causal inference, we are often interested in the value of some causal estiman
 
 ## Estimands API
 
-```@autodocs
+```@autodocs; canonical=false
 Modules = [CausalTables]
 Order   = [:type, :function]
-Pages = = ["estimands.jl"]
+Pages = ["estimands.jl"]
 ```
 

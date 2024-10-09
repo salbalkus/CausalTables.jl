@@ -52,8 +52,8 @@ nothing # hide
 
 ## `CausalTable` API
 
-```@autodocs
+```@autodocs; canonical=false
 Modules = [CausalTables]
 Order   = [:type, :function]
-Pages = = ["causal_table.jl"]
+Pages = ["causal_table.jl"]
 ```

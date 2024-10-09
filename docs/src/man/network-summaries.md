@@ -6,7 +6,7 @@ Typically, performing causal inference on a network relies on summarizing the tr
 
 Data wrapped in a CausalTable includes a NamedTuple `summaries` which describes extra variables represented as summary variables over the network. These summary measures can be computed and added to the table by calling the `summarize` function on the CausalTable object.
 
-```@docs
+```@docs; canonical=false
 summarize
 ```
 
@@ -14,7 +14,7 @@ summarize
 
 The following lists summary measures currently available off-the-shelf in CausalTables.jl. Examples on their use are provided in [Generating Data for Statistical Experiments](generating-data.md) and [Turning data into a `CausalTable`](formatting.md).
 
-```@docs
+```@docs; canonical=false
 Sum
 Mean
 AllOrderStatistics
