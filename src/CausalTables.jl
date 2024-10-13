@@ -31,10 +31,11 @@ include("estimands.jl")
 
 # causal_table.jl
 export CausalTable, istable, columns, columnaccess
-export nrow, ncol, subset
-export replace, treatment, response, confounders
+export nrow, ncol, subset, select, reject
+export replace, treatment, response, confounders, data
 export treatmentnames, responsenames, confoundernames 
 export treatmentparents, responseparents
+export adjacency_matrix, dependency_matrix
 
 # network_summary.jl
 export NetworkSummary, Sum, Friends, Mean, AllOrderStatistics, KOrderStatistics
@@ -51,6 +52,6 @@ export rand, condensity, conmean, convar
 # estimands.jl
 export draw_counterfactual, additive_mtp, multiplicative_mtp
 export cfmean, cfdiff, ate, att, atu, ape
-export treat_all, treat_none, cast_matrix_to_table_function
+export treat_all, treat_none
 
 end
