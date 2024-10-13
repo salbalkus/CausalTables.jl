@@ -88,66 +88,18 @@ Tables.istable(::Type{CausalTable}) = true
 # Currently only allow column access from fixed data table (not network)
 
 Tables.columnaccess(::Type{CausalTable}) = true
-Tables.columns(o::CausalTable) = Tables.columns(o.data)
-
-Tables.getcolumn(x::CausalTable, nm::Symbol) = Tables.getcolumn(Tables.columns(x.data), nm)
-Tables.getcolumn(x::CausalTable, col::Int) = Tables.getcolumn(Tables.columns(x.data), col)
-Tables.columnnames(x::CausalTable) = Tables.columnnames(Tables.columns(x.data))
-
-# fixing StackOverflow error with column indexing methods via overloading
-Tables.columnindex(x::CausalTable, nm::Symbol) = Tables.columnindex(x.data, nm)
-Tables.columntype(x::CausalTable, nm::Symbol) = Tables.columntype(x.data, nm)
-
-### Row Interface ###
-# Currently only allow row access from fixed data table (not network)
-
-Tables.rowaccess(::Type{CausalTable}) = true
-rowaccess(::Type{<:CausalTable}) = true
-rows(o::CausalTable) = Tables.rows(o.data)
-
-### Other Tables Interface ###
-
-Tables.schema(o::CausalTable) = Tables.schema(o.data)
-
-# CausalTables do not permit materializers, because causal variable assignment is required via the constructor
-#Tables.materializer(::Type{CausalTable})
-
-_view_help(x::T, inds) where {T <: AbstractArray} = view(x, repeat([inds], ndims(x))...)
-_view_help(x, inds) = x
-_index_help(x::T, inds) where {T <: AbstractArray} = getindex(x, repeat([inds], ndims(x))...)
-_index_help(x, inds) = x
-
-
-
-function Tables.subset(o::CausalTable, inds; viewhint=nothing)
-    viewhint = isnothing(viewhint) || viewhint
-    
-    data_subset = Tables.subset(o.data, inds; viewhint)
-
-    if viewhint
-        arrays_subset = map(x -> _view_help(x, inds), o.arrays)
-    else
-        arrays_subset = map(x -> _index_help(x, inds), o.arrays)
-    end
-    CausalTable(data_subset, o.treatment, o.response, o.confounders, arrays_subset, o.summaries)
-end
-
-DataAPI.nrow(o::CausalTable) = DataAPI.nrow(o.data)
-DataAPI.ncol(o::CausalTable) = DataAPI.ncol(o.data)
-### Causal-specific Features ###
 
 
 """
-    replace(o::CausalTable; kwargs...)
+    Tables.columns(o::CausalTable) -> Tables.Columns
 
-Replace the fields of a `CausalTable` object with the provided keyword arguments.
+Returns the columns of the `CausalTable` object `o` by delegating to the `columns` method of the underlying data.
 
 # Arguments
-- `o::CausalTable`: The `CausalTable` object to be replaced.
-- `kwargs...`: Keyword arguments specifying the new values for the fields.
+- `o::CausalTable`: The `CausalTable` instance from which to retrieve the columns.
 
 # Returns
-A new `CausalTable` object with the specified fields replaced.
+- `Tables.Columns`: The columns of the underlying data in the `CausalTable`.
 
 """
 replace(o::CausalTable; kwargs...) = CausalTable([field in keys(kwargs) ?  kwargs[field] : getfield(o, field) for field in fieldnames(typeof(o))]...)
@@ -179,42 +131,132 @@ function Base.show(io::IO, o::CausalTable)
     println(io, "Arrays: $(arrays_trunc)")
 end
 
-
-### BELOW NEEDS TO BE REMOVED
-
-
-# Function to get names of summarized versions of a given set of Causal variables
-function _summarized_names(o::CausalTable, symbols::AbstractArray{Symbol})
-    sumnames = map(x -> gettarget(x), o.summaries)
-    sumnames_in_symbols = [x ∈ symbols for x in values(sumnames)]
-    return [k for k in keys(sumnames)[sumnames_in_symbols]]
-end
-
-# Functions to get names of causal variables, including summarized versions
-#_combine_summaries(o::CausalTable, symbols::AbstractArray{Symbol}, include_summary = true) = include_summary ? union(symbols, _summarized_names(o, symbols)) : symbols
-
-#confoundernames(o::CausalTable; include_summary = true) = _combine_summaries(o, o.confounders, include_summary)
-#treatmentnames(o::CausalTable; include_summary = true) = _combine_summaries(o, o.treatment, include_summary)
-#responsenames(o::CausalTable; include_summary = true) = _combine_summaries(o, o.response, include_summary)
-
-#treatmentsummarynames(o::CausalTable) = _summarized_names(o, o.treatment)
-#confoundersummarynames(o::CausalTable) = _summarized_names(o, o.confounders)
-#responsesummarynames(o::CausalTable) = _summarized_names(o, o.response)
-
 # Functions to select causal variables from the data
+"""
+    select(o::CausalTable, symbols)
+
+Selects specified columns from a `CausalTable` object.
+
+# Arguments
+- `o::CausalTable`: The `CausalTable` object from which columns are to be selected.
+- `symbols`: A list of symbols representing the columns to be selected.
+
+# Returns
+- A new `CausalTable` object with only the selected columns.
+
+"""
 select(o::CausalTable, symbols) = replace(o; data = o.data |> TableTransforms.Select(symbols...))
+
+
+"""
+    reject(o::CausalTable, symbols)
+
+Removes the columns specified by `symbols` from the `CausalTable` object `o`.
+
+# Arguments
+- `o::CausalTable`: The `CausalTable` object from which symbols will be rejected.
+- `symbols`: A collection of symbols to be rejected from the `CausalTable`.
+
+# Returns
+A new `CausalTable` object with the specified symbols removed from its data.
+
+"""
 reject(o::CausalTable, symbols) = replace(o; data = o.data |> TableTransforms.Reject(symbols...))
 
+
+"""
+    treatment(o::CausalTable)
+
+Selects the treatment column from the given `CausalTable` object.
+
+# Arguments
+- `o::CausalTable`: The `CausalTable` object from which to select the treatment column.
+
+# Returns
+A new `CausalTable` containing only the treatment column
+"""
 treatment(o::CausalTable) = select(o, o.treatment)
+
+"""
+    confounders(o::CausalTable)
+
+Selects and returns the confounders from a `CausalTable` object.
+
+# Arguments
+- `o::CausalTable`: The `CausalTable` object from which to select confounders.
+
+# Returns
+A new `CausalTable` containing only the confounders
+"""
 confounders(o::CausalTable) = select(o, o.confounders)
+
+"""
+    response(o::CausalTable)
+
+Selects the response column from the given `CausalTable` object.
+
+# Arguments
+- `o::CausalTable`: The `CausalTable` object from which to select the response column.
+
+# Returns
+A new `CausalTable` containing only the confounders
+"""
 response(o::CausalTable) = select(o, o.response)
 
+"""
+    treatmentparents(o::CausalTable)
+
+Selects the confounders from the given `CausalTable` object.
+
+# Arguments
+- `o::CausalTable`: The `CausalTable` object from which to extract the parent variables of the treatment.
+
+# Returns
+A new `CausalTable` containing only the confounders
+"""
 treatmentparents(o::CausalTable) = reject(o, union(o.treatment, o.response))
+
+"""
+    responseparents(o::CausalTable)
+
+Selects the treatment and confounders from the given `CausalTable` object.
+
+# Arguments
+- `o::CausalTable`: The `CausalTable` object from which to extract the parent variables of the response.
+
+# Returns
+A new `CausalTable` containing only the confounders and treatment
+"""
 responseparents(o::CausalTable) = reject(o, o.response)
 
 # Other getters
+
+
+"""
+    data(o::CausalTable)
+
+Retrieve the data stored in a `CausalTable` object.
+
+# Arguments
+- `o::CausalTable`: The `CausalTable` from which to retrieve the data.
+
+# Returns
+The data stored in the `CausalTable` object.
+"""
 data(o::CausalTable) = o.data
 
+
+"""
+    adjacency_matrix(O::CausalTable)
+
+Generate the adjacency matrix induced by the `summaries` and `arrays` attributes of a `CausalTable` object. This matrix denotes which units are *causally dependent* upon one another: an entry of 1 in cell (i,j) indicates that some variable in unit i exhibits a causal relationship to some variable in unit j. 
+
+# Arguments
+- `O::CausalTable`: The `CausalTable` object for which the adjacency matrix is to be generated.
+
+# Returns
+A boolean matrix representing the adjacency relationships in the `CausalTable`.
+"""
 function adjacency_matrix(O::CausalTable)
     # Get the matrices used to summarize across observations in the table
     summary_matrix_names = unique([s.matrix for s in O.summaries if hasfield(typeof(s), :matrix)])
@@ -226,6 +268,17 @@ function adjacency_matrix(O::CausalTable)
     end
 end
 
+"""
+    dependency_matrix(O::CausalTable)
+
+Generate the dependency matrix induced by the `summaries` and `arrays` attributes of a `CausalTable` object. This matrix stores which units are *statistically dependent* upon one another: an entry of 1 in cell (i,j) indicates that the data of unit i is correlated with the data in unit j. Two units are correlated if they either are causally dependent (neighbors in the adjacency matrix) or share a common cause (share a neighbor in the adjacency matrix).
+
+# Arguments
+- `O::CausalTable`: The `CausalTable` object for which the dependency matrix is to be generated.
+
+# Returns
+A boolean matrix representing the  relationships in the `CausalTable`.
+"""
 function dependency_matrix(O::CausalTable)
     # Get the matrices used to summarize across observations in the table
     summary_matrix_names = unique([s.matrix for s in O.summaries if hasfield(typeof(s), :matrix)])
