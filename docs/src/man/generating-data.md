@@ -84,7 +84,7 @@ using Distributions
 dgp = @dgp(
         W ~ DiscreteUniform(1, 5),
         n = length(W),
-        A = adjacency_matrix(erdos_renyi(n, 0.5)),
+        A = Graphs.adjacency_matrix(erdos_renyi(n, 0.5)),
         Ws $ Sum(:W, :A),
         X ~ (@. Normal(Ws, 1)),
         Xs $ Sum(:X, :A),

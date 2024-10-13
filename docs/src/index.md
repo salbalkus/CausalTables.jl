@@ -15,7 +15,7 @@ Pkg> add CausalTables
 CausalTables.jl has three main functionalities:
 
 1. Generating simulation data using a `StructuralCausalModel`.
-2. Computing "ground truth" conditional distributions, moments, counterfactuals, and counterfactual functionals from a `StructuralCausalModel` and a `CausalTable`.
+2. Computing "ground truth" conditional distributions, moments, counterfactuals, and counterfactual functionals from a `StructuralCausalModel` and a `CausalTable`. These include, for instance, counterfactual means and average treatment effects.
 3. Wrapping an existing Table as a `CausalTable` object for use by external packages.
 
 The examples below illustrate each of these three functionalities.
@@ -78,7 +78,7 @@ cfmean(scm, additive_mtp(1))
 (μ = 4.599337273915866, eff_bound = 4.881412474779794)
 ```
 
-For problems that involving functionals not available through CausalTables.jl or that require more fine-grained knowledge of the true conditional distributions for a given dataset, this package also implements the `condensity` function. This function computes the true conditional distributions of any variable in a CausalTable (given a corresponding DGP). This returns a vector of Distribution objects from the package [Distributions.jl](https://juliastats.org/Distributions.jl/stable/)
+For problems that involving functionals not available through CausalTables.jl or that require more fine-grained knowledge of the true conditional distributions for a given dataset, this package also implements the `condensity` function. This function computes the true conditional distributions of any variable in a CausalTable (given a corresponding DGP). The function returns a vector of Distribution objects from the package [Distributions.jl](https://juliastats.org/Distributions.jl/stable/)
 
 ```jldoctest quicktest
 X_distribution = condensity(scm, data, :X)
