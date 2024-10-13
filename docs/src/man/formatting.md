@@ -38,7 +38,7 @@ responseparents(ctbl)        # get CausalTable of treatment and confounders
 data(ctbl)                   # get underlying wrapped dataset
 
 # replace one or more attributes of the CausalTable
-replace(ctbl; treatment = :AGE, response = :CRIM) 
+CausalTables.replace(ctbl; treatment = :AGE, response = :CRIM) 
 
 ```
 
