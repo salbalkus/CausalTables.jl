@@ -5,6 +5,7 @@ using DataFrames
 using Graphs
 using Distributions
 using Random
+using LinearAlgebra
 
 within(x, ε) = abs(x) < ε
 
@@ -21,7 +22,7 @@ end
     foo1 = DataFrame(X = X, Y = Y, Z = Z)
     foo2 = Tables.columntable(foo1)
     foo3 = Tables.rowtable(foo1)
-    
+
     # DataFrame form
     df = CausalTables.CausalTable(foo1, :X, :Y)    
     @test Tables.istable(df)
@@ -34,6 +35,11 @@ end
     @test Tables.columnindex(df, :X) == 1
     @test Tables.columntype(df, :X) == Int
     @test df.confounders == [:Z]
+
+    @test Tables.columnaccess(df)
+    @test Tables.rowaccess(df)
+    @test Tables.rowtable(Tables.rows(df)) == foo3
+    @test Tables.schema(df) == Tables.schema(data(df))
 
     # Row table form
     rowtbl = CausalTables.CausalTable(foo3, :X, :Y; confounders = [:Z])
@@ -102,7 +108,7 @@ end
         Y ~ Normal.(regr, 1)
     )
 
-    scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L1, :L2])
+    scm = CausalTables.StructuralCausalModel(dgp, :A, :Y, [:L1, :L2])
     foo = rand(scm, 10)
 
     @test typeof(foo) == CausalTables.CausalTable
@@ -118,6 +124,9 @@ end
     @test typeof(qux) <: Vector{T} where {T <: Real}
     @test baz == Tables.getcolumn(foo, :A) .+ 0.2 .* Tables.getcolumn(foo, :L2)
     @test all(qux .== 1)
+
+    @test CausalTables.adjacency_matrix(foo) == LinearAlgebra.I
+    @test CausalTables.dependency_matrix(foo) == LinearAlgebra.I
 end
 
 @testset "DataGeneratingProcess with graphs using dgp macro" begin
@@ -131,7 +140,7 @@ end
         Y ~ (@. Normal(A + A_s + 0.2 * L1 + 0.05 * L1_s, 1))
     )
     
-    scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L1])
+    scm = CausalTables.StructuralCausalModel(dgp, :A, [:Y], [:L1])
     foo = rand(scm, 10) 
 
     @test typeof(foo) == CausalTables.CausalTable
@@ -228,6 +237,10 @@ end
     adj = CausalTables.adjacency_matrix(tbl)
     @test sum(adj) == 18
     @test all(map(x -> x ∈ [0.0, 1.0], vec(adj)))
+
+    dep = CausalTables.dependency_matrix(tbl)
+    @test sum(dep) == 25
+    @test all(map(x -> x ∈ [0.0, 1.0], vec(dep)))
 end
 
 @testset "Counterfactual estimand approximation" begin
@@ -240,7 +253,7 @@ end
         Y ~ @.(Normal(A + 2 * L + 1))
     )
 
-    scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L])
+    scm = CausalTables.StructuralCausalModel(dgp, [:A], :Y)
 
     ε = 0.05
     # ATE
@@ -265,7 +278,7 @@ end
         Y ~ @.(Normal(A + 2 * L + 1))
     )
 
-    scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L])
+    scm = CausalTables.StructuralCausalModel(dgp, [:A], :Y, [:L])
     # Modified Treatment Policy / Average Policy Effect
     
     est_ape_a = ape(scm, additive_mtp(1.0))
@@ -275,6 +288,11 @@ end
     est_ape_m = ape(scm, multiplicative_mtp(1.0))
     @test within(est_ape_m.μ, ε)
     @test within(est_ape_m.eff_bound - 2, ε)
-    
+
+    est_ape_a
+    mean_a = cfmean(scm, additive_mtp(1.0))
+    @test within(mean_a.μ - 3, ε)
+    @test within(mean_a.eff_bound - 2.3, 0.1)
+
 end
 
