@@ -88,18 +88,64 @@ Tables.istable(::Type{CausalTable}) = true
 # Currently only allow column access from fixed data table (not network)
 
 Tables.columnaccess(::Type{CausalTable}) = true
+Tables.columns(o::CausalTable) = Tables.columns(o.data)
 
+Tables.getcolumn(x::CausalTable, nm::Symbol) = Tables.getcolumn(Tables.columns(x.data), nm)
+Tables.getcolumn(x::CausalTable, col::Int) = Tables.getcolumn(Tables.columns(x.data), col)
+Tables.columnnames(x::CausalTable) = Tables.columnnames(Tables.columns(x.data))
+
+# fixing StackOverflow error with column indexing methods via overloading
+Tables.columnindex(x::CausalTable, nm::Symbol) = Tables.columnindex(x.data, nm)
+Tables.columntype(x::CausalTable, nm::Symbol) = Tables.columntype(x.data, nm)
+
+### Row Interface ###
+# Currently only allow row access from fixed data table (not network)
+
+Tables.rowaccess(::Type{CausalTable}) = true
+rowaccess(::Type{<:CausalTable}) = true
+rows(o::CausalTable) = Tables.rows(o.data)
+
+### Other Tables Interface ###
+
+Tables.schema(o::CausalTable) = Tables.schema(o.data)
+
+# CausalTables do not permit materializers, because causal variable assignment is required via the constructor
+#Tables.materializer(::Type{CausalTable})
+
+_view_help(x::T, inds) where {T <: AbstractArray} = view(x, repeat([inds], ndims(x))...)
+_view_help(x, inds) = x
+_index_help(x::T, inds) where {T <: AbstractArray} = getindex(x, repeat([inds], ndims(x))...)
+_index_help(x, inds) = x
+
+function Tables.subset(o::CausalTable, inds; viewhint=nothing)
+    viewhint = isnothing(viewhint) || viewhint
+    
+    data_subset = Tables.subset(o.data, inds; viewhint)
+
+    if viewhint
+        arrays_subset = map(x -> _view_help(x, inds), o.arrays)
+    else
+        arrays_subset = map(x -> _index_help(x, inds), o.arrays)
+    end
+    CausalTable(data_subset, o.treatment, o.response, o.confounders, arrays_subset, o.summaries)
+end
+
+DataAPI.nrow(o::CausalTable) = DataAPI.nrow(o.data)
+DataAPI.ncol(o::CausalTable) = DataAPI.ncol(o.data)
+
+### Causal-specific Features ###
 
 """
-    Tables.columns(o::CausalTable) -> Tables.Columns
+    replace(o::CausalTable; kwargs...)
 
-Returns the columns of the `CausalTable` object `o` by delegating to the `columns` method of the underlying data.
+Replace the fields of a `CausalTable` object with the provided keyword arguments.
 
 # Arguments
-- `o::CausalTable`: The `CausalTable` instance from which to retrieve the columns.
+- `o::CausalTable`: The `CausalTable` object to be replaced.
+- `kwargs...`: Keyword arguments specifying the new values for the fields.
 
 # Returns
-- `Tables.Columns`: The columns of the underlying data in the `CausalTable`.
+A new `CausalTable` object with the specified fields replaced.
 
 """
 replace(o::CausalTable; kwargs...) = CausalTable([field in keys(kwargs) ?  kwargs[field] : getfield(o, field) for field in fieldnames(typeof(o))]...)
@@ -132,6 +178,7 @@ function Base.show(io::IO, o::CausalTable)
 end
 
 # Functions to select causal variables from the data
+
 """
     select(o::CausalTable, symbols)
 
@@ -147,7 +194,6 @@ Selects specified columns from a `CausalTable` object.
 """
 select(o::CausalTable, symbols) = replace(o; data = o.data |> TableTransforms.Select(symbols...))
 
-
 """
     reject(o::CausalTable, symbols)
 
@@ -162,7 +208,6 @@ A new `CausalTable` object with the specified symbols removed from its data.
 
 """
 reject(o::CausalTable, symbols) = replace(o; data = o.data |> TableTransforms.Reject(symbols...))
-
 
 """
     treatment(o::CausalTable)
@@ -230,8 +275,6 @@ A new `CausalTable` containing only the confounders and treatment
 responseparents(o::CausalTable) = reject(o, o.response)
 
 # Other getters
-
-
 """
     data(o::CausalTable)
 
@@ -244,7 +287,6 @@ Retrieve the data stored in a `CausalTable` object.
 The data stored in the `CausalTable` object.
 """
 data(o::CausalTable) = o.data
-
 
 """
     adjacency_matrix(O::CausalTable)

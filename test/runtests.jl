@@ -28,7 +28,7 @@ end
     @test Tables.columntable(foo1) == df.data
     @test ncol(df) == 3
     @test nrow(df) == 3
-    @test getindex(df, 1, 2) == 4
+    @test Tables.getindex(df, 1, 2) == 4
     @test Tables.getcolumn(df, :X) == X    
     @test Tables.getcolumn(df, 1) == X
     @test Tables.columnindex(df, :X) == 1
