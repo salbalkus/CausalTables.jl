@@ -123,6 +123,10 @@ CausalTable
 
 For a more detailed guide of how to wrap an existing table as a CausalTable please refer to [Turning Your Data Into a CausalTable](man/formatting.md).
 
+# Contributing
+
+Have questions? Spot a bug or issue in the documentation? Want to request a new feature or add one yourself? Please do not hesitate to open an issue or pull request on the [CausalTables.jl GitHub repository](https://github.com/salbalkus/CausalTables.jl). We welcome all contributions and feedback!
+
 
 
 

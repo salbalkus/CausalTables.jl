@@ -65,7 +65,7 @@ g = SimpleGraphFromIterator([Edge(x...) for x in zip(data.graphs[1].edge_index..
 # Store the "friends" as an the adjacency matrix in a NamedTuple
 # Note that the input to arrays must be a NamedTuple, even if there is only one summary variable, 
 # so the trailing comma is necessary.
-m = (F = adjacency_matrix(g),)
+m = (F = Graphs.adjacency_matrix(g),)
 
 # Construct a CausalTable with the adjacency matrix stored in `arrays` and a summary variable recording the number of friends
 ctbl = CausalTable(tbl; treatment = :friends, response = :labels_clubs, arrays = m, summaries = (friends = Friends(:F),))
@@ -76,8 +76,8 @@ nothing # hide
 Based on these summaries, it is possible to extract two matrices from the `CausalTable` object: the `adjacency_matrix` and the `dependency_matrix`. The `adjacency_matrix` denotes which units are *causally dependent* upon one another: an entry of 1 in cell (i,j) indicates that some variable in unit i exhibits a causal relationship to some variable in unit j. The `dependency_matrix` stores which units are *statistically dependent* upon one another: an entry of 1 in cell (i,j) indicates that the data of unit i is correlated with the data in unit j. Two units are correlated if they either are causally dependent (neighbors in the adjacency matrix) or share a common cause (share a neighbor in the adjacency matrix).
 
 ```@example karateclub
-adjacency_matrix(ctbl) # get adjacency matrix
-dependency_matrix(ctbl) # get dependency matrix
+CausalTables.adjacency_matrix(ctbl) # get adjacency matrix
+CausalTables.dependency_matrix(ctbl) # get dependency matrix
 
 nothing # hide
 ```
