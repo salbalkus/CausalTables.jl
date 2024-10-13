@@ -13,7 +13,7 @@ using Distributions
 dgp = @dgp(
         W ~ Binomial(10, 0.3),
         X ~ (@. Normal(W + 1)),
-        A = adjacency_matrix(barabasi_albert(length(X), 2)),
+        A = Graphs.adjacency_matrix(barabasi_albert(length(X), 2)),
         Xs $ Sum(:X, :A),
         Y ~ (@. LogNormal(log(0.2 * Xs + 4), 0.1 * W + 1))
     )

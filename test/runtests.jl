@@ -124,7 +124,7 @@ end
     dgp = @dgp(
         L1 ~ DiscreteUniform(1, 5),
         n = length(L1),
-        ER = adjacency_matrix(erdos_renyi(n, 0.3)),
+        ER = Graphs.adjacency_matrix(erdos_renyi(n, 0.3)),
         L1_s $ Sum(:L1, :ER),
         A ~ (@. Normal(L1 + L1_s, 1)),
         A_s $ Sum(:A, :ER),
