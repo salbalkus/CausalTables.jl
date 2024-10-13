@@ -17,4 +17,5 @@ Tables = "bd369af6-aec1-5ad0-b16a-f7cc5008161c"
 
 [compat]
 StatsBase = "0.34"
+DataAPI = "1"
 julia = "1"
