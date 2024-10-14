@@ -3,5 +3,4 @@
 ```@autodocs; canonical=false
 Modules = [CausalTables]
 Order   = [:type, :function]
-Pages = ["estimands.jl"]
 ```
