@@ -9,7 +9,7 @@ Given a dataset, methods for statistical causal inference evaluate how an interv
 2. Easily generating random data from a structural causal model (SCM), to be used in simulations.
 3. Computing true conditional distributions and causal effect estimands for a given model, allowing users to evaluate the performance of new and existing causal inference methods against the ground truth.
 
-See the [documentation](https://salbalkus.github.io/CausalTables.jl/dev/) for more information and tutorials. 
+
 
 ## Installation
 CausalTables.jl can be installed using the Julia package manager. From the Julia REPL, type `]` to enter the Pkg REPL mode and run
@@ -17,6 +17,55 @@ CausalTables.jl can be installed using the Julia package manager. From the Julia
 ```
 Pkg> add CausalTables
 ```
+
+## Running a simulation with CausalTables.jl
+To simulate data, one must first define a `StructuralCausalModel` (SCM). An SCM is composed of a `DataGeneratingProcess`, which is a sequence of random variables, along with labels for treatment, response, and confounder variables. For example, the following code defines an SCM with a binary treatment $A$, a continuous confounder $W$, and a continuous response $Y$. The `@dgp` macro constructs a `DataGeneratingProcess` object according to a simple syntax where random variables are defined as `name ~ distribution`, where `rhs` is a `Distribution` object from [Distributions.jl](https://juliastats.org/Distributions.jl/stable/)
+
+```
+using CausalTables
+using Distributions
+
+dgp = @dgp(
+    W ~ Beta(2, 4),
+    A ~ (@. Bernoulli(W)),
+    Y ~ (@. Normal(A + W, 1))
+)
+
+scm = StructuralCausalModel(dgp; treatment = :A, response = :Y, confounders = [:W])
+```
+
+Once a `StructuralCausalModel` is defined, one can then draw a randomly-generated `CausalTable` according to the SCM using the `rand` function:
+
+```
+ctbl = rand(scm, 100)
+```
+
+Alternatively, it is also possible to approximate the "ground truth" value of a variety of relevant causal estimands from this SCM, including counterfactual means (`cfmean`), as well as average treatment effects (`ate`) and average policy effects (`ape`). For example, the ground truth average treatment effect for this SCM can be approximated like so:
+
+```
+ate(scm)
+
+CausalTable
+┌───────────┬───────┬───────────┐
+│         W │     A │         Y │
+│   Float64 │  Bool │   Float64 │
+├───────────┼───────┼───────────┤
+│  0.144405 │ false │ -0.819133 │
+│  0.213987 │ false │    1.2863 │
+│ 0.0340754 │ false │  0.917915 │
+│  0.203227 │ false │   1.99271 │
+│     ⋮     │   ⋮   │     ⋮     │
+│  0.140308 │ false │  0.526877 │
+│  0.396759 │ false │ -0.308218 │
+│  0.217854 │ false │  0.680559 │
+│  0.412048 │ false │  0.477174 │
+└───────────┴───────┴───────────┘
+                  92 rows omitted
+Summaries: NamedTuple()
+Arrays: NamedTuple()
+```
+
+See the [documentation](https://salbalkus.github.io/CausalTables.jl/dev/) for more information and tutorials. 
 
 ## Community Guidelines
 

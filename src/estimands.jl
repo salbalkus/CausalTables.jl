@@ -186,7 +186,7 @@ dgp = @dgp(
     Y ~ @.(Normal(A + L))
 )
 scm = StructuralCausalModel(dgp, [:A], [:Y], [:L])
-ate(scm, treat_all, treat_none)
+ate(scm)
 ```
 """
 function ate(scm::StructuralCausalModel; samples = 10^6)
