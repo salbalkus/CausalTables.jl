@@ -74,7 +74,7 @@ StructuralCausalModel
 
 In some cases, we might work with data in which units may *not* be causally independent, but rather, in which one unit's variables could dependent on some summary function of its neighbors. Generating data from such a model can be done by adding lines of the form `Xs $ NetworkSummary` to the `@dgp` macro.
 
-Here's an example of how such a `DataGeneratingProcess` might be constructed:
+Here's an example of how such a `StructuralCausalModel` might be constructed:
 
 ```jldoctest network; output = false, filter = r"(?<=.{21}).*"s
 using Graphs
@@ -102,7 +102,7 @@ scm = StructuralCausalModel(
 StructuralCausalModel
 ```
 
-## `StructuralCausalModel` API
+## API for Constructing Structural Causal Models
 
 ```@autodocs; canonical=false
 Modules = [CausalTables]
