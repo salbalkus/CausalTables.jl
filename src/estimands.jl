@@ -4,6 +4,10 @@
 
 check_response(scm) = (length(scm.response) != 1 && throw(ArgumentError("More than one response not allowed")))
 check_treatment(scm) = (length(scm.treatment) != 1 && throw(ArgumentError("More than one treatment not allowed")))
+function check_treatment_binary(ct)
+    treatcol = Tables.getcolumn(ct, ct.treatment[1])
+    all((treatcol .== 1) .| (treatcol .== 0)) || throw(ArgumentError("Treatment variable must be binary (only either 0 or 1 valued)"))
+end
 
 
 @doc raw"""
@@ -40,7 +44,7 @@ end
 Approximate the counterfactual mean of the response had `intervention` been applied to the treatment, along with its efficiency bound, for a given structural causal model (SCM). Mathematically, this estimand is
 
 ```math
-E(Y(d(a))
+E(Y(d(a)))
 ```
 
 where ``d(a)`` represents an intervention on the treatment variable(s) ``A``. This statistical quantity is approximated using Monte Carlo sampling. 
@@ -63,7 +67,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = StructuralCausalModel(dgp, :A, :Y, [:L])
 cfmean(scm, treat_all)
 cfmean(scm, treat_none)
 ```
@@ -82,10 +86,10 @@ end
 Approximate the difference between two counterfactual response means -- that under `intervention1` having been applied to the treatment, and that under `intervention2` -- for a given structural causal model (SCM), along with its efficiency bound. Mathematically, this is
 
 ```math
-E(Y(d_1(a) - Y(d_2(a))
+E(Y(d_1(a)) - Y(d_2(a)))
 ```
 
-where ``d_1`` and ``d_2`` represent `intervention` and `intervention2` being applied on the treatment variable(s) ``A``. This statistical quantity is approximated using Monte Carlo sampling. 
+where ``d_1`` and ``d_2`` represent `intervention1` and `intervention2` being applied on the treatment variable(s) ``A``. This statistical quantity is approximated using Monte Carlo sampling. 
 
 # Arguments
 - `scm::StructuralCausalModel`: The SCM from which data is to be simulated.
@@ -106,7 +110,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = StructuralCausalModel(dgp, :A, :Y, [:L])
 cfdiff(scm, treat_all, treat_none)
 ```
 """
@@ -142,7 +146,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = StructuralCausalModel(dgp, :A, :Y, [:L])
 data = rand(scm, 100)
 treat_all(data)
 ```
@@ -168,7 +172,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = StructuralCausalModel(dgp, :A, :Y, [:L])
 data = rand(scm, 100)
 treat_none(data)
 ```
@@ -203,12 +207,23 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = StructuralCausalModel(dgp, :A, :Y, [:L])
 ate(scm)
 ```
 """
 function ate(scm::StructuralCausalModel; samples = 10^6)
-    return(cfdiff(scm, treat_all, treat_none; samples = samples))
+    check_response(scm)
+    check_treatment(scm)
+
+    ct = rand(scm, samples)
+    check_treatment_binary(ct)
+
+    parents = responseparents(ct)
+    Y_cf1 = draw_counterfactual(scm, parents, treat_all)
+    Y_cf2 = draw_counterfactual(scm, parents, treat_none)
+    diff_cf = Y_cf1 .- Y_cf2
+
+    return((μ = mean(diff_cf), eff_bound = var(diff_cf)))
 end
 
 @doc raw"""
@@ -239,7 +254,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = StructuralCausalModel(dgp, :A, :Y, [:L])
 att(scm, treat_all, treat_none)
 ```
 """
@@ -248,6 +263,8 @@ function att(scm::StructuralCausalModel; samples = 10^6)
     check_treatment(scm)
 
     ct = rand(scm, samples)
+    check_treatment_binary(ct)
+
     ct_treated = Tables.subset(ct, Tables.getcolumn(treatment(ct), 1))
     parents = responseparents(ct_treated)
     Y_cf1 = draw_counterfactual(scm, parents, treat_all)
@@ -284,7 +301,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = StructuralCausalModel(dgp, :A, :Y, [:L])
 atu(scm, treat_all, treat_none)
 ```
 """
@@ -293,6 +310,8 @@ function atu(scm::StructuralCausalModel; samples = 10^6)
     check_treatment(scm)
 
     ct = rand(scm, samples)
+    check_treatment_binary(ct)
+
     ct_treated = Tables.subset(ct, .!(Tables.getcolumn(treatment(ct), 1)))
     parents = responseparents(ct_treated)
     Y_cf1 = draw_counterfactual(scm, parents, treat_all)

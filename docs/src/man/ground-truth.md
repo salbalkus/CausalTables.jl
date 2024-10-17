@@ -1,10 +1,10 @@
 # Computing Ground Truth Conditional Distributions
 
-One main goal of CausalTables.jl is to allow statisticians to easily develop and test causal inference methods on simulated data. To this end, the package provides a way to compute "ground truth" causal quantities under a particular data-generating process (DGP). 
+One main goal of CausalTables.jl is to allow statisticians to easily develop and test causal inference methods on simulated data. To this end, the package provides a way to compute "ground truth" causal quantities under a particular structural causal model (SCM). 
 
-Quick methods to approximate the most common ground truth estimands such as the average treatment effect are provided in the section [Approximating ground truth causal estimands](estimands.md). However, in many cases it is also helpful to know the ground-truth of more complicated functions of the data, such as conditional distributions, conditional means, or conditional variances. For example, if one is building a machine learning model to predict a conditional mean $\mathbb{E}(Y \mid X = x)$ or a conditional density $p(y \mid X = x)$, it may be useful to know the true conditional mean to evaluate the model's performance. This section will explain how to compute these ground truth quantities using CausalTables.jl.
+Quick methods to approximate the most common ground truth estimands such as the average treatment effect are provided in the section [Approximating ground truth causal estimands](estimands.md). However, in many cases it is also helpful to know the ground truth of more complicated functions of the data, such as conditional distributions, conditional means, or conditional variances. For example, if one is building a machine learning model to predict a conditional mean $\mathbb{E}(Y \mid X = x)$ or a conditional density $p(y \mid X = x)$, it may be useful to know the true conditional mean to evaluate the model's performance. This section will explain how to compute these ground truth quantities using CausalTables.jl.
 
-Once we've defined a DGP and have some table of data with variables matching those of our DGP, we can compute the ground truth conditional distributions of any variable in a CausalTable (given a corresponding DGP) using the `condensity` function. This returns a Distribution object from the package [Distributions.jl](https://juliastats.org/Distributions.jl/stable/).
+Once we've defined an SCM (see [Generating data for statistical experiments](generating-data.md")) and have some table of data with variables matching those of our DGP, we can compute the ground truth conditional distributions of any variable in a CausalTable (given a corresponding DGP) using the `condensity` function. This returns a Distribution object from the package [Distributions.jl](https://juliastats.org/Distributions.jl/stable/).
 
 Let's see an example. First, we'll define a DGP using the `@dgp` macro and create a StructuralCausalModel object from it. In this DGP, the outcome $Y$ is dependent on the sum of its neighbors' treatments in a random network, meaning that the distributions of some variables in the DGP can be quite complicated. 
 
@@ -58,7 +58,7 @@ One can also compute the ground truth conditional mean or variance of a variable
 
 With these, one can evaluate the performance of flexible statistical models involving functions of conditional densities or moments of a variable in a CausalTable.
 
-### Ground Truth Conditional Distributions API
+## Ground Truth Conditional Distributions API
 
 ```@autodocs; canonical=false
 Modules = [CausalTables]
