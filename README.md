@@ -11,7 +11,6 @@ Given a dataset, methods for statistical causal inference evaluate how an interv
 3. Computing true conditional distributions and causal effect estimands for a given model, allowing users to evaluate the performance of new and existing causal inference methods against the ground truth.
 
 
-
 ## Installation
 CausalTables.jl can be installed using the Julia package manager. From the Julia REPL, type `]` to enter the Pkg REPL mode and run
 
@@ -39,6 +38,25 @@ Once a `StructuralCausalModel` is defined, one can then draw a randomly-generate
 
 ```
 ctbl = rand(scm, 100)
+
+CausalTable
+┌───────────┬───────┬───────────┐
+│         W │     A │         Y │
+│   Float64 │  Bool │   Float64 │
+├───────────┼───────┼───────────┤
+│  0.381527 │  true │  0.809227 │
+│  0.576206 │  true │   3.22163 │
+│  0.380546 │ false │   1.70505 │
+│  0.226648 │ false │  0.185022 │
+│     ⋮     │   ⋮   │     ⋮     │
+│  0.385836 │ false │ -0.392848 │
+│  0.204554 │ false │  0.638084 │
+│  0.232177 │  true │  0.832707 │
+│ 0.0465189 │ false │   1.29168 │
+└───────────┴───────┴───────────┘
+                  92 rows omitted
+Summaries: NamedTuple()
+Arrays: NamedTuple()
 ```
 
 Alternatively, it is also possible to approximate the "ground truth" value of a variety of relevant causal estimands from this SCM, including counterfactual means (`cfmean`), as well as average treatment effects (`ate`) and average policy effects (`ape`). For example, the ground truth average treatment effect for this SCM can be approximated like so:
@@ -46,24 +64,7 @@ Alternatively, it is also possible to approximate the "ground truth" value of a 
 ```
 ate(scm)
 
-CausalTable
-┌───────────┬───────┬───────────┐
-│         W │     A │         Y │
-│   Float64 │  Bool │   Float64 │
-├───────────┼───────┼───────────┤
-│  0.144405 │ false │ -0.819133 │
-│  0.213987 │ false │    1.2863 │
-│ 0.0340754 │ false │  0.917915 │
-│  0.203227 │ false │   1.99271 │
-│     ⋮     │   ⋮   │     ⋮     │
-│  0.140308 │ false │  0.526877 │
-│  0.396759 │ false │ -0.308218 │
-│  0.217854 │ false │  0.680559 │
-│  0.412048 │ false │  0.477174 │
-└───────────┴───────┴───────────┘
-                  92 rows omitted
-Summaries: NamedTuple()
-Arrays: NamedTuple()
+(μ = 1.0006736394005957, eff_bound = 2.0019300075151616)
 ```
 
 See the [documentation](https://salbalkus.github.io/CausalTables.jl/dev/) for more information and tutorials. 
