@@ -4,12 +4,15 @@
 [![Coverage Status](https://coveralls.io/repos/github/salbalkus/CausalTables.jl/badge.svg?branch=main)](https://coveralls.io/github/salbalkus/CausalTables.jl?branch=main)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Given a dataset, methods for statistical causal inference evaluate how an intervention on some treatment variable $A$ would affect a response variable $Y$, typically in the presence of other potential confounding variables. CausalTables.jl is a Julia package for storing and simulating data for causal inference, with three main goals in mind:
+*Developing a new method for causal inference in Julia? CausalTables.jl will help you build a simulation study to test it.*
 
-1. Providing a `CausalTable` data structure that wraps any dataset stored in a [Tables.jl](https://tables.juliadata.org/stable/)-compatible format with a causal structure (i.e. labeling treatment, response, confounders, and other variables) for use by external causal inference packages.
-2. Easily generating random data from a structural causal model (SCM), to be used in simulations.
-3. Computing true conditional distributions and causal effect estimands for a given model, allowing users to evaluate the performance of new and existing causal inference methods against the ground truth.
+Given a dataset, methods for statistical causal inference evaluate how an intervention on some treatment variable $A$ would affect a response variable $Y$, typically in the presence of other potential confounding variables. CausalTables.jl is a tool for to evaluating and compare the statistical performance of causal inference methods in Julia. The package provides:
 
+1. A `CausalTable` data structure that wraps any dataset stored in a [Tables.jl](https://tables.juliadata.org/stable/)-compatible format with a causal structure (i.e. labeling treatment, response, confounders, and other variables) for use by external causal inference packages.
+2. A `StructuralCausalModel` data structure allowing users to easily generate random datasets endowed with a given causal structure.
+3. Methods to computing true conditional distributions and approximate ground truth causal effect estimands for a given `StructuralCausalModel`
+
+When used together, both functionalities allow users to benchmark methods for statistical causal inference in Julia -- that is, evaluate the performance of new and existing causal inference methods against both each other and the the ground truth.
 
 ## Installation
 CausalTables.jl can be installed using the Julia package manager. From the Julia REPL, type `]` to enter the Pkg REPL mode and run
