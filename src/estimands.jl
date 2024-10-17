@@ -6,7 +6,7 @@ check_response(scm) = (length(scm.response) != 1 && throw(ArgumentError("More th
 check_treatment(scm) = (length(scm.treatment) != 1 && throw(ArgumentError("More than one treatment not allowed")))
 
 
-"""
+@doc raw"""
     draw_counterfactual(scm::StructuralCausalModel, parents::CausalTable, intervention::Function) -> Vector
 
 Generate counterfactual responses based on a given structural causal model (SCM), a table of response parents, and an intervention function. That is, sample the responses that would have occurred had some intervention been applied to the treatment specified by the structural causal model.
@@ -34,14 +34,16 @@ function draw_counterfactual(scm::StructuralCausalModel, parents::CausalTable, i
 end
 
 
-"""
+@doc raw"""
     cfmean(scm::StructuralCausalModel, intervention::Function; samples = 10^6)
 
 Approximate the counterfactual mean of the response had `intervention` been applied to the treatment, along with its efficiency bound, for a given structural causal model (SCM). Mathematically, this estimand is
 
-\$\$E(Y(d(a))\$\$
+```math
+E(Y(d(a))
+```
 
-where \$d\$(a)\$ represents an intervention on the treatment variable(s) \$A\$. This statistical quantity is approximated using Monte Carlo sampling. 
+where ``d(a)`` represents an intervention on the treatment variable(s) ``A``. This statistical quantity is approximated using Monte Carlo sampling. 
 
 # Arguments
 - `scm::StructuralCausalModel`: The SCM from which data is to be simulated.
@@ -74,14 +76,16 @@ function cfmean(scm::StructuralCausalModel, intervention::Function; samples = 10
     return((μ = mean(Y_counterfactual), eff_bound = var(Y_counterfactual)))
 end
 
-"""
+@doc raw"""
     cfdiff(scm::StructuralCausalModel, intervention1::Function, intervention2::Function; samples = 10^6)
 
 Approximate the difference between two counterfactual response means -- that under `intervention1` having been applied to the treatment, and that under `intervention2` -- for a given structural causal model (SCM), along with its efficiency bound. Mathematically, this is
 
-\$\$E(Y(d_1(a) - Y(d_2(a))\$\$
+```math
+E(Y(d_1(a) - Y(d_2(a))
+```
 
-where \$d_1\$ and \$d_2\$ represent `intervention` and `intervention2` being applied on the treatment variable(s) \$A\$. This statistical quantity is approximated using Monte Carlo sampling. 
+where ``d_1`` and ``d_2`` represent `intervention` and `intervention2` being applied on the treatment variable(s) ``A``. This statistical quantity is approximated using Monte Carlo sampling. 
 
 # Arguments
 - `scm::StructuralCausalModel`: The SCM from which data is to be simulated.
@@ -171,14 +175,16 @@ treat_none(data)
 """
 treat_none(ct) = NamedTuple{Tuple(ct.treatment)}((zeros(DataAPI.nrow(ct)),))
 
-"""
+@doc raw"""
     ate(scm::StructuralCausalModel; samples = 10^6)
 
 Approximate the average treatment effect (ATE) for a given structural causal model (SCM), along with its efficiency bound, for a univariate binary treatment. Mathematically, this is
 
-\$\$E(Y(1) - Y(0))\$\$
+```math
+E(Y(1) - Y(0))
+```
     
-where \$Y(a)\$ represents the counterfactual \$Y\$ had the treatment \$A\$ been set to \$a\$. This statistical quantity is approximated using Monte Carlo sampling.
+where ``Y(a)`` represents the counterfactual ``Y`` had the treatment ``A`` been set to ``a``. This statistical quantity is approximated using Monte Carlo sampling.
 
 # Arguments
 - `scm::StructuralCausalModel`: The SCM from which data is to be simulated.
@@ -205,14 +211,16 @@ function ate(scm::StructuralCausalModel; samples = 10^6)
     return(cfdiff(scm, treat_all, treat_none; samples = samples))
 end
 
-"""
+@doc raw"""
     att(scm::StructuralCausalModel; samples = 10^6)
 
 Approximate the average treatment effect among the treated (ATT) for a given structural causal model (SCM), along with its efficiency bound, for a univariate binary treatment. Mathematically, this is
 
-\$\$E(Y(1) - Y(0) \mid A = 1)\$\$
+```math
+E(Y(1) - Y(0) \mid A = 1)
+```
     
-where \$Y(a)\$ represents the counterfactual \$Y\$ had the treatment \$A\$ been set to \$a\$. This statistical quantity is approximated using Monte Carlo sampling.
+where ``Y(a)`` represents the counterfactual ``Y`` had the treatment ``A`` been set to ``a``. This statistical quantity is approximated using Monte Carlo sampling.
 
 # Arguments
 - `scm::StructuralCausalModel`: The SCM from which data is to be simulated.
@@ -248,14 +256,16 @@ function att(scm::StructuralCausalModel; samples = 10^6)
     return((μ = mean(diff_cf), eff_bound = var(diff_cf)))
 end
 
-"""
+@doc raw"""
     atu(scm::StructuralCausalModel; samples = 10^6)
 
 Approximate the average treatment effect among the untreated (ATU) for a given structural causal model (SCM), along with its efficiency bound, for a univariate binary treatment. Mathematically, this is
 
-\$\$E(Y(1) - Y(0) \mid A = 0)\$\$
+```math
+E(Y(1) - Y(0) \mid A = 0)
+```
     
-where \$Y(a)\$ represents the counterfactual \$Y\$ had the treatment \$A\$ been set to \$a\$. This statistical quantity is approximated using Monte Carlo sampling.
+where ``Y(a)`` represents the counterfactual ``Y`` had the treatment ``A`` been set to ``a``. This statistical quantity is approximated using Monte Carlo sampling.
 
 # Arguments
 - `scm::StructuralCausalModel`: The SCM from which data is to be simulated.
@@ -370,14 +380,16 @@ function multiplicative_mtp(δ)
     cast_matrix_to_table_function(mat_func)
 end
 
-"""
+@doc raw"""
     ape(scm::StructuralCausalModel, intervention::Function; samples = 10^6)
 
 Approximate the average policy effect for a given structural causal model (SCM), along with its efficiency bound. This is also known as the causal effect of a modified treatment policy, and is approximated using Monte Carlo sampling. Note that unless `intervention` is piecewise smooth invertible, the estimated statistical quantity may not have a causal interpretation; see [Haneuse and Rotnizky (2013)](https://pubmed.ncbi.nlm.nih.gov/23913589/). Mathematically, this is
 
-\$\$E(Y(d(a) - Y(a))\$\$
+```math
+E(Y(d(a) - Y(a))
+```
 
-where \$d(a)\$ represents the intervention on the treatment variable(s) \$A\$, \$Y(d(a))\$ represents the counterfactual $Y$ under treatment $d(a)$, and $Y(a)$ represents the counterfactual outcome under the naturally observed value of treatment. This statistical quantity is approximated using Monte Carlo sampling.
+where ``d(a)`` represents the intervention on the treatment variable(s) ``A``, ``Y(d(a))`` represents the counterfactual ``Y`` under treatment ``d(a)``, and ``Y(a)`` represents the counterfactual outcome under the naturally observed value of treatment. This statistical quantity is approximated using Monte Carlo sampling.
 
 Convenience functions for generating `intervention` functions include `additive_mtp` and `multiplicative_mtp`, which construct functions that respectively add or multiply a constant (or constant vector) to the treatment variable(s). One can also implement their own intervention function; this function must take as input a `CausalTable` object and return a NamedTuple object with each key indexing a treatment variable that has been modified according to the intervention. Also see `cast_matrix_to_table_function` for a convenience function for constructing interventions.
 
