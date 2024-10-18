@@ -4,7 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/salbalkus/CausalTables.jl/badge.svg?branch=main)](https://coveralls.io/github/salbalkus/CausalTables.jl?branch=main)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-*Developing a new method for causal inference in Julia? CausalTables.jl will help you build a simulation study to test it.*
+*A package for storing and simulating data for causal inference in Julia.*
 
 Given a dataset, methods for statistical causal inference evaluate how an intervention on some treatment variable $A$ would affect a response variable $Y$, typically in the presence of other potential confounding variables. CausalTables.jl is a tool for to evaluating and compare the statistical performance of causal inference methods in Julia. The package provides:
 

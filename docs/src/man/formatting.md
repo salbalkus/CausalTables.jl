@@ -78,7 +78,7 @@ nothing # hide
 
 One can then call the function `summarize(ctbl)` to compute the values of the summary function on the causal table. 
 
-Based on these summaries, it is also possible to extract two matrices from the `CausalTable` object: the `adjacency_matrix` and the `dependency_matrix`. The `adjacency_matrix` denotes which units are *causally dependent* upon one another: an entry of 1 in cell (i,j) indicates that some variable in unit i exhibits a causal relationship to some variable in unit j. The `dependency_matrix` stores which units are *statistically dependent* upon one another: an entry of 1 in cell (i,j) indicates that the data of unit i is correlated with the data in unit j. Two units are correlated if they either are causally dependent (neighbors in the adjacency matrix) or share a common neighbor in the adjacency matrix.
+Based on these summaries, it is also possible to extract two matrices from the `CausalTable` object: the `adjacency_matrix` and the `dependency_matrix`. The `adjacency_matrix` denotes which units are *causally dependent* upon one another: an entry of 1 in cell ``(i,j)`` indicates that some variable in unit i exhibits a causal relationship to some variable in unit j. The `dependency_matrix` denotes which units are *statistically dependent* upon one another: an entry of 1 in cell ``(i,j)`` indicates that the data of unit i is correlated with the data in unit j. Two units are correlated if they either are causally dependent (neighbors in the adjacency matrix) or share a common neighbor in the adjacency matrix.
 
 ```@example karateclub
 CausalTables.adjacency_matrix(ctbl) # get adjacency matrix
