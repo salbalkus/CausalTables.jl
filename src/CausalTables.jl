@@ -47,7 +47,7 @@ export @dgp
 
 # structural_causal_model.jl
 export StructuralCausalModel, getscm
-export rand, condensity, conmean, convar
+export rand, condensity, conmean, convar, propensity
 
 # estimands.jl
 export draw_counterfactual, additive_mtp, multiplicative_mtp

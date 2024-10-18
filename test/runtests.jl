@@ -115,15 +115,19 @@ end
     @test Tables.columnnames(foo.data) == (:L1, :L2, :A, :Y)
 
     bar = CausalTables.condensity(scm, foo, :A)
-    baz = CausalTables.conmean(scm, foo, :Y)
-    qux = CausalTables.convar(scm, foo, :Y)
+    baz = CausalTables.propensity(scm, foo, :A)
+    qux = CausalTables.conmean(scm, foo, :Y)
+    quux = CausalTables.convar(scm, foo, :Y)
 
     @test nrow(foo.data) == length(bar)
     @test typeof(bar) <: Vector{T} where {T <: UnivariateDistribution}
     @test typeof(baz) <: Vector{T} where {T <: Real}
     @test typeof(qux) <: Vector{T} where {T <: Real}
-    @test baz == Tables.getcolumn(foo, :A) .+ 0.2 .* Tables.getcolumn(foo, :L2)
-    @test all(qux .== 1)
+    @test typeof(quux) <: Vector{T} where {T <: Real}
+    
+    @test all(baz .== 1.0)
+    @test qux == Tables.getcolumn(foo, :A) .+ 0.2 .* Tables.getcolumn(foo, :L2)
+    @test all(quux .== 1)
 
     @test CausalTables.adjacency_matrix(foo) == LinearAlgebra.I
     @test CausalTables.dependency_matrix(foo) == LinearAlgebra.I

@@ -1,7 +1,7 @@
 """
     condensity(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
 
-Compute the conditional density of a variable in a StructuralCausalModel given a CausalTable.
+Compute the conditional density of variable `name` in CausalTable `ct` that has been drawn from StructuralCausalModel `scm`.
 
 # Arguments
 - `scm::StructuralCausalModel`: The StructuralCausalModel representing the data generating process.
@@ -54,7 +54,7 @@ get_conditional_distribution(ns::T, scm::StructuralCausalModel, scm_result::Name
 """
     conmean(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
 
-Compute the conditional mean of a variable in a CausalTable based on a DataGeneratingProcess.
+Compute the conditional mean of variable `name` in CausalTable `ct` that has been drawn from StructuralCausalModel `scm`.
 
 # Arguments
 - `scm::StructuralCausalModel`: The StructuralCausalModel object representing the data generating process.
@@ -70,7 +70,7 @@ conmean(scm::StructuralCausalModel, ct::CausalTable, name::Symbol) = mean.(conde
 """
     convar(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
 
-Compute the conditional variance of a variable in a CausalTable based on a DataGeneratingProcess.
+Compute the conditional variance of variable `name` in CausalTable `ct` that has been drawn from StructuralCausalModel `scm`.
 
 # Arguments
 - `scm::StructuralCausalModel`: The StructuralCausalModel object representing the data generating process.
@@ -82,3 +82,19 @@ An array of conditional variances for the specified variable.
 
 """
 convar(scm::StructuralCausalModel, ct::CausalTable, name::Symbol) = var.(condensity(scm, ct, name))
+
+"""
+    propensity(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
+
+Compute the (generalized) propensity score of variable `name` in CausalTable `ct` that has been drawn from StructuralCausalModel `scm`.
+
+# Arguments
+- `scm::StructuralCausalModel`: The StructuralCausalModel object representing the data generating process.
+- `ct::CausalTable`: The CausalTable object representing the data.
+- `name::Symbol`: The variable for which to compute the conditional mean.
+
+# Returns
+An array of conditional probabilities for the specified variable (or densities, if the specified variable is continuous).
+
+"""
+propensity(scm::StructuralCausalModel, ct::CausalTable, name::Symbol) = pdf.(condensity(scm, ct, name), Tables.getcolumn(ct, name))
