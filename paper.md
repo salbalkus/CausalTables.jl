@@ -34,9 +34,108 @@ The second major challenge is that evaluating the performance of causal inferenc
 
 By providing interfaces to address these two major challenges, CausalTables.jl will help simplify and accelerate the development of tools for statistical causal inference in Julia. The `CausalTable` interface extends Tables.jl, the most common interface for accessing tabular data in Julia [@quinn2024tables]. The SCM framework works in conjunction with Distributions.jl, the most popular Julia package for working with random variables [@JSSv098i16; @Distributions.jl-2019]. Hence, CausalTables.jl integrates seamlessly with other common packages in the Julia ecosystem, ensuring both compatibility and ease of use for statisticians and students working in Julia. 
 
+# Simulating data with a causal structure
+
+In causal inference, data is conceptualized as being drawn from a *structural causal model* (SCM). An SCM is typically formulated as a sequence of draws random variables, with each draw potentially independent on previous draws. The standard causal inference problem is to estimate the effect of a treatment variable $A$ on a response variable $Y$ in the presence of confounders $W$. An example of one such SCM might be the following:
+
+$$
+\begin{align*}
+W &\sim Beta(2, 4) \\
+A &\sim Bernoulli(W) \\
+Y &\sim Normal(A + W, 1)
+\end{align*}
+$$
+
+We can define the SCM above in CausalTables.jl as follows. First, we define the sequence of random variables to be drawn using the `@dgp` macro, which creates a `DataGeneratingProcess`, or DGP. Then, we create a `StructuralCausalModel` object from the DGP by labeling which steps we want to consider as treatment, response, and confounders.
+
+```julia
+using Distributions
+using CausalTables
+
+# Define the sequence of random variables to be drawn
+dgp = @dgp(
+    W ~ Beta(2, 4),
+    A ~ Bernoulli.(0.5 .* W .+ 0.2),
+    Y ~ Normal.(W .+ A, 1)
+)
+
+# Create a structural causal model (SCM) from the DGP
+scm = StructuralCausalModel(dgp; 
+  treatment = :A, response = :Y, confounders = [:W]
+)
+```
+
+We can then randomly draw a dataset from the SCM using the `rand` function. The function returns a `CausalTable` object, a data structure implementing the Tables.jl [@quinn2024tables] interface that stores both the randomly-drawn data, causal structure labels, and additional metadata output from the DGP, if any. 
+
+```julia
+ct = rand(scm, 100)
+
+CausalTable
+┌───────────┬───────┬───────────┐
+│         W │     A │         Y │
+│   Float64 │  Bool │   Float64 │
+├───────────┼───────┼───────────┤
+│  0.379638 │ false │   0.79128 │
+│  0.195718 │ false │   1.32713 │
+│  0.470725 │  true │  0.636156 │
+│  0.299078 │ false │  0.936103 │
+│     ⋮     │   ⋮   │     ⋮     │
+│  0.485271 │  true │   2.38884 │
+│ 0.0701691 │ false │   0.73535 │
+│  0.500786 │  true │    1.7435 │
+│  0.702048 │  true │   1.24591 │
+└───────────┴───────┴───────────┘
+                  92 rows omitted
+Summaries: NamedTuple()
+Arrays: NamedTuple()
+```
+
+Existing data can also be wrapped as a `CausalTable` using its constructor. This allows users to store data with partially-labeled causal structure in a Tables-compatible format as input to external packages, or use convenience functions to easily partition the table for causal inference tasks. For instance, the `responseparents` function can be used to select only variables upstream from the response. An example is shown below. 
+
+```julia
+# Example data in a Tables-compatible format
+tbl = (W = [0.2, 0.4, 0.7], 
+       A = [false, true, true], 
+       Y = [0.8, 1.2, 2.3])
+
+# Wrap the data as a CausalTable
+ct_wrap = CausalTable(tbl;
+                 treatment = :A, 
+                 response = :Y, 
+                 confounders = [:W])
+          
+# Select only variables upstream from the response
+responseparents(ct_wrap)
+
+CausalTable
+┌─────────┬───────┐
+│       W │     A │
+│ Float64 │  Bool │
+├─────────┼───────┤
+│     0.2 │ false │
+│     0.4 │  true │
+│     0.7 │  true │
+└─────────┴───────┘
+Summaries: NamedTuple()
+Arrays: NamedTuple()
+```
+
+Finally, from a given `StructuralCausalModel`, users can compute or approximate the true values of several common causal effect parameters. One way this can be useful is for testing the performance of a causal effect estimator when a given nuisance parameter is correctly specified. For example, we can compute the true counterfactual mean of the response variable `Y` under the SCM defined above using the `conmean` function. 
+
+```julia
+outcome_regression = conmean(scm, ct, :Y)
+```
+
+CausalTables.jl also includes functions to approximate the ground truth for common causal estimands, such as counterfactual means (`cfmean`), average treatment effects (`ate`), including among the treated (`att`) and the untreated (`atu`), and average policy effects (`ape`) under arbitrary interventions on the treatment. These estimands are approximated using Monte Carlo integration. 
+
+```julia
+ate(scm)
+
+(μ = 1.0006511228443122, eff_bound = 2.0073775088093857)
+```
+
 # Relationship to existing software
 
-# Example use case
 
 # Acknowledgements
 
