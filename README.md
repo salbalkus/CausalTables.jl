@@ -62,7 +62,9 @@ Summaries: NamedTuple()
 Arrays: NamedTuple()
 ```
 
-Alternatively, it is also possible to approximate the "ground truth" value of a variety of relevant causal estimands from this SCM, including counterfactual means (`cfmean`), as well as average treatment effects (`ate`) and average policy effects (`ape`). For example, the ground truth average treatment effect for this SCM can be approximated like so:
+A `CausalTable` is a Table with a causal structure, such as labels for treatment, response, and confounder variables. In addition to implementing the standard Tables.jl interface, CausalTables.jl also provides extra functions to make working with causal data easier. See the [documentation](https://salbalkus.github.io/CausalTables.jl/dev/) for more information.
+
+Given an SCM, it is also possible to approximate the "ground truth" value of a variety of relevant causal estimands from this SCM, including counterfactual means (`cfmean`), as well as average treatment effects (`ate`) and average policy effects (`ape`). For example, the ground truth average treatment effect for this SCM can be approximated like so:
 
 ```
 ate(scm)
