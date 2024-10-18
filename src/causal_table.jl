@@ -289,50 +289,50 @@ The data stored in the `CausalTable` object.
 data(o::CausalTable) = o.data
 
 """
-    adjacency_matrix(O::CausalTable)
+    adjacency_matrix(o::CausalTable)
 
 Generate the adjacency matrix induced by the `summaries` and `arrays` attributes of a `CausalTable` object. This matrix denotes which units are *causally dependent* upon one another: an entry of 1 in cell (i,j) indicates that some variable in unit i exhibits a causal relationship to some variable in unit j. 
 
 # Arguments
-- `O::CausalTable`: The `CausalTable` object for which the adjacency matrix is to be generated.
+- `o::CausalTable`: The `CausalTable` object for which the adjacency matrix is to be generated.
 
 # Returns
 A boolean matrix representing the adjacency relationships in the `CausalTable`.
 """
-function adjacency_matrix(O::CausalTable)
+function adjacency_matrix(o::CausalTable)
     # Get the matrices used to summarize across observations in the table
-    summary_matrix_names = unique([s.matrix for s in O.summaries if hasfield(typeof(s), :matrix)])
+    summary_matrix_names = unique([s.matrix for s in o.summaries if hasfield(typeof(s), :matrix)])
     if length(summary_matrix_names) > 0
-        adj_matrices = values(O.arrays[summary_matrix_names])
+        adj_matrices = values(o.arrays[summary_matrix_names])
         return(sum(adj_matrices) .!= 0.0)
     else
-        return(LinearAlgebra.I(DataAPI.nrow(O)))
+        return(LinearAlgebra.I(DataAPI.nrow(o)))
     end
 end
 
 """
-    dependency_matrix(O::CausalTable)
+    dependency_matrix(o::CausalTable)
 
 Generate the dependency matrix induced by the `summaries` and `arrays` attributes of a `CausalTable` object. This matrix stores which units are *statistically dependent* upon one another: an entry of 1 in cell (i,j) indicates that the data of unit i is correlated with the data in unit j. Two units are correlated if they either are causally dependent (neighbors in the adjacency matrix) or share a common cause (share a neighbor in the adjacency matrix).
 
 # Arguments
-- `O::CausalTable`: The `CausalTable` object for which the dependency matrix is to be generated.
+- `o::CausalTable`: The `CausalTable` object for which the dependency matrix is to be generated.
 
 # Returns
 A boolean matrix representing the  relationships in the `CausalTable`.
 """
-function dependency_matrix(O::CausalTable)
+function dependency_matrix(o::CausalTable)
     # Get the matrices used to summarize across observations in the table
-    summary_matrix_names = unique([s.matrix for s in O.summaries if hasfield(typeof(s), :matrix)])
+    summary_matrix_names = unique([s.matrix for s in o.summaries if hasfield(typeof(s), :matrix)])
     
     # Create a matrix where nonzero entries indicate that the two observations are dependent
     if length(summary_matrix_names) > 0
 
         # extract adjacency matrices from CausalTables
-        adj_matrices = values(O.arrays[summary_matrix_names])
+        adj_matrices = values(o.arrays[summary_matrix_names])
 
         # each unit to itself
-        zero_hop = LinearAlgebra.I(DataAPI.nrow(O))
+        zero_hop = LinearAlgebra.I(DataAPI.nrow(o))
 
         # units that are neighbors
         one_hop = sum(adj_matrices)
@@ -343,7 +343,7 @@ function dependency_matrix(O::CausalTable)
         dependencies = (zero_hop + one_hop + two_hop) .> 0
 
     else
-        dependencies = LinearAlgebra.I(DataAPI.nrow(O))
+        dependencies = LinearAlgebra.I(DataAPI.nrow(o))
     end
     
     # map nonzero entires to 1
