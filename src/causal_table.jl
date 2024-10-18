@@ -212,15 +212,28 @@ reject(o::CausalTable, symbols) = replace(o; data = o.data |> TableTransforms.Re
 """
     treatment(o::CausalTable)
 
-Selects the treatment column from the given `CausalTable` object.
+Selects the treatment column(s) from the given `CausalTable` object.
 
 # Arguments
-- `o::CausalTable`: The `CausalTable` object from which to select the treatment column.
+- `o::CausalTable`: The `CausalTable` object from which to select the treatment column(s).
 
 # Returns
-A new `CausalTable` containing only the treatment column
+A new `CausalTable` containing only the treatment column(s)
 """
 treatment(o::CausalTable) = select(o, o.treatment)
+
+"""
+    treatmentmatrix(o::CausalTable)
+
+Outputs the treatment column(s) from the given `CausalTable` object as a matrix.
+
+# Arguments
+- `o::CausalTable`: The `CausalTable` object from which to select the treatment column(s).
+
+# Returns
+A matrix containing only the treatment column(s)
+"""
+treatmentmatrix(o::CausalTable) = Tables.matrix(treatment(o))
 
 """
     confounders(o::CausalTable)
@@ -231,22 +244,48 @@ Selects and returns the confounders from a `CausalTable` object.
 - `o::CausalTable`: The `CausalTable` object from which to select confounders.
 
 # Returns
-A new `CausalTable` containing only the confounders
+A new `CausalTable` containing only the confounders.
 """
 confounders(o::CausalTable) = select(o, o.confounders)
 
 """
-    response(o::CausalTable)
+    confoundersmatrix(o::CausalTable)
 
-Selects the response column from the given `CausalTable` object.
+Outputs the confounders from the given `CausalTable` object as a matrix.
 
 # Arguments
-- `o::CausalTable`: The `CausalTable` object from which to select the response column.
+- `o::CausalTable`: The `CausalTable` object from which to select the confounders.
 
 # Returns
-A new `CausalTable` containing only the confounders
+A matrix containing only the confounders.
+"""
+confoundersmatrix(o::CausalTable) = Tables.matrix(confounders(o))
+
+"""
+    response(o::CausalTable)
+
+Selects the response column(s) from the given `CausalTable` object.
+
+# Arguments
+- `o::CausalTable`: The `CausalTable` object from which to select the response column(s).
+
+# Returns
+A new `CausalTable` containing only the response column(s).
 """
 response(o::CausalTable) = select(o, o.response)
+
+"""
+    responsematrix(o::CausalTable)
+
+Outputs the response column(s) from the given `CausalTable` object as a matrix.
+
+# Arguments
+- `o::CausalTable`: The `CausalTable` object from which to select the response column(s).
+
+# Returns
+A matrix containing only the response column(s)
+"""
+responsematrix(o::CausalTable) = Tables.matrix(response(o))
 
 """
     treatmentparents(o::CausalTable)
@@ -257,7 +296,7 @@ Selects the confounders from the given `CausalTable` object.
 - `o::CausalTable`: The `CausalTable` object from which to extract the parent variables of the treatment.
 
 # Returns
-A new `CausalTable` containing only the confounders
+A new `CausalTable` containing only the confounders.
 """
 treatmentparents(o::CausalTable) = reject(o, union(o.treatment, o.response))
 
@@ -270,7 +309,7 @@ Selects the treatment and confounders from the given `CausalTable` object.
 - `o::CausalTable`: The `CausalTable` object from which to extract the parent variables of the response.
 
 # Returns
-A new `CausalTable` containing only the confounders and treatment
+A new `CausalTable` containing only the confounders and treatment.
 """
 responseparents(o::CausalTable) = reject(o, o.response)
 
