@@ -98,3 +98,7 @@ An array of conditional probabilities for the specified variable (or densities, 
 
 """
 propensity(scm::StructuralCausalModel, ct::CausalTable, name::Symbol) = pdf.(condensity(scm, ct, name), Tables.getcolumn(ct, name))
+
+
+
+

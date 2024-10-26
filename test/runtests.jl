@@ -69,7 +69,6 @@ end
     more_sums = (S = Sum(:X, :G), T = Sum(:Z, :G), U = Sum(:Y, :G))
     coltbl2 = CausalTables.replace(coltbl, arrays = (G = [1 0 1; 0 1 1; 0 0 1],), summaries = more_sums)
     coltbl2  = summarize(coltbl2) 
-    coltbl2.treatment
 
     @test coltbl2.treatment == [:X, :S]
     @test coltbl2.confounders == [:Z, :T]
@@ -118,7 +117,7 @@ end
     @test Tables.columnnames(foo.data) == (:L1, :L2, :A, :Y)
 
     bar = CausalTables.condensity(scm, foo, :A)
-    baz = CausalTables.propensity(scm, foo, :A)
+    baz = CausalTables.propensity(scm, foo, :L1)
     qux = CausalTables.conmean(scm, foo, :Y)
     quux = CausalTables.convar(scm, foo, :Y)
 

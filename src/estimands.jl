@@ -10,7 +10,7 @@ function check_treatment_binary(ct)
 end
 
 @doc raw"""
-    intervene(ct::CausalTable, intervention::Function
+    intervene(ct::CausalTable, intervention::Function)
 
 Applies `intervention` to the treatment vector(s) within a CausalTable, and outputs a new CausalTable with the intervened treatment.
 
@@ -65,7 +65,7 @@ A vector of counterfactual responses.
 
 """
 function draw_counterfactual(scm::StructuralCausalModel, parents::CausalTable, intervention::Function)
-    intervene(parents, intervention)
+    counterfactual_covariates = intervene(parents, intervention)
     Ystar = rand.(condensity(scm, counterfactual_covariates, scm.response[1]))
     return(Ystar)
 end
