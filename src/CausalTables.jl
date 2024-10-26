@@ -51,7 +51,8 @@ export StructuralCausalModel, getscm
 export rand, condensity, conmean, convar, propensity
 
 # estimands.jl
-export draw_counterfactual, additive_mtp, multiplicative_mtp
+export intervene, draw_counterfactual 
+export additive_mtp, multiplicative_mtp
 export cfmean, cfdiff, ate, att, atu, ape
 export treat_all, treat_none
 
