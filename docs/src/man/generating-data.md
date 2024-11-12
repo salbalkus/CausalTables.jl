@@ -102,7 +102,7 @@ scm = StructuralCausalModel(
 StructuralCausalModel
 ```
 
-## API for Constructing Structural Causal Models
+## API
 
 ```@autodocs; canonical=false
 Modules = [CausalTables]

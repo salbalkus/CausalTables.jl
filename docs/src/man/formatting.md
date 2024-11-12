@@ -87,7 +87,7 @@ CausalTables.dependency_matrix(ctbl) # get dependency matrix
 nothing # hide
 ```
 
-## API for Working with a `CausalTable`
+## API
 ```@autodocs; canonical=false
 Modules = [CausalTables]
 Order   = [:type, :function]

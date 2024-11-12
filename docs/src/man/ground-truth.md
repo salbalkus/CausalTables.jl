@@ -116,7 +116,7 @@ Xs_distribution = condensity(scm, ct, :Xs)
 5-element Vector
 ```
 
-## Ground Truth Conditional Distributions API
+## API
 
 ```@autodocs; canonical=false
 Modules = [CausalTables]
