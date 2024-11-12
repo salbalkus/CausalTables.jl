@@ -16,7 +16,7 @@ authors:
 affiliations:
  - name: Harvard T.H. Chan School of Public Health, U.S.A.
    index: 1
-date: 17 October 2024
+date: 12 November 2024
 bibliography: paper.bib
 ---
 
@@ -68,24 +68,20 @@ scm = StructuralCausalModel(dgp;
 We can then randomly draw a dataset from the SCM using the `rand` function. The function returns a `CausalTable` object, a data structure implementing the Tables.jl [@quinn2024tables] interface that stores both the randomly-drawn data, causal structure labels, and additional metadata output from the DGP, if any. 
 
 ```julia
-ct = rand(scm, 100)
+ct = rand(scm, 1000)
 
 CausalTable
-┌───────────┬───────┬───────────┐
-│         W │     A │         Y │
-│   Float64 │  Bool │   Float64 │
-├───────────┼───────┼───────────┤
-│  0.379638 │ false │   0.79128 │
-│  0.195718 │ false │   1.32713 │
-│  0.470725 │  true │  0.636156 │
-│  0.299078 │ false │  0.936103 │
-│     ⋮     │   ⋮   │     ⋮     │
-│  0.485271 │  true │   2.38884 │
-│ 0.0701691 │ false │   0.73535 │
-│  0.500786 │  true │    1.7435 │
-│  0.702048 │  true │   1.24591 │
-└───────────┴───────┴───────────┘
-                  92 rows omitted
+┌───────────┬───────┬────────────┐
+│         W │     A │          Y │
+│   Float64 │  Bool │    Float64 │
+├───────────┼───────┼────────────┤
+│  0.268858 │ false │    1.67789 │
+│ 0.0889547 │ false │    1.24538 │
+│     ⋮     │   ⋮   │     ⋮      │
+│  0.372702 │ false │   0.555824 │
+│  0.445864 │ false │    1.60837 │
+└───────────┴───────┴────────────┘
+                  996 rows omitted
 Summaries: NamedTuple()
 Arrays: NamedTuple()
 ```
@@ -120,13 +116,41 @@ Summaries: NamedTuple()
 Arrays: NamedTuple()
 ```
 
-Finally, from a given `StructuralCausalModel`, users can compute or approximate the true values of several common causal effect parameters. One way this can be useful is for testing the performance of a causal effect estimator when a given nuisance parameter is correctly specified. For example, we can compute the true counterfactual mean of the response variable `Y` under the SCM defined above using the `conmean` function. 
+# Computing ground truth parameters
+
+Causal inference typically involves estimating various parameters under some intervention on the treatment variable in the original data. CausalTables.jl provides both high-level and low-level interfaces for obtaining the ground truth of these parameters.
+
+The low-level interface includes functions to easily (1) apply common interventions to a CausalTable object, and (2) compute ground-truth conditional densities and functions of densities (mean, variance, et cetera). The example below computes the difference in conditional means of `Y` for each unit in the dataset under two interventions: treating all units and treating none. 
 
 ```julia
-outcome_regression = conmean(scm, ct, :Y)
+ct_treated = intervene(ct, treat_all)
+ct_untreated = intervene(ct, treat_none)
+
+individual_effect = conmean(scm, ct_treated, :Y) .- conmean(scm, ct_untreated, :Y)
+plugin = mean(individual_effect)
+1.00
 ```
 
-CausalTables.jl also includes functions to approximate the ground truth for common causal estimands, such as counterfactual means (`cfmean`), average treatment effects (`ate`), including among the treated (`att`) and the untreated (`atu`), and average policy effects (`ape`) under arbitrary interventions on the treatment. These estimands are approximated using Monte Carlo integration. 
+The above represents the ground-truth plug-in estimate of the individual treatment effect (outcome regression) for each unit in the dataset. Alternatively, one can also compute an inverse-probability weighted estimate with ground-truth weights using the `propensity` function, as shown in the second example:
+
+```julia
+
+y = responsematrix(ct) # get the response variable
+ipw = mean(y ./ propensity(scm, ct, :A)) .- mean(y)
+1.01
+```
+
+Finally, one can randomly generate a new counterfactual response value for each unit in a CausalTable under a given intervention using `draw_counterfactual`. The average treatment effect (ATE) is simply the difference in means of the counterfactual responses under `treat_all` versus `treat_none` interventions. Analogous treatment effects for continuous exposures can be computed similarly (for instance, using `additive_mtp` or `multiplicative_mtp` functions, or by writing custom intervention functions; see the documentation for more information).
+
+```julia
+y_treated = draw_counterfactual(scm, ct, treat_all)
+y_untreated = draw_counterfactual(scm, ct, treat_none)
+
+mean(y_treated .- y_untreated)
+1.01
+```
+
+CausalTables.jl also includes a second, high-level interface allowing users to approximate the ground truth directly for common causal estimands, such as counterfactual means (`cfmean`), average treatment effects (`ate`), including among the treated (`att`) and the untreated (`atu`), and average policy effects (`ape`) under arbitrary interventions on the treatment. These estimands are approximated using Monte Carlo integration. 
 
 ```julia
 ate(scm)
