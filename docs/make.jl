@@ -9,7 +9,7 @@ makedocs(
         "Approximating ground truth causal estimands" =>    "man/estimands.md",
         "Computing ground truth conditional distributions" =>    "man/ground-truth.md",
         "Network summaries" =>                 "man/network-summaries.md",
-        "API" =>                                "man/api.md",
+        "Full API" =>                                "man/api.md",
     ]
 )
 
