@@ -9,6 +9,46 @@ function check_treatment_binary(ct)
     all((treatcol .== 1) .| (treatcol .== 0)) || throw(ArgumentError("Treatment variable must be binary (only either 0 or 1 valued)"))
 end
 
+@doc raw"""
+    intervene(ct::CausalTable, intervention::Function)
+
+Applies `intervention` to the treatment vector(s) within a CausalTable, and outputs a new CausalTable with the intervened treatment.
+
+# Arguments
+- `ct::CausalTable`: The data on which treatment should be intervened
+- `intervention::Function`: A function that defines the intervention to be applied to the parent variables. Use `cast_matrix_to_table_function` to convert a function acting on a treatment vector or matrix to a function that acts on a `CausalTable`.
+
+# Returns
+A `CausalTable` containing the same data as `ct`, but with the treatment variable(s) modified accoding to `intervention`
+
+# Example
+```@example
+using Distributions
+dgp = @dgp(
+    L ~ Beta(2, 4),
+    A ~ @.(Bernoulli(L)),
+    Y ~ @.(Normal(A + L))
+)
+scm = StructuralCausalModel(dgp, :A, :Y, [:L])
+ct = rand(scm, 100)
+intervene(ct, treat_all)
+```
+"""
+function intervene(ct::CausalTable, intervention::Function)
+    # apply intervention
+    intervened = intervention(ct) 
+
+    # check for inconsistencies in function output
+    if DataAPI.ncol(intervened) != DataAPI.ncol(treatment(ct))
+        throw(ArgumentError("Table of intervened treatments does not contain the same number of treatment vectors as are specified in the CausalTable"))
+    end
+
+    # merge intervened treatments with the rest of the data
+    unintervened = CausalTables.reject(ct, keys(intervened))
+    newtbl = CausalTables.replace(ct, data = merge(unintervened.data, intervened) |> Select(Tables.columnnames(ct))) 
+    return(newtbl)
+end
+
 
 @doc raw"""
     draw_counterfactual(scm::StructuralCausalModel, parents::CausalTable, intervention::Function) -> Vector
@@ -18,21 +58,14 @@ Generate counterfactual responses based on a given structural causal model (SCM)
 # Arguments
 - `scm::StructuralCausalModel`: The structural causal model used to generate counterfactual outcomes.
 - `parents::CausalTable`: A table containing the variables causally preceding the response variable.
-- `intervention::Function`: A function that defines the intervention to be applied to the parent variables.
+- `intervention::Function`: A function that defines the intervention to be applied to the parent variables. Use `cast_matrix_to_table_function` to convert a function acting on a treatment vector or matrix to a function that acts on a `CausalTable`.
 
 # Returns
 A vector of counterfactual responses.
 
 """
 function draw_counterfactual(scm::StructuralCausalModel, parents::CausalTable, intervention::Function)
-    intervened = intervention(parents) 
-
-    if DataAPI.ncol(intervened) != DataAPI.ncol(treatment(parents))
-        throw(ArgumentError("Table of intervened treatments does not contain the same number of treatment vectors as are specified in the StructuralCausalModel"))
-    end
-
-    unintervened = CausalTables.reject(parents, keys(intervened))
-    counterfactual_covariates = CausalTables.replace(unintervened, data = merge(unintervened.data, intervened))
+    counterfactual_covariates = intervene(parents, intervention)
     Ystar = rand.(condensity(scm, counterfactual_covariates, scm.response[1]))
     return(Ystar)
 end

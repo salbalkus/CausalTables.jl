@@ -72,6 +72,18 @@ ate(scm)
 (μ = 1.0006736394005957, eff_bound = 2.0019300075151616)
 ```
 
+Alternatively, one can compute the ground truth of low-level statistical functionals, such as conditional means or propensity scores, for use in downstream analyses. 
+
+```
+propensity(scm, ctbl, :A)
+
+100-element Vector{Float64}:
+ 0.17900559797871887
+ 0.653489070854697
+ ⋮
+ 0.8247576289722464
+```
+
 See the [documentation](https://salbalkus.github.io/CausalTables.jl/dev/) for more information and tutorials. 
 
 ## Community Guidelines

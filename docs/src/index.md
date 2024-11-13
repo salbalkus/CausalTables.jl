@@ -58,6 +58,15 @@ data = rand(scm, 5)
 CausalTable
 ```
 
+We can also apply various causal interventions to the data using the `intervene` function. The example below computes a new version of the CausalTable with each unit's treatment shifted by 1 -- this is analogous to the effect estimated by a classical linear regression analysis. 
+
+```jldoctest quicktest; output = false, filter = r"(?<=.{11}).*"s
+data_intervened = intervene(data, additive_mtp(1))
+
+# output
+CausalTable
+```
+
 For a more detailed guide of how to generate data please refer to [Generating Data](man/generating-data.md).
 
 ### Computing Ground Truth Functionals
@@ -92,19 +101,19 @@ X_distribution = condensity(scm, data, :X)
  Distributions.Normal{Float64}(μ=5.0, σ=1.0)
 ```
 
-For convenience, there also exists `conmean` and `convar` functions that extracts the true conditional mean and variance of a specific variable the CausalTable:
+For convenience, there also exists `conmean` and `convar` functions that extracts the true conditional mean and variance of a specific variable the CausalTable. One can apply this to an "intervened" version of data to obtain the conditional mean of the outcome under intervention. 
 
 ```jldoctest quicktest
-Y_var = convar(scm, data, :Y)
-Y_mean = conmean(scm, data, :Y)
+Y_var = convar(scm, data_intervened, :Y)
+Y_mean = conmean(scm, data_intervened, :Y)
 
 # output
 5-element Vector{Float64}:
- 1.467564418628885
- 4.149933692528245
- 3.973979208080703
- 3.757247582108903
- 5.670866154143596
+ 2.467564418628885
+ 5.149933692528245
+ 4.973979208080702
+ 4.757247582108903
+ 6.670866154143596
 ```
 
 For a more detailed guide of how to compute ground truth conditional distributions please refer to [Computing Ground Truth Conditional Distributions](man/ground-truth.md).
@@ -126,8 +135,3 @@ For a more detailed guide of how to wrap an existing table as a CausalTable plea
 # Contributing
 
 Have questions? Spot a bug or issue in the documentation? Want to request a new feature or add one yourself? Please do not hesitate to open an issue or pull request on the [CausalTables.jl GitHub repository](https://github.com/salbalkus/CausalTables.jl). We welcome all contributions and feedback!
-
-
-
-
-

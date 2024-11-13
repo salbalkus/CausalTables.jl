@@ -69,7 +69,6 @@ end
     more_sums = (S = Sum(:X, :G), T = Sum(:Z, :G), U = Sum(:Y, :G))
     coltbl2 = CausalTables.replace(coltbl, arrays = (G = [1 0 1; 0 1 1; 0 0 1],), summaries = more_sums)
     coltbl2  = summarize(coltbl2) 
-    coltbl2.treatment
 
     @test coltbl2.treatment == [:X, :S]
     @test coltbl2.confounders == [:Z, :T]
@@ -89,6 +88,9 @@ end
     @test Tables.subset(coltbl, 1:2).data == (X = X[1:2], Y = Y[1:2], Z = Z[1:2])
     @test Tables.subset(coltbl, 1:2; viewhint = false).data == (X = X[1:2], Y = Y[1:2], Z = Z[1:2])
     @test CausalTables.replace(rowtbl; treatment = :X).treatment == [:X]
+    @test vec(CausalTables.treatmentmatrix(coltbl)) == X
+    @test vec(CausalTables.responsematrix(coltbl)) == Y
+    @test vec(CausalTables.confoundersmatrix(coltbl)) == Z
 
     # Errors
     @test_throws ArgumentError CausalTables.CausalTable(foo1, :X, :X, [:Z])
@@ -115,15 +117,19 @@ end
     @test Tables.columnnames(foo.data) == (:L1, :L2, :A, :Y)
 
     bar = CausalTables.condensity(scm, foo, :A)
-    baz = CausalTables.conmean(scm, foo, :Y)
-    qux = CausalTables.convar(scm, foo, :Y)
+    baz = CausalTables.propensity(scm, foo, :L1)
+    qux = CausalTables.conmean(scm, foo, :Y)
+    quux = CausalTables.convar(scm, foo, :Y)
 
     @test nrow(foo.data) == length(bar)
     @test typeof(bar) <: Vector{T} where {T <: UnivariateDistribution}
     @test typeof(baz) <: Vector{T} where {T <: Real}
     @test typeof(qux) <: Vector{T} where {T <: Real}
-    @test baz == Tables.getcolumn(foo, :A) .+ 0.2 .* Tables.getcolumn(foo, :L2)
-    @test all(qux .== 1)
+    @test typeof(quux) <: Vector{T} where {T <: Real}
+    
+    @test all(baz .== 1.0)
+    @test qux == Tables.getcolumn(foo, :A) .+ 0.2 .* Tables.getcolumn(foo, :L2)
+    @test all(quux .== 1)
 
     @test CausalTables.adjacency_matrix(foo) == LinearAlgebra.I
     @test CausalTables.dependency_matrix(foo) == LinearAlgebra.I
@@ -255,6 +261,15 @@ end
 
     scm = CausalTables.StructuralCausalModel(dgp, [:A], :Y)
 
+    # Check intervention functions
+    ct = rand(scm, 100)
+    cta = intervene(ct, treat_all)
+    @test Tables.columnnames(cta) == Tables.columnnames(ct)
+    @test all(cta.data.A .== 1.0)
+
+    ctn = intervene(ct, treat_none)
+    @test all(ctn.data.A .== 0.0)
+
     ε = 0.05
     # ATE
     est_ate = ate(scm)
@@ -272,27 +287,32 @@ end
     @test within(est_atu.eff_bound - 2, ε)
 
     # Test continuous random variables
-    dgp = CausalTables.@dgp(
+    dgp2 = CausalTables.@dgp(
         L ~ Beta(2, 4),
         A ~ @.(Normal(L)),
         Y ~ @.(Normal(A + 2 * L + 1))
     )
 
-    scm = CausalTables.StructuralCausalModel(dgp, [:A], :Y, [:L])
-    # Modified Treatment Policy / Average Policy Effect
+    scm2 = CausalTables.StructuralCausalModel(dgp2, [:A], :Y, [:L])
     
-    est_ape_a = ape(scm, additive_mtp(1.0))
+    # Check intervention functions
+    ct2 = rand(scm2, 100)
+    ct_add = intervene(ct2, additive_mtp(1.0))
+    @test all(ct_add.data.A .== ct2.data.A .+ 1.0)
+    ct_mul = intervene(ct2, multiplicative_mtp(2.0))
+    @test all(ct_mul.data.A .== ct2.data.A .* 2.0)
+    
+    # Modified Treatment Policy / Average Policy Effect
+    est_ape_a = ape(scm2, additive_mtp(1.0))
     @test within(est_ape_a.μ - 1, ε)
     @test within(est_ape_a.eff_bound - 2, ε)
     
-    est_ape_m = ape(scm, multiplicative_mtp(1.0))
+    est_ape_m = ape(scm2, multiplicative_mtp(1.0))
     @test within(est_ape_m.μ, ε)
     @test within(est_ape_m.eff_bound - 2, ε)
 
-    est_ape_a
-    mean_a = cfmean(scm, additive_mtp(1.0))
+    mean_a = cfmean(scm2, additive_mtp(1.0))
     @test within(mean_a.μ - 3, ε)
     @test within(mean_a.eff_bound - 2.3, 0.1)
-
 end
 

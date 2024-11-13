@@ -17,9 +17,9 @@ CausalTables.jl provides functions that numerically approximate the values of se
 - Average Treatment Effect (`ate`), including among the Treated (`att`) and Untreated (`atu`)
 - Average Policy Effect (`ape`), also known as the causal effect of a Modified Treatment Policy.
 
-Each of these is documented in detail in the following section. For low-level functions that can be used to approximate more complicated custom ground truth estimands in various settings, see [Computing ground truth conditional distributions](ground-truth.md).
+In addition, one can simulate counterfactual outcomes directly using the `draw_counterfactual` function. Each of these is documented in detail in the following section. For low-level functions that can be used to approximate more complicated custom ground truth estimands in various settings, see [Computing ground truth conditional distributions](ground-truth.md).
 
-## Estimands API
+## API
 
 ```@autodocs; canonical=false
 Modules = [CausalTables]

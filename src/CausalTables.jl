@@ -33,6 +33,7 @@ include("estimands.jl")
 export CausalTable, istable, columns, columnaccess
 export nrow, ncol, subset, select, reject
 export replace, treatment, response, confounders, data
+export treatmentmatrix, responsematrix, confoundersmatrix
 export treatmentnames, responsenames, confoundernames 
 export treatmentparents, responseparents
 export adjacency_matrix, dependency_matrix
@@ -47,10 +48,11 @@ export @dgp
 
 # structural_causal_model.jl
 export StructuralCausalModel, getscm
-export rand, condensity, conmean, convar
+export rand, condensity, conmean, convar, propensity
 
 # estimands.jl
-export draw_counterfactual, additive_mtp, multiplicative_mtp
+export intervene, draw_counterfactual 
+export additive_mtp, multiplicative_mtp
 export cfmean, cfdiff, ate, att, atu, ape
 export treat_all, treat_none
 
