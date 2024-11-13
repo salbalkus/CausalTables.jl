@@ -43,6 +43,17 @@ The standard causal inference problem is to estimate the effect of a treatment v
 Wrapping an existing dataset with causal structure is easy. The `CausalTable` constructor creates a Tables-compliant data structure coupled with causal information about its data. Calling convenience functions on this object allows users to perform common causal data processing tasks. For instance, the `responseparents` function can be used to select only variables upstream from the response.
 
 ```{julia}
+#| echo: false
+using Printf
+Base.show(io::IO, f::Float64) = @printf(io, "%.3f", f)
+
+using Random
+Random.seed!(1)
+```
+
+```{julia}
+using CausalTables
+
 # Example data in a Tables-compatible format
 tbl = (W = [0.2, 0.4, 0.7], 
        A = [false, true, true], 
@@ -73,19 +84,8 @@ Y &\sim Normal(A + W, 1)
 To compute the ground truth ATE, we can define the SCM above in CausalTables.jl by defining the sequence of random variables to be drawn using the `@dgp` macro. Then, we create a `StructuralCausalModel` object which labels the steps we want to consider as treatment, response, and confounders.
 
 ```{julia}
-#| echo: false
-using Printf
-Base.show(io::IO, f::Float64) = @printf(io, "%.3f", f)
-
-using Random
-Random.seed!(1)
-```
-
-```{julia}
 #| output: false
-
 using Distributions
-using CausalTables
 
 # Define the sequence of random variables to be drawn
 dgp = @dgp(
