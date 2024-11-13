@@ -97,12 +97,6 @@ processing tasks. For instance, the `responseparents` function can be
 used to select only variables upstream from the response.
 
 :::: {.cell execution_count="1"}
-::: {.cell-output .cell-output-display execution_count="1"}
-    TaskLocalRNG()
-:::
-::::
-
-:::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
 using CausalTables
 
@@ -112,10 +106,7 @@ tbl = (W = [0.2, 0.4, 0.7],
        Y = [0.8, 1.2, 2.3])
 
 # Wrap the data as a CausalTable
-ct_wrap = CausalTable(tbl;
-                 treatment = :A, 
-                 response = :Y, 
-                 confounders = [:W])
+ct_wrap = CausalTable(tbl; treatment = :A, response = :Y, confounders = [:W])
           
 # Select only variables upstream from the response
 responseparents(ct_wrap)
@@ -147,19 +138,16 @@ average treatment effect (ATE) of a binary treatment $A$ on some outcome
 $Y$, in the presence of potential confounders $W$. The ATE describes the
 difference in the counterfactual mean of $Y$ had everyone been treated
 versus no one treated. An example SCM describing this scenario might be
-the following:
-
-`\begin{align*}
+the following: `\begin{align*}
 W &\sim Beta(2, 4) \\
 A &\sim Bernoulli(W) \\
 Y &\sim Normal(A + W, 1)
-\end{align*}`{=tex}
-
-To compute the ground truth ATE, we can define the SCM above in
-CausalTables.jl by defining the sequence of random variables to be drawn
-using the `@dgp` macro. Then, we create a `StructuralCausalModel` object
-which labels the steps we want to consider as treatment, response, and
-confounders.
+\end{align*}`{=tex} To compute the ground truth ATE, we can define the
+SCM above in CausalTables.jl by defining the sequence of random
+variables to be drawn using the `@dgp` macro. Then, we create a
+`StructuralCausalModel` object which labels the steps we want to
+consider as treatment, response, and confounders, and randomly draw
+datasets from it using the `rand` function.
 
 ::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
@@ -176,31 +164,10 @@ dgp = @dgp(
 scm = StructuralCausalModel(dgp; 
   treatment = :A, response = :Y, confounders = [:W]
 )
+
+ct = rand(scm, 500) # randomly draw from the SCM
 ```
 :::
-
-We can then randomly draw datasets from the SCM using the `rand`
-function, which returns a `CausalTable` object.
-
-:::: {.cell execution_count="1"}
-``` {.julia .cell-code}
-ct = rand(scm, 3)
-```
-
-::: {.cell-output .cell-output-display execution_count="1"}
-    CausalTable
-    ┌─────────┬───────┬─────────┐
-    │       W │     A │       Y │
-    │ Float64 │  Bool │ Float64 │
-    ├─────────┼───────┼─────────┤
-    │   0.651 │  true │   2.061 │
-    │   0.139 │ false │  -0.560 │
-    │   0.652 │  true │   2.758 │
-    └─────────┴───────┴─────────┘
-    Summaries: NamedTuple()
-    Arrays: NamedTuple()
-:::
-::::
 
 At a high level, CausalTables.jl provides functions to approximate
 ground truth values of common causal estimands such as the ATE (using
@@ -209,11 +176,11 @@ variance achievable by a causal estimator of the given quantity.
 
 :::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
-ate(scm)
+ate(scm) # average treatment effect
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    (μ = 1.001, eff_bound = 2.000)
+    (μ = 0.998, eff_bound = 2.002)
 :::
 ::::
 
@@ -227,12 +194,9 @@ treatment.
 
 :::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
-ct = rand(scm, 500)
-ct_treated = intervene(ct, treat_all)
-ct_untreated = intervene(ct, treat_none)
-
-individual_effect = conmean(scm, ct_treated, :Y) .- conmean(scm, ct_untreated, :Y)
-mean(individual_effect)
+ct_treated = intervene(ct, treat_all)    # CausalTable with everyone treated
+ct_untreated = intervene(ct, treat_none) # CausalTable with no one treated
+outcome_reg = mean(conmean(scm, ct_treated, :Y) .- conmean(scm, ct_untreated, :Y))
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
@@ -254,7 +218,7 @@ ipw = mean(y .* (2 * a .- 1) ./ propensity(scm, ct, :A))
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    1.160
+    0.923
 :::
 ::::
 
@@ -267,12 +231,11 @@ directly:
 ``` {.julia .cell-code}
 y_treated = draw_counterfactual(scm, ct, treat_all)
 y_untreated = draw_counterfactual(scm, ct, treat_none)
-
 mean(y_treated .- y_untreated)
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    0.951
+    1.017
 :::
 ::::
 
@@ -288,7 +251,7 @@ dgp = @dgp(
     W1 ~ Poisson(10),
     W2 ~ Bernoulli(0.5),
     A ~ (@. Normal(W1 + 5*W2, 1)),
-    Y ~ (@. Normal(2*A + W2*A + 0.5*W1, 1))
+    Y ~ (@. Normal(2*A + W2*A + 0.5*W1, 1 + W2))
 )
 
 scm = StructuralCausalModel(dgp; 
@@ -311,11 +274,11 @@ when the relationship is nonlinear.
 
 :::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
-ape(scm, additive_mtp(1))
+ape(scm, additive_mtp(1)) # average policy effect
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    (μ = 2.499, eff_bound = 2.255)
+    (μ = 2.500, eff_bound = 5.242)
 :::
 ::::
 
@@ -328,16 +291,13 @@ using the `intervene` and `conmean` functions:
 
 :::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
-# Randomly generate data
-ct = rand(scm, 1000) 
-ct_intervened = intervene(ct, additive_mtp(1))
-y = responsematrix(ct)
-
-plugin = mean(conmean(scm, ct_intervened, :Y) .- y)
+ct = rand(scm, 500)  # Randomly draw data
+ct_intervened = intervene(ct, additive_mtp(1))  # apply MTP
+outcome_reg = mean(conmean(scm, ct_intervened, :Y) .- responsematrix(ct))
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    2.549
+    2.330
 :::
 ::::
 
