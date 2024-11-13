@@ -17,7 +17,7 @@ affiliations:
  - name: Harvard T.H. Chan School of Public Health, U.S.A.
    index: 1
 date: 13 November 2024
-bibliography: paper.bib
+bibliography: paper/paper.bib
 format: markdown
 engine: julia
 ---
