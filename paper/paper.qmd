@@ -1,5 +1,6 @@
 ---
-title: 'CausalTables.jl: Simulating and storing data for statistical causal inference in Julia'
+title: "`CausalTables.jl`: Simulating and storing data for statistical causal
+  inference in Julia"
 tags:
   - Julia
   - statistics
@@ -16,7 +17,7 @@ authors:
 affiliations:
  - name: Department of Biostatistics, Harvard T.H. Chan School of Public Health
    index: 1
-date: 13 November 2024
+date: 20 November 2024
 bibliography: paper.bib
 format: markdown
 engine: julia
@@ -24,58 +25,65 @@ engine: julia
 
 # Summary
 
-Estimating the strength of causal relationships between variables is a problem
-of prime importance across scientific disciplines -- and one for which many
-competing statistical methods are being developed. CausalTables.jl provides
-tools to evaluate and compare statistical causal inference methods in Julia.
-The package provides two main functionalities. First, it implements a
-`CausalTable` interface for storing data with partially-labeled causal
-structure in a Tables.jl-compatible format. Second it provides a
-`StructuralCausalModel` for randomly generating data with a given causal
-structure, as well as computing ground truth parameters. When used together,
-both functionalities allow users to more easily use and benchmark the growing
-number of methods for causal inference in Julia. 
+Estimating the strength of causal relationships between variables is an
+important problem across many scientific disciplines---and one for which
+several frameworks have been developed. A variety of statistical methods have
+been developed to estimate and obtain inference about causal quantities, yet
+few tools readily support the comparison of candidate approaches.
+`CausalTables.jl` provides tools to evaluate and compare statistical causal
+inference methods in Julia. The package provides two main functionalities.
+Firstly, it implements a `CausalTable` interface for storing data with
+partially-labeled causal structure in a `Tables.jl`-compatible format.
+Secondly, it introduces a `StructuralCausalModel` for randomly generating data
+with a user-specified causal structure while also supporting computing ground
+truth parameters under the given experiment. Together, these functionalities
+expand the Julia ecosystem by supporting the use and benchmarking of the
+growing number of causal inference methods. 
 
 # Statement of need
 
-The field of causal inference helps scientists and decision-makers understand
-cause-and-effect relationships between variables in data [@hernan2020causal].
-As interest in this field has grown across disciplines, so too has the
-development of software tools for estimating causal effects. While Julia
-packages for causal inference have begun to emerge -- including TMLE.jl
-[@TMLE.jl] and CausalELM.jl [@CausalELM.jl] for estimation and
-CausalInference.jl for graph discovery [@Schauer2024] -- the ecosystem is still
-in its infancy. Because new methods for causal inference in various settings
-are being developed at a rapid pace, it is important to have tools that make it
-easy to evaluate and compare their performance. The goal of CausalTables.jl is
-to provide such a tool in Julia. 
+The quantitative science of causal inference has emerged over the past three 
+decades as a set of formalisms for studying cause-and-effect relationships
+between variables from observed data [@pearl2009causality; @hernan2020causal];
+causal inference techniques have helped applied scientists and decision-makers
+better understand important phenomena in fields ranging from health and medicine
+to politics and economics. As interest in causal inference has grown across many
+disciplines, so too has the development of software tools for estimating causal
+effects. While Julia packages for causal inference have begun to
+emerge---including, for estimation, `TMLE.jl` [@TMLE.jl] and `CausalELM.jl`
+[@CausalELM.jl], and, for causal discovery, `CausalInference.jl`
+[@Schauer2024]---the ecosystem is still in its infancy. New methods for causal
+inference are being developed at a rapid pace, underscoring the need for tools
+designed to support and simplify the evaluation and comparison of their
+performance. `CausalTables.jl` aims to provide such a tool for the Julia
+language. Currently, attempts to benchmark causal inference methods in Julia
+face two major challenges.
 
-Currently, those attempting to benchmark causal inference methods in Julia face
-two major challenges. First, packages often have inconsistent interfaces. For
-example, some packages might require the user to provide treatment and response
-variables as individual vectors, while others might require the entire dataset
-in a Tables.jl-compliant format, with treatment and response labeled via
-strings or symbols. CausalTables.jl provides a `CausalTable` interface that
-simplifies packaging data and auxiliary causal information together.
+First, packages often have inconsistent APIs. For example, some packages
+require the user to provide treatment and response variables as individual
+vectors, while others require the entire dataset in a `Tables.jl`-compliant
+format, with treatment and response variables labeled via strings or symbols.
+`CausalTables.jl` provides a `CausalTable` interface that simplifies packaging
+the data and auxiliary causal knowledge together. Second, benchmarking of
+methods requires simulating data for numerical experiments from a Structural
+Causal Model (SCM) [@pearl2009causality] so as to compare candidate estimators
+to an underlying ground truth (encoded via interventions on the SCM). An SCM
+defines causal structure by envisaging a data generating process as random
+draws from a sequence of non-parametric structural equations, with each draw
+depending on realizations from draws preceding it temporally. `CausalTables.jl`
+provides a simple, user-friendly way to define an SCM, sample data randomly
+from it, and compute or approximate the underlying true values (determiend by
+the SCM) of several common causal effect parameters.
 
-The second major challenge is that benchmarking often requires simulating data
-from a known Structural Causal Model (SCM) [@pearl2009causality] and comparing
-estimated effects to some ground truth. An SCM is a statistical model,
-typically defined as a sequence of random draws, with each draw depending on
-the previous ones. Both the potential outcomes and graph-based frameworks of
-causality can be represented using SCMs. CausalTables.jl provides a simple way
-for users to define their own SCM, draw random data from it, and compute or
-approximate the true values of several common causal effect parameters.
-
-By addressing these two major challenges, CausalTables.jl helps simplify and
-accelerate the development of tools for statistical causal inference in Julia.
-The `CausalTable` interface extends Tables.jl, the most common interface for
-accessing tabular data in Julia [@quinn2024tables]. The SCM framework works in
-conjunction with Distributions.jl, the premier Julia package for working with
-random variables [@JSSv098i16; @Distributions.jl-2019]. By integrating
-seamlessly with other common packages in the Julia ecosystem, CausalTables.jl
-ensures both compatibility and ease of use for statisticians and students
-alike. 
+By addressing these two major challenges, `CausalTables.jl` simplifies and
+accelerates the development of tools for statistical causal inference in Julia.
+The `CausalTable` interface extends `Tables.jl`, the most common interface for
+accessing tabular data in Julia [@quinn2024tables]. The SCM framework operates
+in conjunction with `Distributions.jl`, the premier Julia package for working
+with random variables [@JSSv098i16; @Distributions.jl-2019]. By integrating
+seamlessly with other commonly usedpackages in the Julia ecosystem,
+`CausalTables.jl` ensures both compatibility and ease of use for statisticians
+and applied scientists alike. 
 
 # Instructional use cases
 
