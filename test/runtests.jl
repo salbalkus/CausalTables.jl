@@ -77,6 +77,8 @@ end
     @test Tables.columnnames(CausalTables.response(coltbl2)) == (:Y, :U)
     @test Tables.columnnames(CausalTables.confounders(coltbl2)) == (:Z, :T)
     @test Tables.columnnames(CausalTables.treatmentparents(coltbl2)) == (:Z, :T)
+    @test Tables.columnnames(CausalTables.parents(coltbl2, :X)) == (:Z, :T)
+    @test Tables.columnnames(CausalTables.parents(coltbl2, :Z)) == ()
     @test Tables.columnnames(CausalTables.responseparents(coltbl2)) == (:X, :Z, :S, :T)
 
     # Other convenience
