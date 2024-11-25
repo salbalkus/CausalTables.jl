@@ -104,8 +104,8 @@ Wrapping an existing dataset with causal structure is easy. The
 structure, coupled with causal structure about the data-generating
 process. Calling convenience functions on this object allows users to
 perform data processing tasks common in causal inference. For instance,
-the `responseparents` function can be used to select only variables
-upstream from the response.
+the `parents` function can be used to select only variables denoted as
+causes of another given variable.
 
 :::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
@@ -120,7 +120,7 @@ tbl = (W = [0.2, 0.4, 0.7],
 ct_wrap = CausalTable(tbl; treatment = :A, response = :Y, confounders = [:W])
           
 # Select only variables upstream from the response
-responseparents(ct_wrap)
+parents(ct_wrap, :Y)
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
@@ -137,11 +137,6 @@ responseparents(ct_wrap)
     Arrays: NamedTuple()
 :::
 ::::
-
-<!--
-nh: wouldn't it be clearer to have a single `parents()` function that takes as
-argument what node to return the parents of?
--->
 
 Simulating causal data for different settings is slightly more involved.
 In the remainder of this section, we will present two example use cases
@@ -202,7 +197,7 @@ ate(scm) # average treatment effect
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    (μ = 0.999, eff_bound = 1.998)
+    (μ = 0.999, eff_bound = 2.004)
 :::
 ::::
 
@@ -245,7 +240,7 @@ ipw = mean(y .* (2 * a .- 1) ./ propensity(scm, ct, :A))
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    1.129
+    1.122
 :::
 ::::
 
@@ -262,7 +257,7 @@ mean(y_treated .- y_untreated)
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    1.056
+    1.076
 :::
 ::::
 
@@ -308,7 +303,7 @@ ape(scm, additive_mtp(1)) # average policy effect
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    (μ = 2.502, eff_bound = 5.252)
+    (μ = 2.500, eff_bound = 5.263)
 :::
 ::::
 
@@ -329,7 +324,7 @@ outcome_reg = mean(conmean(scm, ct_intervened, :Y) .- responsematrix(ct))
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    2.502
+    2.541
 :::
 ::::
 
