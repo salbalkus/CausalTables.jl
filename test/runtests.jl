@@ -80,6 +80,7 @@ end
     @test Tables.columnnames(CausalTables.parents(coltbl2, :X)) == (:Z, :T)
     @test Tables.columnnames(CausalTables.parents(coltbl2, :Z)) == ()
     @test Tables.columnnames(CausalTables.responseparents(coltbl2)) == (:X, :Z, :S, :T)
+    @test Tables.columnnames(CausalTables.parents(coltbl2, :Y)) == Tables.columnnames(CausalTables.responseparents(coltbl2))
 
     # Other convenience
     baz = (X = [4, 5], Y = ["foo", "bar"], Z = [0.1, 0.2])
