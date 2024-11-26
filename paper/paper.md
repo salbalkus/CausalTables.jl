@@ -97,12 +97,14 @@ either by imposing a causal structure on an existing dataset, or by
 drawing new data randomly from a programmatically-defined SCM.
 
 Wrapping an existing dataset with causal structure is easy. The
-`CausalTable` constructor creates a `Tables.jl`-compliant data
-structure, coupled with causal structure about the data-generating
-process. Calling convenience functions on this object allows users to
-perform data processing tasks common in causal inference. For instance,
-the `parents` function can be used to select only variables denoted as
-causes of another given variable.
+`CausalTable` constructor creates a `Tables.jl`-compliant data structure
+that wraps any existing data that already satisfies the `Tables.jl`
+interface with additional information about its causal structure.
+Calling convenience functions on this object allows users to perform
+data processing tasks common in causal inference, such as selecting or
+intervening on specific variables. For example, the `parents` function
+can be used to select only variables denoted as causes of another given
+variable.
 
 :::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
@@ -193,7 +195,7 @@ ate(scm) # average treatment effect
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    (μ = 0.998, eff_bound = 2.002)
+    (μ = 0.999, eff_bound = 1.997)
 :::
 ::::
 
@@ -232,7 +234,7 @@ mean(y .* (2 * a .- 1) ./ propensity(scm, ct, :A))
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    0.941
+    1.002
 :::
 ::::
 
@@ -249,7 +251,7 @@ mean(y_treated .- y_untreated)
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    1.059
+    0.919
 :::
 ::::
 
@@ -295,7 +297,7 @@ ape(scm, additive_mtp(1)) # average policy effect
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    (μ = 2.500, eff_bound = 5.236)
+    (μ = 2.498, eff_bound = 5.237)
 :::
 ::::
 
@@ -316,7 +318,7 @@ mean(conmean(scm, ct_intervened, :Y) .- responsematrix(ct))
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    2.481
+    2.464
 :::
 ::::
 
