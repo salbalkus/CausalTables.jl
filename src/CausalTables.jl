@@ -35,7 +35,7 @@ export nrow, ncol, subset, select, reject
 export replace, treatment, response, confounders, data
 export treatmentmatrix, responsematrix, confoundersmatrix
 export treatmentnames, responsenames, confoundernames 
-export treatmentparents, responseparents
+export treatmentparents, responseparents, parents
 export adjacency_matrix, dependency_matrix
 
 # network_summary.jl

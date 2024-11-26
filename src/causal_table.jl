@@ -290,7 +290,7 @@ responsematrix(o::CausalTable) = Tables.matrix(response(o))
 """
     treatmentparents(o::CausalTable)
 
-Selects the confounders from the given `CausalTable` object.
+Selects all variables besides those in `o.treatment` and `o.response` from the given `CausalTable` object.
 
 # Arguments
 - `o::CausalTable`: The `CausalTable` object from which to extract the parent variables of the treatment.
@@ -303,7 +303,7 @@ treatmentparents(o::CausalTable) = reject(o, union(o.treatment, o.response))
 """
     responseparents(o::CausalTable)
 
-Selects the treatment and confounders from the given `CausalTable` object.
+Selects all variables besides those in `o.response` from the given `CausalTable` object.
 
 # Arguments
 - `o::CausalTable`: The `CausalTable` object from which to extract the parent variables of the response.
@@ -312,6 +312,30 @@ Selects the treatment and confounders from the given `CausalTable` object.
 A new `CausalTable` containing only the confounders and treatment.
 """
 responseparents(o::CausalTable) = reject(o, o.response)
+
+"""
+    parents(o::CausalTable, symbol)
+
+Selects the variables that precede `symbol` causally from the CausalTable `o`. For instance, if `symbol` is in `o.response`, this function will return a CausalTable containing the symbols in `o.treatment` and `o.confounders`. 
+
+Warning: If `symbol` is in `o.confounders`, then this function will return a CausalTable containing an empty `data` attribute.
+
+# Arguments
+- `o::CausalTable`: The `CausalTable` object from which to extract the parent variables of `symbol`.
+- `symbol`: The variable for which to extract the parent variables.
+
+# Returns
+A new `CausalTable` containing only the parents of `symbol`
+"""
+function parents(o::CausalTable, symbol)
+    if symbol in o.treatment
+        return(treatmentparents(o))
+    elseif symbol in o.response
+        return(responseparents(o))
+    else
+        return(replace(o; data = (;)))
+    end
+end
 
 # Other getters
 """
