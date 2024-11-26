@@ -195,7 +195,7 @@ ate(scm) # average treatment effect
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    (μ = 0.999, eff_bound = 1.997)
+    (μ = 1.001, eff_bound = 1.999)
 :::
 ::::
 
@@ -234,7 +234,7 @@ mean(y .* (2 * a .- 1) ./ propensity(scm, ct, :A))
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    1.002
+    0.918
 :::
 ::::
 
@@ -251,7 +251,7 @@ mean(y_treated .- y_untreated)
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    0.919
+    1.024
 :::
 ::::
 
@@ -297,18 +297,16 @@ ape(scm, additive_mtp(1)) # average policy effect
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    (μ = 2.498, eff_bound = 5.237)
+    (μ = 2.502, eff_bound = 5.264)
 :::
 ::::
 
-One strategy for estimating an APE is to assume a parametric outcome
-regression model (such as a general linear model) and using this to
-predict the outcome $Y$ under the modified treatment policy
-$d(A, W;\delta): A \to A + \delta$; the average difference of these
-predictions from the observed $Y$ yields the APE. We can use
-`CausalTables.jl` to see what the output of such a procedure would have
-been had we known the true value of the outcome regression using the
-`intervene` and `conmean` functions:
+One strategy for estimating an APE is to fit a parametric outcome
+regression model and use it to predict the outcome $Y$ under the
+modified treatment policy $d(A, W;\delta): A \to A + \delta$; the
+average difference of these predictions on the observed data yields the
+APE. We can use `CausalTables.jl` to simulate the output of such a
+procedure under the true value of the outcome regression:
 
 :::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
@@ -318,7 +316,7 @@ mean(conmean(scm, ct_intervened, :Y) .- responsematrix(ct))
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    2.464
+    2.558
 :::
 ::::
 

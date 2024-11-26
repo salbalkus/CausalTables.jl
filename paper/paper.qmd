@@ -252,18 +252,16 @@ demonstrate this below for an MTP indexed by the choice $\delta = 1$.
 ape(scm, additive_mtp(1)) # average policy effect
 ```
 
-One strategy for estimating an APE is to assume a parametric outcome regression
-model (such as a general linear model) and using this to predict the outcome 
-$Y$ under the modified treatment policy $d(A, W;\delta): A \to A + \delta$; 
-the average difference of these predictions from the observed $Y$ yields the 
-APE. We can use `CausalTables.jl` to see what the output  of such a procedure 
-would have been had we known the true value of the outcome regression 
-using the `intervene` and `conmean` functions:
+One strategy for estimating an APE is to fit a parametric outcome regression
+model and use it to predict the outcome $Y$ under the modified treatment policy 
+$d(A, W;\delta): A \to A + \delta$; the average difference of these predictions 
+on the observed data yields the APE. We can use `CausalTables.jl` to simulate 
+the output of such a procedure under the true value of the outcome regression:
 
 ```{julia}
 ct = rand(scm, 500)  # Randomly draw data
 ct_intervened = intervene(ct, additive_mtp(1))  # apply MTP
-mean(conmean(scm, ct_intervened, :Y) .- responsematrix(ct))
+mean(conmean(scm, ct_intervened, :Y) .- responsematrix(ct)) 
 ```
 
 # Closing remarks
