@@ -27,11 +27,11 @@ toc-title: Table of contents
 
 Estimating the strength of causal relationships between variables is an
 important problem across many scientific disciplines. A variety of
-statistical methods have been developed to estimate and obtain inference
-about causal quantities, yet few tools readily support the comparison of
-candidate approaches. `CausalTables.jl` provides tools to evaluate and
-compare statistical causal inference methods in Julia. The package
-provides two main functionalities. Firstly, it implements a
+statistical methods have been developed to estimate and obtain
+inferences about causal quantities, yet few tools readily support the
+comparison of candidate approaches. `CausalTables.jl` offers tools to
+evaluate and compare statistical causal inference methods in Julia. The
+package provides two main functionalities. Firstly, it implements a
 `CausalTable` interface for storing data with partially-labeled causal
 structure in a `Tables.jl`-compatible format. Secondly, it introduces a
 `StructuralCausalModel` for randomly generating data with a
@@ -145,8 +145,8 @@ of how `CausalTables.jl` can be used as a benchmarking tool.
 
 The prototypical causal inference problem involves estimating the
 average treatment effect (ATE) of a binary treatment $A$. The ATE
-describes the difference in the counterfactual mean of $Y$ had everyone
-been treated versus no one treated. An example SCM describing this
+describes the difference in the counterfactual mean of $Y$ had every
+unit been treated versus no unit treated. An example SCM describing this
 scenario might be the following: `\begin{align*}
 W &\sim Beta(2, 4) \\
 A &\sim Bernoulli(W) \\
@@ -195,13 +195,13 @@ ate(scm) # average treatment effect
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    (μ = 1.001, eff_bound = 1.999)
+    (μ = 1.000, eff_bound = 1.996)
 :::
 ::::
 
 In addition, `CausalTables.jl` provides a low-level interface allowing
 users to (1) apply common interventions to the treatment variable in a
-`CausalTable`, and (2) compute ground-truth conditional densities and
+`CausalTable`, and (2) compute ground truth conditional densities and
 functions of these (e.g., mean, variance), which typically arise as
 nuisance parameters in the construction of estimators in causal
 inference. For example, below, we compute the difference in the
@@ -220,11 +220,11 @@ mean(conmean(scm, treated, :Y) .- conmean(scm, untreated, :Y))
 :::
 ::::
 
-The above recovers an estimate of the ground-truth via plug-in estimates
+The above recovers an estimate of the ground truth via plug-in estimates
 based on the outcome regression (i.e., the conditional expectation of
 the outcome, given treatment and covariates). Alternatively, one can
-also compute an inverse probability weighted (IPW) estimate with
-ground-truth weights using the `propensity` function:
+also compute an inverse probability weighted (IPW) estimate with ground
+truth weights using the `propensity` function:
 
 :::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
@@ -234,7 +234,7 @@ mean(y .* (2 * a .- 1) ./ propensity(scm, ct, :A))
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    0.918
+    1.171
 :::
 ::::
 
@@ -251,7 +251,7 @@ mean(y_treated .- y_untreated)
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    1.024
+    0.950
 :::
 ::::
 
@@ -297,7 +297,7 @@ ape(scm, additive_mtp(1)) # average policy effect
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    (μ = 2.502, eff_bound = 5.264)
+    (μ = 2.501, eff_bound = 5.270)
 :::
 ::::
 
@@ -306,7 +306,7 @@ regression model and use it to predict the outcome $Y$ under the
 modified treatment policy $d(A, W;\delta): A \to A + \delta$; the
 average difference of these predictions on the observed data yields the
 APE. We can use `CausalTables.jl` to simulate the output of such a
-procedure under the true value of the outcome regression:
+procedure had we known the true value of the outcome regression:
 
 :::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
@@ -316,7 +316,7 @@ mean(conmean(scm, ct_intervened, :Y) .- responsematrix(ct))
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    2.558
+    2.551
 :::
 ::::
 
