@@ -12,7 +12,7 @@ authors:
   name: Nima S. Hejazi
   orcid: 0000-0002-7127-2789
 bibliography: paper.bib
-date: 2024-11-20
+date: 2024-11-26
 tags:
 - Julia
 - statistics
@@ -26,20 +26,19 @@ toc-title: Table of contents
 # Summary
 
 Estimating the strength of causal relationships between variables is an
-important problem across many scientific disciplines---and one for which
-several frameworks have been developed. A variety of statistical methods
-have been developed to estimate and obtain inference about causal
-quantities, yet few tools readily support the comparison of candidate
-approaches. `CausalTables.jl` provides tools to evaluate and compare
-statistical causal inference methods in Julia. The package provides two
-main functionalities. Firstly, it implements a `CausalTable` interface
-for storing data with partially-labeled causal structure in a
-`Tables.jl`-compatible format. Secondly, it introduces a
+important problem across many scientific disciplines. A variety of
+statistical methods have been developed to estimate and obtain inference
+about causal quantities, yet few tools readily support the comparison of
+candidate approaches. `CausalTables.jl` provides tools to evaluate and
+compare statistical causal inference methods in Julia. The package
+provides two main functionalities. Firstly, it implements a
+`CausalTable` interface for storing data with partially-labeled causal
+structure in a `Tables.jl`-compatible format. Secondly, it introduces a
 `StructuralCausalModel` for randomly generating data with a
-user-specified causal structure while also supporting computing ground
-truth parameters under the given experiment. Together, these
-functionalities expand the Julia ecosystem by supporting the use and
-benchmarking of the growing number of causal inference methods.
+user-specified causal structure and computing ground truth parameters
+under the given experiment. Together, these functionalities expand the
+Julia ecosystem by supporting the use and benchmarking of the growing
+number of causal inference methods.
 
 # Statement of need
 
@@ -52,15 +51,14 @@ important phenomena in fields ranging from health and medicine to
 politics and economics. As interest in causal inference has grown across
 many disciplines, so too has the development of software tools for
 estimating causal effects. While Julia packages for causal inference
-have begun to emerge---including, for estimation, `TMLE.jl` [@TMLE.jl]
-and `CausalELM.jl` [@CausalELM.jl], and, for causal discovery,
-`CausalInference.jl` [@Schauer2024]---the ecosystem is still in its
-infancy. New methods for causal inference are being developed at a rapid
-pace, underscoring the need for tools designed to support and simplify
-the evaluation and comparison of their performance. `CausalTables.jl`
-aims to provide such a tool for the Julia language. Currently, attempts
-to benchmark causal inference methods in Julia face two major
-challenges.
+have begun to emerge---with examples including, for estimation,
+`TMLE.jl` [@TMLE.jl] and `CausalELM.jl` [@CausalELM.jl], and, for causal
+discovery, `CausalInference.jl` [@Schauer2024]---the ecosystem is still
+in its infancy. New methods for causal inference are being developed at
+a rapid pace, underscoring the need for tools designed to support the
+evaluation and comparison of their performance. `CausalTables.jl` aims
+to provide such a tool for the Julia language. Currently, attempts to
+benchmark causal inference methods in Julia face two major challenges.
 
 First, packages often have inconsistent APIs. For example, some packages
 require the user to provide treatment and response variables as
@@ -74,11 +72,10 @@ simulating data for numerical experiments from a Structural Causal Model
 underlying ground truth (encoded via interventions on the SCM). An SCM
 defines causal structure by envisaging a data-generating process as
 random draws from a sequence of non-parametric structural equations,
-with each draw depending on realizations from draws preceding it
-temporally. `CausalTables.jl` provides a simple, user-friendly way to
-define an SCM, sample data randomly from it, and compute or approximate
-the underlying true values (determiend by the SCM) of several common
-causal effect parameters.
+with each draw depending on realizations from draws preceding it.
+`CausalTables.jl` provides a simple, user-friendly way to define an SCM,
+sample data randomly from it, and compute or approximate the underlying
+true values of several common causal effect parameters.
 
 By addressing these two major challenges, `CausalTables.jl` simplifies
 and accelerates the development of tools for statistical causal
@@ -87,7 +84,7 @@ most common interface for accessing tabular data in Julia
 [@quinn2024tables]. The SCM framework operates in conjunction with
 `Distributions.jl`, the premier Julia package for working with random
 variables [@JSSv098i16; @Distributions.jl-2019]. By integrating
-seamlessly with other commonly usedpackages in the Julia ecosystem,
+seamlessly with other commonly used packages in the Julia ecosystem,
 `CausalTables.jl` ensures both compatibility and ease of use for
 statisticians and applied scientists alike.
 
@@ -145,11 +142,10 @@ of how `CausalTables.jl` can be used as a benchmarking tool.
 ## Example 1: Average Treatment Effect
 
 The prototypical causal inference problem involves estimating the
-average treatment effect (ATE) of a binary treatment $A$ on some outcome
-$Y$, in the presence of potential confounders $W$. The ATE describes the
-difference in the counterfactual mean of $Y$ had everyone been treated
-versus no one treated. An example SCM describing this scenario might be
-the following: `\begin{align*}
+average treatment effect (ATE) of a binary treatment $A$. The ATE
+describes the difference in the counterfactual mean of $Y$ had everyone
+been treated versus no one treated. An example SCM describing this
+scenario might be the following: `\begin{align*}
 W &\sim Beta(2, 4) \\
 A &\sim Bernoulli(W) \\
 Y &\sim Normal(A + W, 1)
@@ -181,15 +177,15 @@ ct = rand(scm, 500) # randomly draw from the SCM
 ```
 :::
 
-Not only does `CausalTables.jl` provide functions to approximate ground
-truth values of common causal estimands such as the ATE (using `ate`),
-it also allows estimation of the corresponding efficiency bound---the
-asymptotic variance lower bound---for a class of estimators (those that
-are regulary and asymptotically linear) commonly used in causal
-inference; this is a critical component as it facilitates the comparison
-of candidate estimators not only in terms of their bias (average
-distance from the ground truth) but also their efficiency. Below, we
-demonstrate these for the example SCM given above.
+`CausalTables.jl` provides functions to approximate ground truth values
+of common causal estimands such as the ATE (using `ate`). These
+functions also simultaneously estimate the corresponding efficiency
+bound---the asymptotic lower bound on the variance---for a class of
+estimators (those that are regular and asymptotically linear) commonly
+used in causal inference. This facilitates the comparison of candidate
+estimators not only in terms of their bias (average distance from the
+ground truth) but also their efficiency. Below, we demonstrate these for
+the example SCM given above.
 
 :::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
@@ -197,16 +193,12 @@ ate(scm) # average treatment effect
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    (μ = 0.999, eff_bound = 2.004)
+    (μ = 0.998, eff_bound = 2.002)
 :::
 ::::
 
-<!--
-nh:  show the variance computation via a convenience function?
--->
-
-`CausalTables.jl` also provides a low-level interface allowing users to
-(1) apply common interventions to the treatment variable in a
+In addition, `CausalTables.jl` provides a low-level interface allowing
+users to (1) apply common interventions to the treatment variable in a
 `CausalTable`, and (2) compute ground-truth conditional densities and
 functions of these (e.g., mean, variance), which typically arise as
 nuisance parameters in the construction of estimators in causal
@@ -216,9 +208,9 @@ difference of which is the ATE.
 
 :::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
-ct_treated = intervene(ct, treat_all)    # CausalTable with everyone treated
-ct_untreated = intervene(ct, treat_none) # CausalTable with no one treated
-outcome_reg = mean(conmean(scm, ct_treated, :Y) .- conmean(scm, ct_untreated, :Y))
+treated = intervene(ct, treat_all)    # CausalTable with everyone treated
+untreated = intervene(ct, treat_none) # CausalTable with no one treated
+mean(conmean(scm, treated, :Y) .- conmean(scm, untreated, :Y))
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
@@ -236,11 +228,11 @@ ground-truth weights using the `propensity` function:
 ``` {.julia .cell-code}
 y = responsematrix(ct) # get the response
 a = treatmentmatrix(ct) # get the treatment
-ipw = mean(y .* (2 * a .- 1) ./ propensity(scm, ct, :A))
+mean(y .* (2 * a .- 1) ./ propensity(scm, ct, :A))
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    1.122
+    0.941
 :::
 ::::
 
@@ -257,15 +249,15 @@ mean(y_treated .- y_untreated)
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    1.076
+    1.059
 :::
 ::::
 
 ## Example 2: Modified Treatment Policies
 
 `CausalTables.jl` is not limited to settings with binary treatments; it
-also supports more exotic estimands. Consider the following SCM, in
-which the treatment $A$ is continuous-valued.
+also supports other estimands. Consider the following SCM, in which the
+treatment $A$ is continuous-valued.
 
 ::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
@@ -303,28 +295,28 @@ ape(scm, additive_mtp(1)) # average policy effect
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    (μ = 2.500, eff_bound = 5.263)
+    (μ = 2.500, eff_bound = 5.236)
 :::
 ::::
 
 One strategy for estimating an APE is to assume a parametric outcome
-regression model (such as the general linear model with a specified
-functional form), using this to predict the outcome $Y$ under the
-modified treatment policy $d(A, W;
-\delta): A \to A + \delta$; the average difference of these predictions
-from the observed $Y$ yields the APE. We can use `CausalTables.jl` to
-see how well this procedure would work if we knew the true value of the
-outcome regression using the `intervene` and `conmean` functions:
+regression model (such as a general linear model) and using this to
+predict the outcome $Y$ under the modified treatment policy
+$d(A, W;\delta): A \to A + \delta$; the average difference of these
+predictions from the observed $Y$ yields the APE. We can use
+`CausalTables.jl` to see what the output of such a procedure would have
+been had we known the true value of the outcome regression using the
+`intervene` and `conmean` functions:
 
 :::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
 ct = rand(scm, 500)  # Randomly draw data
 ct_intervened = intervene(ct, additive_mtp(1))  # apply MTP
-outcome_reg = mean(conmean(scm, ct_intervened, :Y) .- responsematrix(ct))
+mean(conmean(scm, ct_intervened, :Y) .- responsematrix(ct))
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    2.541
+    2.481
 :::
 ::::
 
