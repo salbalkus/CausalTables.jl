@@ -18,7 +18,7 @@ tags:
 - statistics
 - causal inference
 - tables
-title: "`CausalTables.jl`: Simulating and storing data for statistical
+title: "CausalTables.jl: Simulating and storing data for statistical
   causal inference in Julia"
 toc-title: Table of contents
 ---
@@ -195,7 +195,7 @@ ate(scm) # average treatment effect
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    (μ = 1.000, eff_bound = 1.996)
+    (μ = 1.002, eff_bound = 2.001)
 :::
 ::::
 
@@ -234,7 +234,7 @@ mean(y .* (2 * a .- 1) ./ propensity(scm, ct, :A))
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    1.171
+    1.021
 :::
 ::::
 
@@ -251,7 +251,7 @@ mean(y_treated .- y_untreated)
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    0.950
+    0.994
 :::
 ::::
 
@@ -297,7 +297,7 @@ ape(scm, additive_mtp(1)) # average policy effect
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    (μ = 2.501, eff_bound = 5.270)
+    (μ = 2.502, eff_bound = 5.242)
 :::
 ::::
 
@@ -316,7 +316,7 @@ mean(conmean(scm, ct_intervened, :Y) .- responsematrix(ct))
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    2.551
+    2.529
 :::
 ::::
 
