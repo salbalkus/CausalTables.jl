@@ -12,7 +12,7 @@ authors:
   name: Nima S. Hejazi
   orcid: 0000-0002-7127-2789
 bibliography: paper.bib
-date: 2024-11-26
+date: 02 December 2024
 tags:
 - Julia
 - statistics
