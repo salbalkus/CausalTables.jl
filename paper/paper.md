@@ -28,11 +28,11 @@ toc-title: Table of contents
 Estimating the strength of causal relationships between variables is an
 important problem across many scientific disciplines. `CausalTables.jl`
 provides tools to (1) easily store and process tabular data endowed with
-causal structure and (2) simulate data from causal models for
-experimental testing and compute ground-truth estimates. Together, these
-functionalities expand the Julia ecosystem by supporting the development
-and experimental assessment of new statistical causal inference methods
-in Julia.
+causal structure, (2) simulate data from causal models for experimental
+testing, and (3) compute ground-truth estimates of causal parameters.
+Together, these functionalities expand the Julia ecosystem by supporting
+the development and experimental assessment of new statistical causal
+inference methods in Julia.
 
 # Statement of need
 
@@ -80,54 +80,40 @@ While the R and Python ecoysystems include many implementations of
 causal methods [@tlverse; @Chen2020], Julia has relatively fewer. Recent
 Julia packages for causal inference include `TMLE.jl` [@TMLE.jl] and
 `CausalELM.jl` [@CausalELM.jl]. These packages focus on specific
-estimation techniques using tabular data, each implementing different
-interfaces to label causal structure for their specific causal problems;
-they do not provide a general simulation or causal-specific data
-processing framework like `CausalTables.jl`. On the other hand,
-`CausalInference.jl` [@Schauer2024] provides an interface for
-representing causal graphs and implements causal discovery algorithms,
-similar to CausalDAG [@squires2018causaldag] or DoWhy [@dowhy] in Python
-and daggity [@Textor2017] in R. However, it is generally incompatible
-with the tabular data format required by statistical tools, and also
-cannot simulate data. In fact, as far as we are aware, `CausalTables.jl`
-is the first package for simulating and extracting ground-truth causal
+estimation techniques, each implementing different interfaces to label
+causal structure for their specific problems. They do not provide a
+general simulation or causal-specific data processing framework like
+`CausalTables.jl`. On the other hand, `CausalInference.jl`
+[@Schauer2024] provides an interface for representing causal graphs and
+implements causal discovery algorithms, similar to CausalDAG
+[@squires2018causaldag] or DoWhy [@dowhy] in Python and daggity
+[@Textor2017] in R. However, it is generally incompatible with the
+tabular data format required by statistical tools, and also cannot
+simulate data. In fact, as far as we are aware, `CausalTables.jl` is the
+first package for simulating and extracting ground-truth causal
 estimands from an existing SCM in Julia.
 
 # Example 1: Data Preprocessing
 
 `CausalTables.jl` supports causal inference problems that involve
 estimating the effect of at least one treatment variable $A$ on a
-response variable $Y$ in the presence of confounders $W$. Using the
-`CausalTable` constructor, one can wrap existing data as a
-`Tables.jl`-compliant structure coupled with causal structure labels.
+response variable $Y$. Using the `CausalTable` constructor, one can wrap
+existing data as a `Tables.jl`-compliant structure coupled with causal
+structure labels.
 
-:::: {.cell execution_count="1"}
+::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
 using CausalTables
 
-# Example data in a Tables-compatible format
+# Example data in Tables-compatible format
 tbl = (W = [0.2, 0.4, 0.7], 
        A = [false, true, true], 
        Y = [0.8, 1.2, 2.3])
 
-# Wrap the data as a CausalTable
+# Wrap data as CausalTable
 ct_wrap = CausalTable(tbl; treatment = :A, response = :Y, confounders = [:W])
 ```
-
-::: {.cell-output .cell-output-display execution_count="1"}
-    CausalTable
-    ┌─────────┬───────┬─────────┐
-    │       W │     A │       Y │
-    │ Float64 │  Bool │ Float64 │
-    ├─────────┼───────┼─────────┤
-    │   0.200 │ false │   0.800 │
-    │   0.400 │  true │   1.200 │
-    │   0.700 │  true │   2.300 │
-    └─────────┴───────┴─────────┘
-    Summaries: NamedTuple()
-    Arrays: NamedTuple()
 :::
-::::
 
 Convenience functions perform data processing tasks common to causal
 inference, such as selecting or intervening on specific variables. For
@@ -154,7 +140,7 @@ parents(ct_wrap, :Y)
 :::
 ::::
 
-## Example 2: Simulating data with ground-truth ATE
+## Example 2: Simulating data with ground-truth approximations
 
 An SCM defines causal structure by envisaging a data-generating process
 as random draws from a sequence of non-parametric structural equations,
@@ -191,35 +177,23 @@ ct = rand(scm, 500) # randomly draw from the SCM
 ```
 :::
 
-`CausalTables.jl` provides high-level functions to approximate ground
-truth values of common causal estimands, including:
+`CausalTables.jl` provides high-level functions that approximate ground
+truth values of common causal estimands when called on the `scm`. These
+include:
 
--   Average Treatment Effects (ATE) including among the treatment (ATT)
-    and untreated (ATT)
--   Counterfactual Means and Differences
--   Average Policy Effects (APE)
+-   Average treatment effects (`ate`) including among the treatment
+    (`att`) and untreated (`atu`)
+-   Counterfactual means (`cfmean`) and differences (`cfdiff`)
+-   Average policy effects (`ape`)
 
-For example, we can compute the ATE on the SCM above like so:
-
-:::: {.cell execution_count="1"}
-``` {.julia .cell-code}
-ate(scm) # average treatment effect
-```
-
-::: {.cell-output .cell-output-display execution_count="1"}
-    (μ = 1.000, eff_bound = 2.000)
-:::
-::::
-
-In addition, `CausalTables.jl` provides a low-level interface allowing
-users to (1) apply common interventions to the treatment variable in a
-`CausalTable`, (2) draw randomly from counterfactual distributions, and
-(3) compute ground truth conditional densities and functions of these
-(e.g., mean, variance, propensity scores), which typically arise as
-nuisance parameters in the construction of estimators in causal
-inference. For example, below, we compute the difference in the
-conditional mean of $Y$ under treatment versus no treatment, the
-difference of which is the ATE.
+In addition, `CausalTables.jl` implements low-level interface for (1)
+applying common interventions to the treatment variable in a
+`CausalTable`, (2) drawing randomly from counterfactual distributions,
+and (3) computing ground truth conditional densities and functions of
+these (e.g., means, variances, propensity scores), which often arise in
+the definition of many estimands.. For example, below we compute the
+difference in the conditional mean of $Y$ under treatment versus no
+treatment, the difference of which is the ATE.
 
 :::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
