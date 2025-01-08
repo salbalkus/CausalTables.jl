@@ -46,7 +46,7 @@ While the R and Python ecoysystems include many implementations of causal method
 #| echo: false
 #| output: false
 using Printf
-Base.show(io::IO, f::Float64) = @printf(io, "%.3f", f)
+Base.show(io::IO, f::Float64) = @printf(io, "%.1f", f)
 using Random
 Random.seed!(1)
 ```

@@ -131,9 +131,9 @@ parents(ct_wrap, :Y)
     │       W │     A │
     │ Float64 │  Bool │
     ├─────────┼───────┤
-    │   0.200 │ false │
-    │   0.400 │  true │
-    │   0.700 │  true │
+    │     0.2 │ false │
+    │     0.4 │  true │
+    │     0.7 │  true │
     └─────────┴───────┘
     Summaries: NamedTuple()
     Arrays: NamedTuple()
@@ -203,7 +203,7 @@ mean(conmean(scm, treated, :Y) .- conmean(scm, untreated, :Y))
 ```
 
 ::: {.cell-output .cell-output-display execution_count="1"}
-    1.000
+    1.0
 :::
 ::::
 
