@@ -55,15 +55,14 @@ Note that with the `@dgp` macro, any symbol (that is, any string of characters p
 
 ## Defining a StructuralCausalModel
 
-In CausalTables.jl, a StructuralCausalModel is a data generating process endowed with some causal interpretation. Constructing a StructuralCausalModel allows users to randomly draw a CausalTable with the necessary components from the DataGeneratingProcess they've defined. With the above DataGeneratingProcess in hand, we can define a `StructuralCausalModel` object like so -- treatment, response, and confounder variables in the causal model are specified as keyword arguments to the `DataGeneratingProcess` constructor:
+In CausalTables.jl, a StructuralCausalModel is a data generating process endowed with some causal interpretation. Constructing a StructuralCausalModel allows users to randomly draw a CausalTable with the necessary components from the DataGeneratingProcess they've defined. With the above DataGeneratingProcess in hand, we can define a `StructuralCausalModel` object like so -- treatment and response in the causal model are specified as keyword arguments to the `DataGeneratingProcess` constructor:
 
 
 ```jldoctest generation; output = false, filter = r"(?<=.{21}).*"s
 dgp = StructuralCausalModel(
     distributions;
     treatment = :X,
-    response = :Y,
-    confounders = [:W]
+    response = :Y
 )
 
 # output

@@ -18,6 +18,9 @@ function _process_causal_variable_names(treatment, response, causes)
         # Check that `causes` is acyclic
         _check_dag(causes) && throw(ArgumentError("`causes` contains a cycle, but causal relationships must form a directed acyclic graph (DAG), meaning no cycles are allowed."))
 
+        # Check that `causes` includes all treatment and response variables
+        !all(map(x -> x ∈ keys(causes), vcat(treatment, response))) && throw(ArgumentError("`causes` must contain, at a minimum, a key for each Symbol contained in `treatment` or `response`. If a given treatment has no causes, set it equal to an empty Vector (i.e. `A = []`)"))
+
         # Ensure response does not cause any variables in the DAG
         response_is_a_cause = any.(map(r -> r .∈ values(causes), response))
         any(response_is_a_cause) && throw(ArgumentError("`causes` denotes a response variables causing a treatment variable, which is not allowed."))
@@ -28,6 +31,7 @@ function _process_causal_variable_names(treatment, response, causes)
 end
 
 # Function that outputs true if the input is not a directed acyclic graph
+# Uses topological sorting to check
 function _check_dag(causes_original)
     causes = deepcopy(causes_original)
 
@@ -218,7 +222,7 @@ Selects specified columns from a `CausalTable` object.
 
 """
 select(o::CausalTable, symbols::Symbol) = replace(o; data = o.data |> TableTransforms.Select(symbols))
-select(o::CausalTable, symbols) = replace(o; data = o.data |> TableTransforms.Select(symbols...))
+select(o::CausalTable, symbols) = replace(o; data = (length(symbols) == 0 ? (;) : o.data |> TableTransforms.Select(symbols...)))
 
 """
     reject(o::CausalTable, symbols)
