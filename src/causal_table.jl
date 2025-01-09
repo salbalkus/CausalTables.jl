@@ -19,7 +19,7 @@ function _process_causal_variable_names(treatment, response, causes)
         _check_dag(causes) && throw(ArgumentError("`causes` contains a cycle, but causal relationships must form a directed acyclic graph (DAG), meaning no cycles are allowed."))
 
         # Check that `causes` includes all treatment and response variables
-        !all(map(x -> x ∈ keys(causes), vcat(treatment, response))) && throw(ArgumentError("`causes` must contain, at a minimum, a key for each Symbol contained in `treatment` or `response`. If a given treatment has no causes, set it equal to an empty Vector (i.e. `A = []`)"))
+        !all(map(x -> x ∈ keys(causes), vcat(treatment, response))) && throw(ArgumentError("`causes` must contain, at a minimum, a key for each Symbol contained in `treatment` or `response`. If a given treatment has no causes, set it equal to an empty Vector (i.e. `A = []`). If this error arose from using the `replace` function to change the `treatment` or `response` of a `CausalTable`, be sure to also update the `causes` attribute to reflect the new changes."))
 
         # Ensure response does not cause any variables in the DAG
         response_is_a_cause = any.(map(r -> r .∈ values(causes), response))
