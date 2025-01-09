@@ -36,6 +36,7 @@ export replace, treatment, response, confounders, data
 export treatmentmatrix, responsematrix, treatmentparents, responseparents, parents
 export confounders, confoundernames, confoundersmatrix
 export mediators, mediatornames, mediatorsmatrix
+export instruments, instrumentnames, instrumentsmatrix
 export adjacency_matrix, dependency_matrix
 
 # network_summary.jl

@@ -97,7 +97,7 @@ end
     @test_throws ArgumentError CausalTables.CausalTable(foo1, :X, :X)
 end
 
-#@testset "Confounders, mediators, and instrumental variables"
+@testset "Confounders, mediators, and instrumental variables" begin
     tbl = (
         L1 = [1, 2, 3],
         L2 = [4, 5, 6],
@@ -124,11 +124,14 @@ end
 
     # Test mediators
     @test mediatorsmatrix(ctbl) == reshape([hcat(tbl[:M1]), [;], hcat(tbl[:M1], tbl[:M2]), hcat(tbl[:M2])], (2,2))
-    @test mediatornames(ctbl, :L1, :Y1)  == [:A1]
+    @test mediators(ctbl, :L1, :Y1).data  == (A1 = tbl[:A1],)
 
     # Test instrumental variables
-    
-
+    instrument_truth = reshape([hcat(tbl[:I1], tbl[:M2]), 
+        hcat(tbl[:L2], tbl[:I1], tbl[:I2], tbl[:M2]), 
+        hcat(tbl[:I1]), hcat(tbl[:I1], tbl[:I2])], (2,2))
+    @test instrumentsmatrix(ctbl) == instrument_truth
+    @test instruments(ctbl, :M1, :Y1).data == (;)
 end
 
 @testset "DataGeneratingProcess using dgp macro, no graphs" begin

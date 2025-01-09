@@ -524,8 +524,8 @@ mediators(o::CausalTable, x::Symbol, y::Symbol) = select(o, mediatornames(o, x, 
 Outputs the treatment-variable confounders from the given `CausalTable` object as a matrix (or matrix of matrices, if multiple treatment-response pairs are present).
 
 # Arguments
-- `o::CausalTable`: The `CausalTable` object from which to extract the confounders of each treatment-response pair.
-- `collape_parents::Bool`: Optional parameter, whether to collapse the output to a single `Matrix` object if there is either only one treatment-response pair or all pair share the same set of confounders. Defaults to `true`.
+- `o::CausalTable`: The `CausalTable` object from which to extract the mediators of each treatment-response pair.
+- `collape_parents::Bool`: Optional parameter, whether to collapse the output to a single `Matrix` object if there is either only one treatment-response pair or all pair share the same set of mediators. Defaults to `true`.
 
 # Returns
 A matrix containing only the confounders.
@@ -545,17 +545,15 @@ Outputs the instrument names of each treatment-response pair from the given `Cau
 # Returns
 A matrix of Vectors containing the instrument names of each treatment-response pair.
 """
-#function instrumentnames(o::CausalTable)
-    # Extract the mediator names: variables that cause response but are caused by treatment
-#    treatment_parent_names = [o.causes[k] for k in keys(o.causes) if k ∈ o.treatment]
-#    response_parent_names = [o.causes[k] for k in keys(o.causes) if k ∈ o.response]
-#    return(hcat([[intersect(tpn, rpn) for tpn in caused_by_treatment] for rpn in response_parent_names]...))
-#end
+function instrumentnames(o::CausalTable)
+    # Extract the instrument names: variables that cause treatment but not response
+    hcat([[instrumentnames(o, t, r) for t in o.treatment] for r in o.response]...)
+end
 
 """
     instrumentnames(o::CausalTable, x::Symbol, y::Symbol)
 
-Outputs the names of the instruments of the causal relationship between `x` and `y` from the given `CausalTable` object; that is, variables that cause `x` but do not cause `y` through any other path except through `x`
+Outputs the names of the instruments of the causal relationship between `x` and `y` from the given `CausalTable` object; that is, variables that are associated with `x` but do not cause `y`.
 
 # Arguments
 - `o::CausalTable`: The `CausalTable` object from which to extract the mediator names.
@@ -564,12 +562,12 @@ Outputs the names of the instruments of the causal relationship between `x` and 
 # Returns
 A Vector of Symbols containing the names of the mediators between x and y.
 """
-#instrumentnames(o::CausalTable, x::Symbol, y::Symbol) = [c for c in o.causes[x]]
+instrumentnames(o::CausalTable, x::Symbol, y::Symbol) = [c for c in union(o.causes[x], [k for k in keys(o.causes) if x ∈ o.causes[k]]) if c ∉ union(o.causes[y], o.response)]
 
 """
     instruments(o::CausalTable; collapse_parents = true)
 
-Selects the instruments of each treatment-response pair from the given `CausalTable` object; that is, variables that cause the treatment but do not cause the response through any other path except through treatment.
+Selects the instruments of each treatment-response pair from the given `CausalTable` object; that is, variables that are associated with the treatment but do not cause the response.
 
 # Arguments
 - `o::CausalTable`: The `CausalTable` object from which to extract the instrumental variables of each treatment-response pair.
@@ -578,35 +576,35 @@ Selects the instruments of each treatment-response pair from the given `CausalTa
 # Returns
 A new `CausalTable` containing only the instruments (if a single response, or all responses share the same set of instruments); otherwise, a Matrix of CausalTable objects containing the instruments of each treatment-response pair, where rows represent responses and columns represent treatments.
 """
-#instruments(o::CausalTable; collapse_parents = true) = select_over_matrix(o, instrumentnames(o); collapse_parents = collapse_parents)
+instruments(o::CausalTable; collapse_parents = true) = select_over_matrix(o, instrumentnames(o); collapse_parents = collapse_parents)
 
 """
     instruments(o::CausalTable, x::Symbol, y::Symbol)
 
-Selects the instruments for a specific pair of variables (x,y) from the given `CausalTable` object; that is, variables that cause `x` but do not cause `y` through any other path except through `x`
+Selects the instruments for a specific pair of variables (x,y) from the given `CausalTable` object; that is, variables that are associated with `x` but do not cause `y`.
 
 # Arguments
-- `o::CausalTable`: The `CausalTable` object from which to extract the mediators.
-- `x::Symbol`, `y::Symbol`: The two variables whose mediators should be selected.
+- `o::CausalTable`: The `CausalTable` object from which to extract the instruments.
+- `x::Symbol`, `y::Symbol`: The two variables whose instruments should be selected.
 
 # Returns
-A new `CausalTable` containing only the mediators of both x and y.
+A new `CausalTable` containing only the instruments of both x and y.
 """
-#instruments(o::CausalTable, x::Symbol, y::Symbol) = select(o, instrumentnames(o, x, y))
+instruments(o::CausalTable, x::Symbol, y::Symbol) = select(o, instrumentnames(o, x, y))
 
 """
-    mediatorsmatrix(o::CausalTable; collapse_parents = true)
+    instrumentsmatrix(o::CausalTable; collapse_parents = true)
 
-Outputs the treatment-variable confounders from the given `CausalTable` object as a matrix (or matrix of matrices, if multiple treatment-response pairs are present).
+Outputs the treatment-variable instruments from the given `CausalTable` object as a matrix (or matrix of matrices, if multiple treatment-response pairs are present).
 
 # Arguments
-- `o::CausalTable`: The `CausalTable` object from which to extract the confounders of each treatment-response pair.
-- `collape_parents::Bool`: Optional parameter, whether to collapse the output to a single `Matrix` object if there is either only one treatment-response pair or all pair share the same set of confounders. Defaults to `true`.
+- `o::CausalTable`: The `CausalTable` object from which to extract the instruments of each treatment-response pair.
+- `collape_parents::Bool`: Optional parameter, whether to collapse the output to a single `Matrix` object if there is either only one treatment-response pair or all pair share the same set of instruments. Defaults to `true`.
 
 # Returns
 A matrix containing only the confounders.
 """
-#instrumentsmatrix(o::CausalTable; collapse_parents = true) = matrix(instruments(o; collapse_parents = collapse_parents))
+instrumentsmatrix(o::CausalTable; collapse_parents = true) = matrix(instruments(o; collapse_parents = collapse_parents))
 
 # Other getters
 """
