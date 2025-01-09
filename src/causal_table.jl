@@ -359,7 +359,7 @@ function responseparents(o::CausalTable; collapse_parents = true)
 end
 
 """
-    confounders(o::CausalTable)
+    confounders(o::CausalTable; collapse_parents = true)
 
 Selects the confounders of each response-treatment pair from the given `CausalTable` object.
 
@@ -400,7 +400,7 @@ A new `CausalTable` containing only the confounders of both x and y.
 confounders(o::CausalTable, x::Symbol, y::Symbol) = select(o, intersect(o.causes[x], o.causes[y]))
 
 """
-    confoundersmatrix(o::CausalTable)
+    confoundersmatrix(o::CausalTable; collapse_parents = true)
 
 Outputs the treatment-variable confounders from the given `CausalTable` object as a matrix (or matrix of matrices, if multiple treatment-response pairs are present).
 

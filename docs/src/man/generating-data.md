@@ -94,8 +94,7 @@ dgp = @dgp(
 scm = StructuralCausalModel(
     dgp;
     treatment = :X,
-    response = :Y,
-    confounders = [:W, :Ws]
+    response = :Y
 )
 
 # output

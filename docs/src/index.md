@@ -40,8 +40,7 @@ dgp = @dgp(
 scm = StructuralCausalModel(
     dgp;
     treatment = :X,
-    response = :Y,
-    confounders = [:W]
+    response = :Y
 )
 
 # output
@@ -124,7 +123,7 @@ If you have a table of data that you would like to use with CausalTables.jl with
 
 ```jldoctest quicktest; output = false, filter = r"(?<=.{11}).*"s
 tbl = (W = rand(1:5, 10), X = randn(10), Y = randn(10))
-ctbl = CausalTable(tbl; treatment = :X, response = :Y, confounders = [:W])
+ctbl = CausalTable(tbl; treatment = :X, response = :Y)
 
 # output
 CausalTable
