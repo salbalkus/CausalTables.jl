@@ -476,7 +476,3 @@ ape(scm, custom_intervention)
 function ape(scm::StructuralCausalModel, intervention::Function; samples = 10^6)
     return(cfdiff(scm, intervention, treatment_identity))
 end
-
-
-
-

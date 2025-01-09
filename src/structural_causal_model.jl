@@ -17,7 +17,7 @@ A struct representing a structural causal model (SCM). This includes a DataGener
 - `dgp::DataGeneratingProcess`: The data generating process from which random data will be drawn.
 - `treatment::Vector{Symbol}`: The variables representing the treatment.
 - `response::Vector{Symbol}`: The variables representing the response.
-- `confounders::Vector{Symbol}`: The variables representing the confounders.
+- `causes::Union{NamedTuple, Nothing}`: A NamedTuple of Vectors labeling the causes of relevant variables in the data-generating process. If `nothing`, will assume that all variables not contained in `treatment` or `response` are common causes of both.
 - `arraynames`: Names of auxiliary variables used in the DataGeneratingProcess that are not included as "tabular" variables. Most commonly used to denote names of adjacency matrices used to compute summary functions of previous steps. 
 
 """
@@ -25,33 +25,34 @@ mutable struct StructuralCausalModel
     dgp::DataGeneratingProcess
     treatment::Symbols
     response::Symbols
-    confounders::Symbols
+    causes::Union{NamedTuple, Nothing}
     arraynames::Symbols
 
-    function StructuralCausalModel(dgp, treatment, response, confounders, arraynames)
-        treatment, response, confounders = _process_causal_variable_names(treatment, response, confounders)
+    function StructuralCausalModel(dgp, treatment, response, causes, arraynames)
+        treatment, response, causes = _process_causal_variable_names(treatment, response, causes)
 
         not_in_dgp(dgp, treatment) && throw(ArgumentError("One or more of treatment labels $(treatment) are not a variable in the DataGeneratingProcess."))
         not_in_dgp(dgp, response) && throw(ArgumentError("One or more of response labels $(response) are not a variable in the DataGeneratingProcess."))
-        not_in_dgp(dgp, confounders) && throw(ArgumentError("One or more of confounder labels $(confounders) are not a variable in the DataGeneratingProcess."))
+        if(!isnothing(causes))
+            not_in_dgp(dgp, union(keys(causes), vcat(values(causes)...))) && throw(ArgumentError("One or more symbols in `cause` are not a variable in the DataGeneratingProcess."))
+        end
         not_in_dgp(dgp, arraynames) && throw(ArgumentError("One or more of array labels $(arraynames) are not a variable in the DataGeneratingProcess."))
 
-        new(dgp, treatment, response, confounders, arraynames)
+        new(dgp, treatment, response, causes, arraynames)
     end
 end
 
-StructuralCausalModel(dgp, treatment::Symbol, response::Symbol, confounders::Symbols; arraynames = []) = StructuralCausalModel(dgp, [treatment], [response], confounders, arraynames)
-StructuralCausalModel(dgp, treatment::Symbol, response::Symbols, confounders::Symbols; arraynames = []) = StructuralCausalModel(dgp, [treatment], response, confounders, arraynames)
-StructuralCausalModel(dgp, treatment::Symbols, response::Symbol, confounders::Symbols; arraynames = []) = StructuralCausalModel(dgp, treatment, [response], confounders, arraynames)
-StructuralCausalModel(dgp, treatment, response, confounders; arraynames = []) = StructuralCausalModel(dgp, treatment, response, confounders, arraynames)
-StructuralCausalModel(dgp, treatment, response; confounders = [], arraynames = []) = StructuralCausalModel(dgp, treatment, response, confounders, arraynames)
+StructuralCausalModel(dgp, treatment::Symbol, response::Symbol, causes::NamedTuple; arraynames = []) = StructuralCausalModel(dgp, [treatment], [response], causes, arraynames)
+StructuralCausalModel(dgp, treatment::Symbol, response::Symbols, causes::NamedTuple; arraynames = []) = StructuralCausalModel(dgp, [treatment], response, causes, arraynames)
+StructuralCausalModel(dgp, treatment::Symbols, response::Symbol, causes::NamedTuple; arraynames = []) = StructuralCausalModel(dgp, treatment, [response], causes, arraynames)
+StructuralCausalModel(dgp, treatment, response, causes; arraynames = []) = StructuralCausalModel(dgp, treatment, response, causes, arraynames)
+StructuralCausalModel(dgp, treatment, response; causes = nothing, arraynames = []) = StructuralCausalModel(dgp, treatment, response, causes, arraynames)
 
-function StructuralCausalModel(dgp; treatment = nothing, response = nothing, confounders = [], arraynames = [])
+function StructuralCausalModel(dgp; treatment = nothing, response = nothing, causes = nothing, arraynames = [])
     isnothing(treatment) && throw(ArgumentError("Treatment variable must be defined"))
     isnothing(response) && throw(ArgumentError("Response variable must be defined"))
-    StructuralCausalModel(dgp, treatment, response, confounders, arraynames)
+    StructuralCausalModel(dgp, treatment, response, causes, arraynames)
 end
-
 
 Base.length(scm::StructuralCausalModel) = length(scm.dgp)
 
@@ -108,7 +109,7 @@ function Base.rand(scm::StructuralCausalModel, n::Int)
     arrays = NamedTuple{keys(result)[array_tag]}(values(result)[array_tag],)    
 
     # Store the recorded draws in a CausalTable format
-    return CausalTable(data, scm.treatment, scm.response, scm.confounders, arrays, summaries)
+    return CausalTable(data, scm.treatment, scm.response, scm.causes, arrays, summaries)
 end
 
 ### Helper functions for drawing a random CausalTable ###

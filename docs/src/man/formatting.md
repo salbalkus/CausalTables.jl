@@ -15,7 +15,7 @@ using DataFrames
 tbl = BostonHousing().dataframe
 
 # Wrapping the dataset in a CausalTable
-ctbl = CausalTable(tbl; treatment = :NOX, response = :MEDV, confounders = [:CRIM, :ZN, :INDUS, :CHAS, :B, :DIS, :LSTAT])
+ctbl = CausalTable(tbl; treatment = :NOX, response = :MEDV)
 
 nothing # hide
 ```
@@ -37,8 +37,10 @@ confounders(ctbl)            # get CausalTable of confounders
 responseparents(ctbl)        # get CausalTable of treatment and confounders
 data(ctbl)                   # get underlying wrapped dataset
 
-# replace one or more attributes of the CausalTable
-CausalTables.replace(ctbl; response = :CRIM, confounders = [:MEDV, :ZN, :INDUS, :CHAS, :B, :DIS, :LSTAT]) 
+# Replace one or more attributes of the CausalTable.
+# Setting `causes = nothing` is a quick shortcut to specify
+# that all unlabeled variables are confounders of the treatment-response relationship
+CausalTables.replace(ctbl; response = :CRIM, causes = nothing) 
 
 nothing # hide
 ```
