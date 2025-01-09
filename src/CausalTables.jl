@@ -33,9 +33,9 @@ include("estimands.jl")
 export CausalTable, istable, columns, columnaccess
 export nrow, ncol, subset, select, reject
 export replace, treatment, response, confounders, data
-export treatmentmatrix, responsematrix, confoundersmatrix
-export treatmentnames, responsenames, confoundernames 
-export treatmentparents, responseparents, parents
+export treatmentmatrix, responsematrix, treatmentparents, responseparents, parents
+export confounders, confoundernames, confoundersmatrix
+export mediators, mediatornames, mediatorsmatrix
 export adjacency_matrix, dependency_matrix
 
 # network_summary.jl
