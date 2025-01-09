@@ -24,7 +24,8 @@ end
     foo3 = Tables.rowtable(foo1)
 
     # DataFrame form
-    df = CausalTables.CausalTable(foo1, :X, :Y)    
+    df = CausalTables.CausalTable(foo1, :X, :Y)  
+    
     @test Tables.istable(df)
     @test Tables.columntable(foo1) == df.data
     @test ncol(df) == 3
@@ -34,7 +35,7 @@ end
     @test Tables.getcolumn(df, 1) == X
     @test Tables.columnindex(df, :X) == 1
     @test Tables.columntype(df, :X) == Int
-    @test df.confounders == [:Z]
+    @test df.causes == (X = [:Z], Y = [:Z, :X])
 
     @test Tables.columnaccess(df)
     @test Tables.rowaccess(df)
@@ -42,7 +43,7 @@ end
     @test Tables.schema(df) == Tables.schema(data(df))
 
     # Row table form
-    rowtbl = CausalTables.CausalTable(foo3, :X, :Y; confounders = [:Z])
+    rowtbl = CausalTables.CausalTable(foo3, :X, :Y; causes = (X = [:Z], Y = [:X, :Z]))
     @test Tables.istable(rowtbl)
     @test Tables.rowtable(rowtbl.data) == foo3
     @test ncol(rowtbl) == 3
@@ -53,7 +54,7 @@ end
     @test Tables.columntype(rowtbl, :X) == Int
 
     # Column table form
-    coltbl = CausalTables.CausalTable(foo2, :X, :Y; confounders = [:Z])
+    coltbl = CausalTables.CausalTable(foo2, :X, :Y, (X = [:Z], Y = [:X, :Z]))
     @test Tables.istable(coltbl)
     @test coltbl.data == foo2
     @test ncol(coltbl) == 3
@@ -65,17 +66,14 @@ end
     @test Tables.columnnames(coltbl) == (:X, :Y, :Z)
 
     # Extra causal-related functions
-    coltbl.response
     more_sums = (S = Sum(:X, :G), T = Sum(:Z, :G), U = Sum(:Y, :G))
     coltbl2 = CausalTables.replace(coltbl, arrays = (G = [1 0 1; 0 1 1; 0 0 1],), summaries = more_sums)
-    coltbl2  = summarize(coltbl2) 
-
+    coltbl2 = summarize(coltbl2) 
     @test coltbl2.treatment == [:X, :S]
-    @test coltbl2.confounders == [:Z, :T]
+    @test coltbl2.causes == (X = [:Z, :T], Y = [:X, :Z, :S, :T], S = [:Z, :T], U = [:X, :Z, :S, :T])
     @test coltbl2.response == [:Y, :U]
     @test Tables.columnnames(CausalTables.treatment(coltbl2)) == (:X, :S)
     @test Tables.columnnames(CausalTables.response(coltbl2)) == (:Y, :U)
-    @test Tables.columnnames(CausalTables.confounders(coltbl2)) == (:Z, :T)
     @test Tables.columnnames(CausalTables.treatmentparents(coltbl2)) == (:Z, :T)
     @test Tables.columnnames(CausalTables.parents(coltbl2, :X)) == (:Z, :T)
     @test Tables.columnnames(CausalTables.parents(coltbl2, :Z)) == ()
@@ -85,9 +83,10 @@ end
     # Other convenience
     baz = (X = [4, 5], Y = ["foo", "bar"], Z = [0.1, 0.2])
     array = Graphs.adjacency_matrix(Graphs.path_graph(2))
-    causalbaz = CausalTables.CausalTable(baz, :X, :Y, [:Z], (A = array,), (B = CausalTables.Sum(:X, :A),))
+    causalbaz = CausalTables.CausalTable(baz, :X, :Y, (X = [:Z], Y = [:X, :Z]), (A = array,), (B = CausalTables.Sum(:X, :A),))
     @test causalbaz isa CausalTables.CausalTable
     @test CausalTables.replace(rowtbl; data = baz).data == baz
+    Tables.subset(coltbl, 1:2)
     @test Tables.subset(coltbl, 1:2).data == (X = X[1:2], Y = Y[1:2], Z = Z[1:2])
     @test Tables.subset(coltbl, 1:2; viewhint = false).data == (X = X[1:2], Y = Y[1:2], Z = Z[1:2])
     @test CausalTables.replace(rowtbl; treatment = :X).treatment == [:X]
@@ -96,10 +95,7 @@ end
     @test vec(CausalTables.confoundersmatrix(coltbl)) == Z
 
     # Errors
-    @test_throws ArgumentError CausalTables.CausalTable(foo1, :X, :X, [:Z])
-    @test_throws ArgumentError CausalTables.CausalTable(foo1, :X, :Z, [:Z])
-    @test_throws ArgumentError CausalTables.CausalTable(foo1, :Z, :X, [:Z])
-
+    @test_throws ArgumentError CausalTables.CausalTable(foo1, :X, :X)
 end
 
 @testset "DataGeneratingProcess using dgp macro, no graphs" begin
@@ -113,7 +109,7 @@ end
         Y ~ Normal.(regr, 1)
     )
 
-    scm = CausalTables.StructuralCausalModel(dgp, :A, :Y, [:L1, :L2])
+    scm = CausalTables.StructuralCausalModel(dgp, :A, :Y)
     foo = rand(scm, 10)
 
     @test typeof(foo) == CausalTables.CausalTable
@@ -149,7 +145,7 @@ end
         Y ~ (@. Normal(A + A_s + 0.2 * L1 + 0.05 * L1_s, 1))
     )
     
-    scm = CausalTables.StructuralCausalModel(dgp, :A, [:Y], [:L1])
+    scm = CausalTables.StructuralCausalModel(dgp, :A, [:Y])
     foo = rand(scm, 10) 
 
     @test typeof(foo) == CausalTables.CausalTable
@@ -196,12 +192,11 @@ end
         Y ~ (@. Normal(reg, 1))
     )
 
-    @test_throws ArgumentError CausalTables.StructuralCausalModel(dgp; treatment = :L1, response = :Y, confounders = [:L1])
-    @test_throws ArgumentError CausalTables.StructuralCausalModel(dgp; response = :L1, treatment = :A,  confounders = [:L1])
-    @test_throws ArgumentError CausalTables.StructuralCausalModel(dgp; treatment = :X, response = :Y, confounders = [:L1])
-    @test_throws ArgumentError CausalTables.StructuralCausalModel(dgp; treatment = :A, response = :X, confounders = [:L1])
-    @test_throws ArgumentError CausalTables.StructuralCausalModel(dgp; treatment = :A, response = :Y, confounders = [:X])
-    @test_throws ArgumentError CausalTables.StructuralCausalModel(dgp; treatment = :A, response = :Y, confounders = [:L1], arraynames = [:X])
+    @test_throws ArgumentError CausalTables.StructuralCausalModel(dgp; response = :A, treatment = :A)
+    @test_throws ArgumentError CausalTables.StructuralCausalModel(dgp; treatment = :X, response = :Y)
+    @test_throws ArgumentError CausalTables.StructuralCausalModel(dgp; treatment = :A, response = :X)
+    @test_throws ArgumentError CausalTables.StructuralCausalModel(dgp; treatment = :A, response = :Y, causes = (Y = [:A, :X],))
+    @test_throws ArgumentError CausalTables.StructuralCausalModel(dgp; treatment = :A, response = :Y, arraynames = [:X])
 
     # Test the RHS
     # TODO: Currently errors in DGP construct are deferred until rand or condensity is called.
@@ -228,7 +223,7 @@ end
         Lm $ Mean(:L, :H),
         Y ~ Normal(0,1)
     )
-    scm = CausalTables.StructuralCausalModel(dgp; treatment = :A, response = :Y, confounders = [:L])
+    scm = CausalTables.StructuralCausalModel(dgp; treatment = :A, response = :Y, causes = (A = [:L], Y = [:L, :A]))
     tbl = rand(scm, 5)
 
     stbl = CausalTables.summarize(tbl)
@@ -237,7 +232,7 @@ end
     @test stbl.data.F == [2.0, 2.0, 3.0, 3.0, 2.0]
     @test Tables.columnnames(stbl) == (:A, :L, :Y, :As, :Lo1, :Lo2, :F, :Lm)
     @test stbl.treatment == [:A, :As]
-    @test stbl.confounders == [:L, :Lo1, :Lo2, :Lm]
+    @test stbl.causes == (A = [:L, :Lo1, :Lo2, :Lm], Y = [:L, :A,  :Lo1, :Lo2, :Lm, :As], As = [:L, :Lo1, :Lo2, :Lm])
     
     sub = Tables.subset(stbl, 1:3)
     @test nrow(sub) == 3
@@ -296,7 +291,7 @@ end
         Y ~ @.(Normal(A + 2 * L + 1))
     )
 
-    scm2 = CausalTables.StructuralCausalModel(dgp2, [:A], :Y, [:L])
+    scm2 = CausalTables.StructuralCausalModel(dgp2, [:A], :Y)
     
     # Check intervention functions
     ct2 = rand(scm2, 100)
@@ -318,4 +313,3 @@ end
     @test within(mean_a.μ - 3, ε)
     @test within(mean_a.eff_bound - 2.3, 0.1)
 end
-
