@@ -165,6 +165,8 @@ end
 DataAPI.nrow(o::CausalTable) = DataAPI.nrow(o.data)
 DataAPI.ncol(o::CausalTable) = DataAPI.ncol(o.data)
 
+Base.isempty(o::CausalTable) = Base.isempty(o.data)
+
 ### Causal-specific Features ###
 
 """
@@ -367,38 +369,27 @@ end
 
 # Iterator over matrix of CausalTables to turn them into matrices
 # If a CausalTable has empty data, return an empty matrix
-matrix(tbl::Matrix{CausalTable}) = map(x -> length(x.data) == 0 ? [;] : Tables.matrix(x), tbl)
-matrix(tbl::CausalTable) = Tables.matrix(tbl)
 
-function select_over_matrix(o::CausalTable, varnames; collapse_parents = true) 
+map_treatment_response_pairs(o::CausalTable, f::Function) = Dict(treat => Dict(resp => f(o, treat, resp) for resp in o.response) for treat in o.treatment)
+map_over_dicts(tbl, f::Function) = Dict(k => Dict(k2 => f(v2) for (k2, v2) in v) for (k, v) in tbl)
+
+function select_over_dicts(o::CausalTable, varnames; collapse_parents = true) 
     # When possible, only select a single `CausalTable` representing the selection of all variables
-    if(collapse_parents && (length(o.response) + length(o.treatment) == 1 || all(x -> x == varnames[1,1], vec(varnames))))
-        return(select(o, varnames[1,1]))
+    if(collapse_parents && 
+        (length(o.response) + length(o.treatment) == 1 || #  if there is only one treatment-response pair
+        all(x -> x == varnames[o.treatment[1]][o.response[1]], reduce(vcat, values.(values(varnames)))))) # if all pairs share the same set of variables
+
+        return(select(o, varnames[o.treatment[1]][o.response[1]]))
     # Otherwise, return a matrix of `CausalTables` representing the selection of each treatment-response pair
     else
-        return([select(o, cn) for cn in varnames])
+        return(map_over_dicts(varnames, x -> select(o, x)))
     end
 end
 
+matrix(tbl::Dict{Symbol, Dict{Symbol, CausalTable}}) = map_over_dicts(tbl, x -> isempty(x) ? [;] : Tables.matrix(x))
+matrix(tbl::CausalTable) = Tables.matrix(tbl)
+
 ### Confounders ###
-
-"""
-    confoundernames(o::CausalTable)
-
-Outputs the confounder names of each response-treatment pair from the given `CausalTable` object.
-
-# Arguments
-- `o::CausalTable`: The `CausalTable` object from which to extract the confounder names of each treatment-response pair.
-
-# Returns
-A matrix of Vectors containing the confounder names of each treatment-response pair.
-"""
-function confoundernames(o::CausalTable)
-    # Extract the causes of each treatment variable as vector of vectors
-    treatment_parent_names = [o.causes[k] for k in keys(o.causes) if k ∈ o.treatment]
-    response_parent_names = [o.causes[k] for k in keys(o.causes) if k ∈ o.response]
-    return(hcat([[intersect(tpn, rpn) for tpn in treatment_parent_names] for rpn in response_parent_names]...))
-end
 
 """
     confoundernames(o::CausalTable, x::Symbol, y::Symbol)
@@ -415,6 +406,19 @@ A Vector of Symbols containing the names of the confounders between x and y.
 confoundernames(o::CausalTable, x::Symbol, y::Symbol) = intersect(o.causes[x], o.causes[y])
 
 """
+    confoundernames(o::CausalTable)
+
+Outputs the confounder names of each response-treatment pair from the given `CausalTable` object.
+
+# Arguments
+- `o::CausalTable`: The `CausalTable` object from which to extract the confounder names of each treatment-response pair.
+
+# Returns
+A matrix of Vectors containing the confounder names of each treatment-response pair.
+"""
+confoundernames(o::CausalTable) = map_treatment_response_pairs(o, confoundernames)
+
+"""
     confounders(o::CausalTable; collapse_parents = true)
 
 Selects the confounders of each response-treatment pair from the given `CausalTable` object.
@@ -426,7 +430,7 @@ Selects the confounders of each response-treatment pair from the given `CausalTa
 # Returns
 A new `CausalTable` containing only the confounders (if a single response, or all responses share the same set of causes); otherwise, a Matrix of CausalTable objects containing the confounders of each treatment-response pair, where rows represent responses and columns represent treatments.
 """
-confounders(o::CausalTable; collapse_parents = true) = select_over_matrix(o, confoundernames(o); collapse_parents = collapse_parents)
+confounders(o::CausalTable; collapse_parents = true) = select_over_dicts(o, confoundernames(o); collapse_parents = collapse_parents)
 
 """
     confounders(o::CausalTable, x::Symbol, y::Symbol)
@@ -459,24 +463,6 @@ confoundersmatrix(o::CausalTable; collapse_parents = true) = matrix(confounders(
 ### Mediation ###
 
 """
-    mediatornames(o::CausalTable)
-
-Outputs the mediator names of each response-treatment pair from the given `CausalTable` object.
-
-# Arguments
-- `o::CausalTable`: The `CausalTable` object from which to extract the mediator names of each treatment-response pair.
-
-# Returns
-A matrix of Vectors containing the mediator names of each treatment-response pair.
-"""
-function mediatornames(o::CausalTable)
-    # Extract the mediator names: variables that cause response but are caused by treatment
-    caused_by_treatment = [[k for k in keys(o.causes) if tr ∈ o.causes[k]] for tr in o.treatment]
-    response_parent_names = [o.causes[k] for k in keys(o.causes) if k ∈ o.response]
-    return(hcat([[intersect(tpn, rpn) for tpn in caused_by_treatment] for rpn in response_parent_names]...))
-end
-
-"""
     mediatornames(o::CausalTable, x::Symbol, y::Symbol)
 
 Outputs the names of the mediators of the causal relationship between `x` and `y` from the given `CausalTable` object.
@@ -491,6 +477,19 @@ A Vector of Symbols containing the names of the mediators between x and y.
 mediatornames(o::CausalTable, x::Symbol, y::Symbol) = intersect([k for k in keys(o.causes) if x ∈ o.causes[k]], o.causes[y])
 
 """
+    mediatornames(o::CausalTable)
+
+Outputs the mediator names of each response-treatment pair from the given `CausalTable` object.
+
+# Arguments
+- `o::CausalTable`: The `CausalTable` object from which to extract the mediator names of each treatment-response pair.
+
+# Returns
+A matrix of Vectors containing the mediator names of each treatment-response pair.
+"""
+mediatornames(o::CausalTable) = map_treatment_response_pairs(o, mediatornames)
+
+"""
     mediators(o::CausalTable; collapse_parents = true)
 
 Selects the mediators of each treatment-response pair from the given `CausalTable` object.
@@ -502,7 +501,7 @@ Selects the mediators of each treatment-response pair from the given `CausalTabl
 # Returns
 A new `CausalTable` containing only the mediators (if a single response, or all responses share the same set of mediators); otherwise, a Matrix of CausalTable objects containing the mediators of each treatment-response pair, where rows represent responses and columns represent treatments.
 """
-mediators(o::CausalTable; collapse_parents = true) = select_over_matrix(o, mediatornames(o); collapse_parents = collapse_parents)
+mediators(o::CausalTable; collapse_parents = true) = select_over_dicts(o, mediatornames(o); collapse_parents = collapse_parents)
 
 """
     mediators(o::CausalTable, x::Symbol, y::Symbol)
@@ -535,22 +534,6 @@ mediatorsmatrix(o::CausalTable; collapse_parents = true) = matrix(mediators(o; c
 ### Instrumental Variables ###
 
 """
-    instrumentnames(o::CausalTable)
-
-Outputs the instrument names of each treatment-response pair from the given `CausalTable` object.
-
-# Arguments
-- `o::CausalTable`: The `CausalTable` object from which to extract the instrument names of each treatment-response pair.
-
-# Returns
-A matrix of Vectors containing the instrument names of each treatment-response pair.
-"""
-function instrumentnames(o::CausalTable)
-    # Extract the instrument names: variables that cause treatment but not response
-    hcat([[instrumentnames(o, t, r) for t in o.treatment] for r in o.response]...)
-end
-
-"""
     instrumentnames(o::CausalTable, x::Symbol, y::Symbol)
 
 Outputs the names of the instruments of the causal relationship between `x` and `y` from the given `CausalTable` object; that is, variables that are associated with `x` but do not cause `y`.
@@ -565,6 +548,19 @@ A Vector of Symbols containing the names of the mediators between x and y.
 instrumentnames(o::CausalTable, x::Symbol, y::Symbol) = [c for c in union(o.causes[x], [k for k in keys(o.causes) if x ∈ o.causes[k]]) if c ∉ union(o.causes[y], o.response)]
 
 """
+    instrumentnames(o::CausalTable)
+
+Outputs the instrument names of each treatment-response pair from the given `CausalTable` object.
+
+# Arguments
+- `o::CausalTable`: The `CausalTable` object from which to extract the instrument names of each treatment-response pair.
+
+# Returns
+A matrix of Vectors containing the instrument names of each treatment-response pair.
+"""
+instrumentnames(o::CausalTable) = map_treatment_response_pairs(o, instrumentnames)
+
+"""
     instruments(o::CausalTable; collapse_parents = true)
 
 Selects the instruments of each treatment-response pair from the given `CausalTable` object; that is, variables that are associated with the treatment but do not cause the response.
@@ -576,7 +572,7 @@ Selects the instruments of each treatment-response pair from the given `CausalTa
 # Returns
 A new `CausalTable` containing only the instruments (if a single response, or all responses share the same set of instruments); otherwise, a Matrix of CausalTable objects containing the instruments of each treatment-response pair, where rows represent responses and columns represent treatments.
 """
-instruments(o::CausalTable; collapse_parents = true) = select_over_matrix(o, instrumentnames(o); collapse_parents = collapse_parents)
+instruments(o::CausalTable; collapse_parents = true) = select_over_dicts(o, instrumentnames(o); collapse_parents = collapse_parents)
 
 """
     instruments(o::CausalTable, x::Symbol, y::Symbol)

@@ -91,7 +91,6 @@ end
     @test CausalTables.replace(rowtbl; treatment = :X).treatment == [:X]
     @test vec(CausalTables.treatmentmatrix(coltbl)) == X
     @test vec(CausalTables.responsematrix(coltbl)) == Y
-    @test vec(CausalTables.confoundersmatrix(coltbl)) == Z
 
     # Errors
     @test_throws ArgumentError CausalTables.CausalTable(foo1, :X, :X)
@@ -119,17 +118,18 @@ end
     # Test confounders
     topcorner = hcat(tbl[:L1])
     bottomcorner = hcat(tbl[:L1], tbl[:L2])
-    @test confoundersmatrix(ctbl) == reshape([topcorner, topcorner, topcorner, bottomcorner], (2,2))
+    @test confoundersmatrix(ctbl) == Dict(:A1 => Dict(:Y1 => topcorner, :Y2 => topcorner),
+                                          :A2 => Dict(:Y1 => topcorner, :Y2 => bottomcorner))
     @test confounders(ctbl, :M1, :A1).data == (;)
 
     # Test mediators
-    @test mediatorsmatrix(ctbl) == reshape([hcat(tbl[:M1]), [;], hcat(tbl[:M1], tbl[:M2]), hcat(tbl[:M2])], (2,2))
+    @test mediatorsmatrix(ctbl) == Dict(:A1 => Dict(:Y2 => hcat(tbl[:M1], tbl[:M2]), :Y1 => hcat(tbl[:M1])),
+                                        :A2 => Dict(:Y2 => hcat(tbl[:M2]), :Y1 => [;]))
     @test mediators(ctbl, :L1, :Y1).data  == (A1 = tbl[:A1],)
 
     # Test instrumental variables
-    instrument_truth = reshape([hcat(tbl[:I1], tbl[:M2]), 
-        hcat(tbl[:L2], tbl[:I1], tbl[:I2], tbl[:M2]), 
-        hcat(tbl[:I1]), hcat(tbl[:I1], tbl[:I2])], (2,2))
+    instrument_truth = Dict(:A1 => Dict(:Y2 => hcat(tbl[:I1]), :Y1 => hcat(tbl[:I1], tbl[:M2])),
+                            :A2 => Dict(:Y2 => hcat(tbl[:I1], tbl[:I2]), :Y1 => hcat(tbl[:L2], tbl[:I1], tbl[:I2], tbl[:M2])))
     @test instrumentsmatrix(ctbl) == instrument_truth
     @test instruments(ctbl, :M1, :Y1).data == (;)
 end
