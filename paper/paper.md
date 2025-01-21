@@ -12,7 +12,7 @@ authors:
   name: Nima S. Hejazi
   orcid: 0000-0002-7127-2789
 bibliography: paper.bib
-date: 08 January 2025
+date: 20 January 2025
 tags:
 - Julia
 - statistics
@@ -25,14 +25,14 @@ toc-title: Table of contents
 
 # Summary
 
-Estimating the strength of causal relationships between variables is an
-important problem across many scientific disciplines. `CausalTables.jl`
-provides tools to (1) easily store and process tabular data endowed with
-causal structure, (2) simulate data from causal models for experimental
-testing, and (3) compute ground-truth estimates of causal parameters.
-Together, these functionalities expand the Julia ecosystem by supporting
-the development and experimental assessment of new statistical causal
-inference methods in Julia.
+Estimating the strength of causal relationships between treatment and
+response variables is an important problem across many scientific
+disciplines. `CausalTables.jl` is a Julia package that helps
+statisticians and applied scientists create, manipulate, and simulate
+datasets labeled with relevant causal structure. Together, its
+functionalities expand the Julia ecosystem by supporting the development
+and experimental assessment of new statistical causal inference methods
+in Julia.
 
 # Statement of need
 
@@ -48,23 +48,23 @@ currently do not exist auxiliary tools designed to support their
 development. `CausalTables.jl` aims to provide such a tool.
 
 Attempts to implement and test causal inference methods in Julia face
-two major challenges. First, statistical causal inference requires data
-to be transformed in various ways based on the underlying causal
-structure, in order to be provided as input to other packages. For
-instance, causal methods using `MLJ.jl` [@blaom2020mlj] would
-necessitate extracting the variables hypothesized to cause the treatment
-and response as Tables; meanwhile; using `GLM.jl` [@bates2023glm] would
-require the same but as Matrix or `Formula` objects. Second, testing the
-performance of new estimators often requires simulating data for
-numerical experiments from a Structural Causal Model (SCM)
+two major challenges. First, statistical causal inference often requires
+extracting features from data based on their relationships with
+"treatment" and "response" variables; these might include confounders,
+mediators, or instruments. The format of these variables might even
+differ depending on downstream analysis package; for instance, `MLJ.jl`
+[@blaom2020mlj] requires input to be a Table, but `GLM.jl`
+[@bates2023glm] necessitates a Matrix or `Formula` object. Second,
+testing the performance of new estimators often requires simulating data
+for numerical experiments from a Structural Causal Model (SCM)
 [@pearl2009causality] so as to compare them to an underlying ground
 truth (encoded via interventions on the SCM).
 
 `CausalTables.jl` provides an interface to solve these two problems,
 simplifying the development of packages for statistical causal inference
 on tabular data in Julia. It implements a `CausalTable` interface that
-extends `Tables.jl`, the most common interface for accessing tabular
-data in Julia [@quinn2024tables]. The package also implements a
+extends `Tables.jl` [@quinn2024tables] to also store necessary causal
+relationships between variables. In addition, the package implements a
 `StructuralCausalModel` interface for sampling from any SCM and
 computing ground-truth estimates of causal parameters. This interface
 operates in conjunction with `Distributions.jl`, the primary Julia
@@ -111,7 +111,7 @@ tbl = (W = [0.2, 0.4, 0.7],
        Y = [0.8, 1.2, 2.3])
 
 # Wrap data as CausalTable
-ct_wrap = CausalTable(tbl; treatment = :A, response = :Y, confounders = [:W])
+ct_wrap = CausalTable(tbl; treatment = :A, response = :Y)
 ```
 :::
 
@@ -170,7 +170,7 @@ dgp = @dgp(
 
 # Create a structural causal model (SCM) from the DGP
 scm = StructuralCausalModel(dgp; 
-  treatment = :A, response = :Y, confounders = [:W]
+  treatment = :A, response = :Y
 )
 
 ct = rand(scm, 500) # randomly draw from the SCM
@@ -209,15 +209,15 @@ mean(conmean(scm, treated, :Y) .- conmean(scm, untreated, :Y))
 
 # Closing remarks
 
-`CausalTables.jl` provides useful auxiliary functions to support causal
-inference methods on tabular data in Julia that involve one or more
-treatment variables and responses. Users can simulate data from any SCM
-and benchmark methods using either high-level functions for common
-estimands or low-level functions for more exotic estimands. By combining
-this with the power of the `CausalTable` interface for processing data
-once it is generated, `CausalTables.jl` serves as a useful tool for
-scientists seeking to develop and experimentally evaluate new causal
-inference methods.
+Not only does `CausalTables.jl` provide high-level functions for common
+data processing and simulation tasks in causal inference, it can also be
+easily extended to support more novel methods and estimands using
+low-level functions. The `CausalTable` stores all relevant causal
+relationships needed to extract variables related to treatment and
+response variables. The `StructuralCausalModel` support simulating data
+from any SCM that can be expressed as a sequence of random variables.
+Hence, `CausalTables.jl` serves as a useful tool in Julia for both
+developing new methods and providing input to existing ones.
 
 # Acknowledgements
 
