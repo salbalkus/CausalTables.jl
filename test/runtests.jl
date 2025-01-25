@@ -134,6 +134,22 @@ end
     @test instruments(ctbl, :M1, :Y1).data == (;)
 end
 
+@testset "DataGeneratingProcess utilities with no dgp macro" begin
+    dgp1 = DataGeneratingProcess([O -> Normal(0,1)])
+    dgp2 = DataGeneratingProcess(
+        [Symbol("X$(i)") for i in 2:10],
+        [O -> Normal.(O[Symbol("X$(i-1)")], 0.5) for i in 2:10]
+    )
+    dgp = merge(dgp1, dgp2)
+    
+    scm = CausalTables.StructuralCausalModel(dgp, :X1, :X2)
+    ct = rand(scm, 10)
+
+    @test typeof(ct) == CausalTables.CausalTable
+    @test Tables.columnnames(ct) == Tuple(Symbol("X$(i)") for i in 1:10)
+    @test_throws ArgumentError Base.merge(DataGeneratingProcess([O -> Normal(0,1)]; varsymb = "Y"), DataGeneratingProcess([O -> Normal(0,1)]; varsymb = "Y"))
+end
+
 @testset "DataGeneratingProcess using dgp macro, no graphs" begin
     dgp = CausalTables.@dgp(
         L1 ~ Beta(1,1),

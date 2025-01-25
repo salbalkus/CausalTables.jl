@@ -26,16 +26,16 @@ DataGeneratingProcess(
     [:W, :X, :Y],
     [:distribution, :distribution, :distribution],
     [
-        (; O...) -> DiscreteUniform(1, 5), 
-        (; O...) -> (@. Normal(O.W, 1)),
-        (; O...) -> (@. Normal(O.X + 0.2 * O.W, 1))
+        O -> DiscreteUniform(1, 5), 
+        O -> (@. Normal(O.W, 1)),
+        O -> (@. Normal(O.X + 0.2 * O.W, 1))
     ]
 )
 
 # output
 DataGeneratingProcess
 ```
-where `; O...` syntax is a shorthand for a function that takes keyword arguments corresponding to the names of the variables in the DGP. 
+where `O` is an object that stores the output of each previous function in the sequence as a field with a name corresponding to its order in the sequence (i.e. in this example, the first function's output is stored as `O.W`, the second function's output is stored as `O.X`, and so on).
 
 However, a much more convenient way to define this DGP is using the `@dgp` macro, which takes a sequence of conditional distributions of the form `[variable name] ~ Distribution(args...)` and deterministic variable assignments of the form `[variable name] = f(...)` and automatically generates a valid DataGeneratingProcess. For example, the *easier* way to define the DGP above is as follows:
 

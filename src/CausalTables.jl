@@ -15,6 +15,7 @@ import MacroTools: postwalk
 
 # New types
 Symbols = AbstractArray{Symbol, 1}
+Functions = AbstractArray{Function, 1}
 
 # Includes
 include("utilities.jl")
