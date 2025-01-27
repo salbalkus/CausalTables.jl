@@ -147,7 +147,16 @@ end
 
     @test typeof(ct) == CausalTables.CausalTable
     @test Tables.columnnames(ct) == Tuple(Symbol("X$(i)") for i in 1:10)
-    @test_throws ArgumentError Base.merge(DataGeneratingProcess([O -> Normal(0,1)]; varsymb = "Y"), DataGeneratingProcess([O -> Normal(0,1)]; varsymb = "Y"))
+    @test_throws ArgumentError merge(DataGeneratingProcess([O -> Normal(0,1)]; varsymb = "Y"), 
+                                          DataGeneratingProcess([O -> Normal(0,1)]; varsymb = "Y"))
+    
+    dgp3 = @dgp(
+        Y ~ Normal.(reduce(+, values(O)), 1)
+    )        
+    scm = CausalTables.StructuralCausalModel(merge(dgp, dgp3), :X1, :Y)
+    rand(scm, 10)
+    @test typeof(ct) == CausalTables.CausalTable
+    @test Tables.columnnames(ct) == Tuple(Symbol("X$(i)") for i in 1:10)
 end
 
 @testset "DataGeneratingProcess using dgp macro, no graphs" begin

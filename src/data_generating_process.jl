@@ -37,7 +37,6 @@ nothing # hide
 
 """
 
-
 macro dgp(args...)
     names = [_parse_name(arg) for arg in args]
     # parse each line of the input into a vector of vectors
