@@ -37,7 +37,6 @@ nothing # hide
 
 """
 
-
 macro dgp(args...)
     names = [_parse_name(arg) for arg in args]
     # parse each line of the input into a vector of vectors
@@ -63,11 +62,21 @@ A struct representing a data generating process.
 mutable struct DataGeneratingProcess
     names::Symbols
     types::Symbols
-    funcs::AbstractArray{Function, 1}
+    funcs::Functions
 end
 
-DataGeneratingProcess(steps) = all(length(steps[1]) .== length.(arr[2:end])) ? DataGeneratingProcess(steps) : throw(ArgumentError("All step vectors must be the same length."))
+# Utility functions for quickly creating DataGeneratingProcesses
+DataGeneratingProcess(funcs; varsymb = "X", type = "distribution") = DataGeneratingProcess([Symbol("$(varsymb)$(i)") for i in 1:length(funcs)], [Symbol("$(type)") for i in 1:length(funcs)], funcs)
+DataGeneratingProcess(names::Symbols, funcs; type = "distribution") = DataGeneratingProcess(names, [Symbol("$(type)") for i in 1:length(funcs)], funcs)
+
+# Base functions for DataGeneratingProcess
 Base.length(x::DataGeneratingProcess) = length(x.names)
+function Base.merge(x1::DataGeneratingProcess, x2::DataGeneratingProcess)
+    if any([any(name ∈ x2.names) for name in x1.names])
+        throw(ArgumentError("Cannot merge DataGeneratingProcess that share variable names; please ensure the name of each step is unique across both DataGeneratingProcesses."))
+    end
+    return DataGeneratingProcess(vcat(x1.names, x2.names), vcat(x1.types, x2.types), vcat(x1.funcs, x2.funcs))
+end
 
 function _parse_name(expr)
     # Get the first value in the expression

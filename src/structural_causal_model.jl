@@ -1,8 +1,4 @@
-DIST_ERR_MSG(node) = "Failed to generate a valid distribution for variable $(node). This is likely because the function provided to the 
-                      DataGeneratingProcess does not return a valid distribution object. If using the @dgp macro, ensure that the 
-                        right hand side of `$(node) ~ Distribution` returns either a valid distribution or a vector of distributions.
-                        Otherwise, ensure that the distribution functions are of the form O -> Distribution(...) where `O` is a 
-                        NamedTuple of the observed variables."
+DIST_ERR_MSG(node) = "Failed to generate a valid distribution for variable $(node). This is likely because the function provided to the DataGeneratingProcess does not return a valid distribution object. If using the @dgp macro, ensure that the right hand side of `$(node) ~ Distribution` returns either a valid distribution or a vector of distributions. Otherwise, ensure that the distribution functions are of the form O -> Distribution(...) where `O` is a NamedTuple of the observed variables."
 SUPPORTED_SUMMARIES = "Sum"
 
 # Helper function to check whether any elements of a vector are not contained in the DGP
@@ -17,7 +13,7 @@ A struct representing a structural causal model (SCM). This includes a DataGener
 - `dgp::DataGeneratingProcess`: The data generating process from which random data will be drawn.
 - `treatment::Vector{Symbol}`: The variables representing the treatment.
 - `response::Vector{Symbol}`: The variables representing the response.
-- `confounders::Vector{Symbol}`: The variables representing the confounders.
+- `causes::Union{NamedTuple, Nothing}`: A NamedTuple of Vectors labeling the causes of relevant variables in the data-generating process. If `nothing`, will assume that all variables not contained in `treatment` or `response` are common causes of both.
 - `arraynames`: Names of auxiliary variables used in the DataGeneratingProcess that are not included as "tabular" variables. Most commonly used to denote names of adjacency matrices used to compute summary functions of previous steps. 
 
 """
@@ -25,33 +21,34 @@ mutable struct StructuralCausalModel
     dgp::DataGeneratingProcess
     treatment::Symbols
     response::Symbols
-    confounders::Symbols
+    causes::Union{NamedTuple, Nothing}
     arraynames::Symbols
 
-    function StructuralCausalModel(dgp, treatment, response, confounders, arraynames)
-        treatment, response, confounders = _process_causal_variable_names(treatment, response, confounders)
+    function StructuralCausalModel(dgp, treatment, response, causes, arraynames)
+        treatment, response, causes = _process_causal_variable_names(treatment, response, causes)
 
         not_in_dgp(dgp, treatment) && throw(ArgumentError("One or more of treatment labels $(treatment) are not a variable in the DataGeneratingProcess."))
         not_in_dgp(dgp, response) && throw(ArgumentError("One or more of response labels $(response) are not a variable in the DataGeneratingProcess."))
-        not_in_dgp(dgp, confounders) && throw(ArgumentError("One or more of confounder labels $(confounders) are not a variable in the DataGeneratingProcess."))
+        if(!isnothing(causes))
+            not_in_dgp(dgp, union(keys(causes), vcat(values(causes)...))) && throw(ArgumentError("One or more symbols in `cause` are not a variable in the DataGeneratingProcess."))
+        end
         not_in_dgp(dgp, arraynames) && throw(ArgumentError("One or more of array labels $(arraynames) are not a variable in the DataGeneratingProcess."))
 
-        new(dgp, treatment, response, confounders, arraynames)
+        new(dgp, treatment, response, causes, arraynames)
     end
 end
 
-StructuralCausalModel(dgp, treatment::Symbol, response::Symbol, confounders::Symbols; arraynames = []) = StructuralCausalModel(dgp, [treatment], [response], confounders, arraynames)
-StructuralCausalModel(dgp, treatment::Symbol, response::Symbols, confounders::Symbols; arraynames = []) = StructuralCausalModel(dgp, [treatment], response, confounders, arraynames)
-StructuralCausalModel(dgp, treatment::Symbols, response::Symbol, confounders::Symbols; arraynames = []) = StructuralCausalModel(dgp, treatment, [response], confounders, arraynames)
-StructuralCausalModel(dgp, treatment, response, confounders; arraynames = []) = StructuralCausalModel(dgp, treatment, response, confounders, arraynames)
-StructuralCausalModel(dgp, treatment, response; confounders = [], arraynames = []) = StructuralCausalModel(dgp, treatment, response, confounders, arraynames)
+StructuralCausalModel(dgp, treatment::Symbol, response::Symbol, causes::NamedTuple; arraynames = []) = StructuralCausalModel(dgp, [treatment], [response], causes, arraynames)
+StructuralCausalModel(dgp, treatment::Symbol, response::Symbols, causes::NamedTuple; arraynames = []) = StructuralCausalModel(dgp, [treatment], response, causes, arraynames)
+StructuralCausalModel(dgp, treatment::Symbols, response::Symbol, causes::NamedTuple; arraynames = []) = StructuralCausalModel(dgp, treatment, [response], causes, arraynames)
+StructuralCausalModel(dgp, treatment, response, causes; arraynames = []) = StructuralCausalModel(dgp, treatment, response, causes, arraynames)
+StructuralCausalModel(dgp, treatment, response; causes = nothing, arraynames = []) = StructuralCausalModel(dgp, treatment, response, causes, arraynames)
 
-function StructuralCausalModel(dgp; treatment = nothing, response = nothing, confounders = [], arraynames = [])
+function StructuralCausalModel(dgp; treatment = nothing, response = nothing, causes = nothing, arraynames = [])
     isnothing(treatment) && throw(ArgumentError("Treatment variable must be defined"))
     isnothing(response) && throw(ArgumentError("Response variable must be defined"))
-    StructuralCausalModel(dgp, treatment, response, confounders, arraynames)
+    StructuralCausalModel(dgp, treatment, response, causes, arraynames)
 end
-
 
 Base.length(scm::StructuralCausalModel) = length(scm.dgp)
 
@@ -108,8 +105,10 @@ function Base.rand(scm::StructuralCausalModel, n::Int)
     arrays = NamedTuple{keys(result)[array_tag]}(values(result)[array_tag],)    
 
     # Store the recorded draws in a CausalTable format
-    return CausalTable(data, scm.treatment, scm.response, scm.confounders, arrays, summaries)
+    return CausalTable(data, scm.treatment, scm.response, scm.causes, arrays, summaries)
 end
+
+Base.rand(scm::StructuralCausalModel) = rand(scm, 1)
 
 ### Helper functions for drawing a random CausalTable ###
 # Single Distributions: Draw n samples
@@ -119,11 +118,11 @@ _scm_draw(x::T, o::NamedTuple, n::Int64) where {T <: MatrixDistribution}        
 
 # Vectors of Distributions: Draw a single sample (assumes user input sample n into the distribution)
 function _scm_draw(x::AbstractArray{<:Distribution}, o::NamedTuple, n::Int64)
-    if length(x) == n
+#    if length(x) == n
         return rand.(x)
-    else 
-        throw(ArgumentError("Length of vector of distributions in DataGeneratingProcess must be equal to n"))
-    end
+#    else 
+#        throw(ArgumentError("Length of vector of distributions in DataGeneratingProcess must be equal to n"))
+#    end
 end
 
 # Summary Function: Compute the summary

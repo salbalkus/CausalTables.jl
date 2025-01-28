@@ -2,7 +2,7 @@
 
 In Julia, most datasets are stored in a Table: a data structure with a [Tables.jl](https://tables.juliadata.org/stable/)-compatible interface. One of the main purposes of CausalTables.jl is to wrap a Table of data in Julia in order to provide it as input to some other causal inference package. Given a Table of some data, we can turn it into a `CausalTable` by specifying the treatment, response, and control variables. 
 
-## Tables with Causally Independent Units
+## Constructing the `CausalTable`
 
 The code below provides an example of how to wrap the Boston Housing dataset as a `CausalTable` to answer causal questions of the form "How would changing nitrous oxide air pollution (`NOX`) within Boston-area towns affect median home value (`MEDV`)?" Any dataset in a [Tables.jl](https://tables.juliadata.org/stable/)-compliant format can be wrapped as a `CausalTable`. In this example, we turn a `DataFrame` from [DataFrames.jl](https://dataframes.juliadata.org/stable/) into a `CausalTable` object.
 
@@ -15,10 +15,20 @@ using DataFrames
 tbl = BostonHousing().dataframe
 
 # Wrapping the dataset in a CausalTable
-ctbl = CausalTable(tbl; treatment = :NOX, response = :MEDV, confounders = [:CRIM, :ZN, :INDUS, :CHAS, :B, :DIS, :LSTAT])
+ctbl = CausalTable(tbl; treatment = :NOX, response = :MEDV)
 
 nothing # hide
 ```
+
+When only `treatment` and `response` are specified, all other variables are assumed to be confounders. However, one can also explicitly specify the causes of both treatment and response by passing them as a `NamedTuple` of lists to the `CausalTable` constructor. In the example below, we specify the causes of the treatment `NOX` only as `[:CRIM, :INDUS]`, and the causes of the response `MEDV` are specified as `[:CRIM, :INDUS, :NOX]`.
+
+```@example bostonhousing
+ctbl = CausalTable(tbl; treatment = :NOX, response = :MEDV, 
+                        causes = (NOX = [:CRIM, :INDUS], MEDV = [:CRIM, :INDUS, :NOX]))
+
+```
+
+Note that a full representation of the causes of each variable is **not** required, though they can be specified (this is often referred to a "[directed acyclic graph](https://www.nature.com/articles/s41390-018-0071-3)"). Only the causes of the treatment and response are necessary as input; `CausalTables.jl` can compute other types of variables one might be interested in like confounders or mediators automatically. 
 
 After wrapping a dataset in a `CausalTable` object, the [Tables.jl](https://tables.juliadata.org/stable/) is available to call on the `CausalTable` as well. Below, we demonstrate a few of these functions, as well as additional utility functions for causal inference tasks made available by CausalTables.jl.
 
@@ -29,16 +39,35 @@ using Tables
 Tables.getcolumn(ctbl, :NOX) # extract specific column
 Tables.subset(ctbl, 1:5)     # exact specific rows
 Tables.columnnames(ctbl)     # obtain all column names
+```
 
+In addition, the `CausalTable` object has several utility functions that can be used to extract different types of variables relevant to causal inference from the `CausalTable` object.
+
+```@example bostonhousing
 # Additional utility functions for CausalTables
 treatment(ctbl)              # get CausalTable of treatment variables
 response(ctbl)               # get CausalTable of response variables
-confounders(ctbl)            # get CausalTable of confounders
+treatmentparents(ctbl)      # get CausalTable of treatment and response
 responseparents(ctbl)        # get CausalTable of treatment and confounders
-data(ctbl)                   # get underlying wrapped dataset
 
-# replace one or more attributes of the CausalTable
-CausalTables.replace(ctbl; response = :CRIM, confounders = [:MEDV, :ZN, :INDUS, :CHAS, :B, :DIS, :LSTAT]) 
+parents(ctbl, :NOX)          # get CausalTable of parents of a particular variable
+
+confounders(ctbl)            # get CausalTable of confounders
+mediators(ctbl)              # get CausalTable of mediators
+instruments(ctbl)            # get CausalTable of instruments
+
+data(ctbl)                   # get underlying wrapped dataset of a CausalTable
+
+nothing # hide
+```
+
+Although the `CausalTable` object is immutable, one can replace the values of its attributes with new ones using the `replace` function. The code below demonstrates how to replace the treatment and response variables of the `CausalTable` object `ctbl` with `:CRIM` and `nothing`, respectively. Setting `causes = nothing` is a quick shortcut to specify that all unlabeled variables are confounders of the treatment-response relationship.
+
+```@example bostonhousing
+# Replace one or more attributes of the CausalTable.
+# Setting `causes = nothing` is a quick shortcut to specify
+# that all unlabeled variables are confounders of the treatment-response relationship
+CausalTables.replace(ctbl; response = :CRIM, causes = nothing) 
 
 nothing # hide
 ```

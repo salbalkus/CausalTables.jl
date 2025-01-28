@@ -15,6 +15,7 @@ import MacroTools: postwalk
 
 # New types
 Symbols = AbstractArray{Symbol, 1}
+Functions = AbstractArray{Function, 1}
 
 # Includes
 include("utilities.jl")
@@ -33,9 +34,10 @@ include("estimands.jl")
 export CausalTable, istable, columns, columnaccess
 export nrow, ncol, subset, select, reject
 export replace, treatment, response, confounders, data
-export treatmentmatrix, responsematrix, confoundersmatrix
-export treatmentnames, responsenames, confoundernames 
-export treatmentparents, responseparents, parents
+export treatmentmatrix, responsematrix, treatmentparents, responseparents, parents
+export confounders, confoundernames, confoundersmatrix
+export mediators, mediatornames, mediatorsmatrix
+export instruments, instrumentnames, instrumentsmatrix
 export adjacency_matrix, dependency_matrix
 
 # network_summary.jl
