@@ -69,7 +69,6 @@ Y_under_treatment = condensity(scm, ct_untreated, :Y)
 One can also compute the ground truth of various functions of these distributions, including the conditional mean (`conmean`), conditional variance (`convar`), or propensity scores (`propensity`; this is the density function evaluated at the observed value of the given variable). To compute other functions of conditional densities not included in CausalTables.jl, please see [Distributions.jl](https://juliastats.org/Distributions.jl/stable/). Below, we show two examples of how one might compute an average treatment effect (ATE) using two different ground-truth functionals of the data.
 
 ```jldoctest truthtest; output = false, filter = r"(?<=.{16}).*"s
-
 ### Plug-in Estimate ###
 μ_treated = conmean(scm, ct_treated, :Y) 
 μ_untreated = conmean(scm, ct_untreated, :Y) 
