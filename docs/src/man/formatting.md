@@ -28,7 +28,11 @@ ctbl = CausalTable(tbl; treatment = :NOX, response = :MEDV,
 
 ```
 
-Note that a full representation of the causes of each variable is **not** required, though they can be specified (this is often referred to a "[directed acyclic graph](https://www.nature.com/articles/s41390-018-0071-3)"). Only the causes of the treatment and response are necessary as input; `CausalTables.jl` can compute other types of variables one might be interested in like confounders or mediators automatically. 
+Note that a full representation of the causes of each variable is **not** required, though they can be specified (this is often referred to a "[directed acyclic graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph)"). Only the causes of the treatment and response are necessary as input; `CausalTables.jl` can compute other types of variables one might be interested in like confounders or mediators automatically. 
+
+!!! warning
+
+    When provided, the partial edgelist represented by `causes` assumes that if variable A is not listed as a cause of B, then no "causal path" exists between A and B -- the two variables are uncorrelated. This differs slightly from the common definition of a directed acyclic graph edge in causal inference, where A can be considered a cause of B even if it only acts through another variable C. In this case, specify both A and C as causes of B in `causes` when constructing the `CausalTable`.
 
 After wrapping a dataset in a `CausalTable` object, the [Tables.jl](https://tables.juliadata.org/stable/) is available to call on the `CausalTable` as well. Below, we demonstrate a few of these functions, as well as additional utility functions for causal inference tasks made available by CausalTables.jl.
 

@@ -16,7 +16,7 @@ CausalTables.jl has three main functionalities:
 
 1. Generating simulation data using a `StructuralCausalModel`.
 2. Computing "ground truth" conditional distributions, moments, counterfactuals, and counterfactual functionals from a `StructuralCausalModel` and a `CausalTable`. These include, for instance, counterfactual means and average treatment effects.
-3. Wrapping an existing Table as a `CausalTable` object for use by external packages, which provides several utility functions for extracting causal-relevant variables from a dataset. 
+3. Wrapping data with a representation of relevant causal relationships as a `CausalTable` object, which provides several utility functions for extracting relevant variables from a dataset. 
 
 The examples below illustrate each of these three functionalities.
 
@@ -118,7 +118,7 @@ For a more detailed guide of how to compute ground truth conditional distributio
 
 ### Wrapping an existing Table as a CausalTable
 
-If you have a table of data that you would like to use with CausalTables.jl without defining a corresponding DataGeneratingProcess (i.e. to use with another package) you can wrap it as a `CausalTable` using the corresponding constructor.
+If you have a table of data that you would like to use with CausalTables.jl without defining a corresponding DataGeneratingProcess (i.e. to use with another package, or write your own causal method in Julia) you can wrap it as a `CausalTable` using the corresponding constructor.
 
 ```jldoctest quicktest; output = false, filter = r"(?<=.{11}).*"s
 tbl = (W = rand(1:5, 10), X = randn(10), Y = randn(10))
@@ -129,7 +129,9 @@ ctbl = CausalTable(tbl; treatment = :X, response = :Y,
 CausalTable
 ```
 
-Doing this is often convenient, as it allows you to use the utility functions provided by CausalTables.jl to extract causal-relevant variables from the dataset. For instance, you can extract the treatment, response, confounders, mediators, or instruments from the dataset using the corresponding functions. For example, the following subsets the data to include only confounders:
+Observe how `causes` is a `NamedTuple` of arrays listing the causes of specified variables, forming a partial edgelist of a [directed acyclic graph](https://en.wikipedia.org/wiki/Directed_acyclic_graph). Labeling the causes of treatment and response is required, but causes of other variables do not need to be labeled; the roles of common causal inference variables, such as confounders, can be determined automatically. 
+
+Wrapping data as a `CausalTable` allows one to use its utility functions to extract causal-relevant variables from the dataset. For instance, you can extract the treatment, response, confounders, mediators, or instruments from the dataset using the corresponding functions. As an example, the following subsets the data to include only confounders:
 
 ```jldoctest quicktest; output = false, filter = r"(?<=.{11}).*"s
 confounders(ctbl)
