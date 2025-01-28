@@ -132,6 +132,20 @@ end
                             :A2 => Dict(:Y2 => hcat(tbl[:I1], tbl[:I2]), :Y1 => hcat(tbl[:L2], tbl[:I1], tbl[:I2], tbl[:M2])))
     @test instrumentsmatrix(ctbl) == instrument_truth
     @test instruments(ctbl, :M1, :Y1).data == (;)
+
+    tbl = (
+        L1 = [1, 2, 3],
+        I1 = [0.3, 0.9, 0.7],
+        A1 = [true, false, false],
+        M1 = [true, true, false],
+        Y1 = [1.1, 2.5, 1.7],
+        )
+    causes = (A1 = [:L1, :I1], M1 = [:A1], Y1 = [:M1, :A1, :L1]) 
+    ctbl = CausalTable(tbl, :A1, :Y1, causes)
+
+    @test vec(confoundersmatrix(ctbl)) == [1,2,3]
+    @test vec(mediatorsmatrix(ctbl)) == [true, true, false]
+    @test vec(instrumentsmatrix(ctbl)) == [0.3, 0.9, 0.7]
 end
 
 @testset "DataGeneratingProcess utilities with no dgp macro" begin
