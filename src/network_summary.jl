@@ -141,11 +141,12 @@ function summarize(o::CausalTable)
     # we need to replace the previous summary results.
     scm_result = merge(o.data, o.arrays)
     new_treatment = o.treatment
-    new_confounders = o.confounders
+    new_causes = deepcopy(o.causes)
     new_response = o.response
 
     nsummaries = length(o.summaries)
     tables = Vector{NamedTuple}(undef, nsummaries)
+    headers = Vector{Vector}(undef, nsummaries)
 
     for i in 1:nsummaries
         # get name and object of each summary
@@ -169,19 +170,36 @@ function summarize(o::CausalTable)
         # update the appropriate causal variable list based on the target 
         # of the summary with the newly generated columns
 
-        origin = gettarget(sm)
+        origin = CausalTables.gettarget(sm)
         if origin ∈ o.treatment
             new_treatment = union(new_treatment, header)
-        elseif origin ∈ o.confounders
-            new_confounders = union(new_confounders, header)
         elseif origin ∈ o.response
             new_response = union(new_response, header)
         end
+
+        # update cause tuple
+        if origin ∈ keys(o.causes)
+            new_causes = merge(new_causes, NamedTuple{Tuple(header)}(repeat([deepcopy(o.causes[origin])], length(header))))
+        end
+        headers[i] = header
     end
 
-    new_table = merge(o.data, tables...)
+    # setup to update causes by adding summarized symbols next to original symbols
+    # need to extract headers from iteration above because some summaries add multiple new variables
+    targets = CausalTables.gettarget.(values(o.summaries))
+    originals = vcat([repeat([targets[i]], length(headers[i])) for i in 1:length(headers) if !isnothing(targets[i])]...)
+    additions = vcat([headers[i] for i in 1:length(headers) if !isnothing(targets[i])]...)
 
-    return CausalTable(new_table, new_treatment, new_response, new_confounders, o.arrays, o.summaries)
+    # add each summary as a cause if its original variables was also a cause
+    for cause in new_causes
+        for c in cause
+            append!(cause, additions[c .== originals])
+        end
+    end
+
+    # create a new data talble and construct CausalTable
+    new_table = merge(o.data, tables...)
+    return CausalTable(new_table, new_treatment, new_response, new_causes, o.arrays, o.summaries)
 end
 
 gettarget(s::Friends) = nothing

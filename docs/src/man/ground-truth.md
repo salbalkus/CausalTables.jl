@@ -23,8 +23,7 @@ dgp = @dgp(
 scm = StructuralCausalModel(
     dgp;
     treatment = :A,
-    response = :Y,
-    confounders = [:W]
+    response = :Y
 )
 
 # output
@@ -105,7 +104,7 @@ dgp = @dgp(
         Xs $ Sum(:X, :A),
         Y ~ (@. LogNormal(log(0.2 * Xs + 4), 0.1 * W + 1))
     )
-scm = StructuralCausalModel(dgp; treatment = :X, response = :Y, confounders = [:W])
+scm = StructuralCausalModel(dgp; treatment = :X, response = :Y)
 
 ct = rand(scm, 5)
 W_distribution = condensity(scm, ct, :W)
