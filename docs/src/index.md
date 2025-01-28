@@ -16,7 +16,7 @@ CausalTables.jl has three main functionalities:
 
 1. Generating simulation data using a `StructuralCausalModel`.
 2. Computing "ground truth" conditional distributions, moments, counterfactuals, and counterfactual functionals from a `StructuralCausalModel` and a `CausalTable`. These include, for instance, counterfactual means and average treatment effects.
-3. Wrapping an existing Table as a `CausalTable` object for use by external packages.
+3. Wrapping an existing Table as a `CausalTable` object for use by external packages, which provides several utility functions for extracting causal-relevant variables from a dataset. 
 
 The examples below illustrate each of these three functionalities.
 
@@ -24,7 +24,7 @@ The examples below illustrate each of these three functionalities.
 
 To set up a statistical simulation using CausalTables.jl, we first define a `StructuralCausalModel` (SCM). This consists of two parts: a `DataGeneratingProcess` (DGP) that controls how the data is generated, and a list of variables to define the basic structure of the underlying causal diagram.
 
-A DataGeneratingProcess can be constructed using the `@dgp` macro, which takes a sequence of conditional distributions of the form `[variable name] ~ Distribution(args...)` and returns a `DataGeneratingProcess` object. Then, one can construct an StructuralCausalModel by passing the DGP to its construct, along with labels of the treatment and response variables. Note that `using Distributions` is almost always required before defining a DGP, since the package [Distributions.jl](https://juliastats.org/Distributions.jl/stable/) is used to define the conditional distribution of random components at each step.
+A DataGeneratingProcess can be constructed using the `@dgp` macro, which takes a sequence of conditional distributions of the form `[name] ~ Distribution(args...)` or auxiliary variables `[name] = some code...` and returns a `DataGeneratingProcess` object. Then, one can construct an StructuralCausalModel by passing the DGP to its construct, along with labels of the treatment and response variables. Note that `using Distributions` is almost always required before defining a DGP, since the package [Distributions.jl](https://juliastats.org/Distributions.jl/stable/) is used to define the conditional distribution of random components at each step.
 
 ```jldoctest quicktest; output = false, filter = r"(?<=.{21}).*"s
 using CausalTables
@@ -100,10 +100,9 @@ X_distribution = condensity(scm, data, :X)
  Distributions.Normal{Float64}(μ=5.0, σ=1.0)
 ```
 
-For convenience, there also exists `conmean` and `convar` functions that extracts the true conditional mean and variance of a specific variable the CausalTable. One can apply this to an "intervened" version of data to obtain the conditional mean of the outcome under intervention. 
+For convenience, there also exists functins like `conmean`, `convar`, and `propensity` that extract the true conditional mean, variance, and (generalized) propensity score of a specific variable the CausalTable. One can apply this to an "intervened" version of data to obtain functionals of the outcome under intervention:
 
 ```jldoctest quicktest
-Y_var = convar(scm, data_intervened, :Y)
 Y_mean = conmean(scm, data_intervened, :Y)
 
 # output
@@ -123,7 +122,17 @@ If you have a table of data that you would like to use with CausalTables.jl with
 
 ```jldoctest quicktest; output = false, filter = r"(?<=.{11}).*"s
 tbl = (W = rand(1:5, 10), X = randn(10), Y = randn(10))
-ctbl = CausalTable(tbl; treatment = :X, response = :Y)
+ctbl = CausalTable(tbl; treatment = :X, response = :Y, 
+                        causes = (X = [:W], Y = [:W, :X]))
+
+# output
+CausalTable
+```
+
+Doing this is often convenient, as it allows you to use the utility functions provided by CausalTables.jl to extract causal-relevant variables from the dataset. For instance, you can extract the treatment, response, confounders, mediators, or instruments from the dataset using the corresponding functions. For example, the following subsets the data to include only confounders:
+
+```jldoctest quicktest; output = false, filter = r"(?<=.{11}).*"s
+confounders(ctbl)
 
 # output
 CausalTable
@@ -133,4 +142,4 @@ For a more detailed guide of how to wrap an existing table as a CausalTable plea
 
 # Contributing
 
-Have questions? Spot a bug or issue in the documentation? Want to request a new feature or add one yourself? Please do not hesitate to open an issue or pull request on the [CausalTables.jl GitHub repository](https://github.com/salbalkus/CausalTables.jl). We welcome all contributions and feedback!
+Have questions? Spot a bug or issue in the documentation? Want to request a new feature or add one yourself? Please don't hesitate to open an issue or pull request on the [CausalTables.jl GitHub repository](https://github.com/salbalkus/CausalTables.jl). We welcome all contributions and feedback!

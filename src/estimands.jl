@@ -353,7 +353,6 @@ function atu(scm::StructuralCausalModel; samples = 10^6)
     return((μ = mean(diff_cf), eff_bound = var(diff_cf)))
 end
 
-
 treatment_identity(ct) = columntable(treatment(ct))
 
 """

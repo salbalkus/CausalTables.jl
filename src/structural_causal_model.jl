@@ -108,6 +108,8 @@ function Base.rand(scm::StructuralCausalModel, n::Int)
     return CausalTable(data, scm.treatment, scm.response, scm.causes, arrays, summaries)
 end
 
+Base.rand(scm::StructuralCausalModel) = rand(scm, 1)
+
 ### Helper functions for drawing a random CausalTable ###
 # Single Distributions: Draw n samples
 _scm_draw(x::T, o::NamedTuple, n::Int64) where {T <: UnivariateDistribution}     = rand(x, n)
@@ -116,11 +118,11 @@ _scm_draw(x::T, o::NamedTuple, n::Int64) where {T <: MatrixDistribution}        
 
 # Vectors of Distributions: Draw a single sample (assumes user input sample n into the distribution)
 function _scm_draw(x::AbstractArray{<:Distribution}, o::NamedTuple, n::Int64)
-    if length(x) == n
+#    if length(x) == n
         return rand.(x)
-    else 
-        throw(ArgumentError("Length of vector of distributions in DataGeneratingProcess must be equal to n"))
-    end
+#    else 
+#        throw(ArgumentError("Length of vector of distributions in DataGeneratingProcess must be equal to n"))
+#    end
 end
 
 # Summary Function: Compute the summary
