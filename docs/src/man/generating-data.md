@@ -42,7 +42,7 @@ However, a much more convenient way to define this DGP is using the `@dgp` macro
 using CausalTables
 distributions = @dgp(
         W ~ DiscreteUniform(1, 5),
-        X ~ Normal.(W, 1)),
+        X ~ Normal.(W, 1),
         Y ~ (@. Normal(X + 0.2 * W, 1))
     )
 
