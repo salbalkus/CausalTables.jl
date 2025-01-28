@@ -70,7 +70,6 @@ In the first step, previous variables are accessed by index using `O[1]`, and in
 For instance, if one wanted to generate a large number of variables with the same distribution, one could use the `DataGeneratingProcess` constructor without specifying variable names, in which case names will be automatically generated:
 
 ```jldoctest generation; output = false, filter = r"(?<=.{75}).*"s
-
 many_distributions = DataGeneratingProcess(
     [O -> Normal(0, 1) for _ in 1:100]
 )
@@ -112,7 +111,6 @@ StructuralCausalModel
 When a `StructuralCausalModel` is constructed with only treatment and response specified, all other variables are assumed to be confounders. However, one can also explicitly specify the causes of both treatment and response by passing them as a `NamedTuple` of lists to the `StructuralCausalModel` constructor:
 
 ```jldoctest generation; output = false, filter = r"(?<=.{21}).*"s
-
 scm = StructuralCausalModel(
     distributions;
     treatment = :X,
@@ -126,7 +124,9 @@ StructuralCausalModel
 
 In the above, the keys of `causes` denote the variables whose causes are being specified, and the values are lists of variables that cause the key variable. In this case, the causes of the treatment `X` are specified as `[:W]`, and the causes of the response `Y` are specified as `[:X, :W]`, identical to how they are defined in a [CausalTable object](formatting.md). Just like for a `CausalTable`, while causes of other variables besides treatment and response can be specified, they are not necessary: only the causes of treatment and response are required as input. 
 
-**Important note**: `causes` must be specified manually unless the user is assuming that all unlabeled variables cause both `treatment` and `outcome`. This is the default assumption of a `StructuralCausalModel`, but it may not not factually match the model encoded by the `DataGeneratingProcess`. This behavior is allowed for two reasons: (1) to permit a random draw of a `CausalTable` with an 'incorrect' causal model, which can be useful for benchmarking the robustness of different causal inference methods to model misspecification, and (2) to simulate causal models that implicitly condition on a particular set of variables by leaving them out of the `causes` argument. Otherwise, ensure that labels in `causes` do not contradict the data generating process! 
+!!! note
+
+    `causes` must be specified manually unless the user is assuming that all unlabeled variables cause both `treatment` and `outcome`. This is the default assumption of a `StructuralCausalModel`, but it may not not factually match the model encoded by the `DataGeneratingProcess`. This behavior is allowed for two reasons: (1) to permit a random draw of a `CausalTable` with an 'incorrect' causal model, which can be useful for benchmarking the robustness of different causal inference methods to model misspecification, and (2) to simulate causal models that implicitly condition on a particular set of variables by leaving them out of the `causes` argument. Otherwise, ensure that labels in `causes` do not contradict the data generating process! 
 
 Finally, in some cases it may be convenient to define intermediate variables within a DGP
 
