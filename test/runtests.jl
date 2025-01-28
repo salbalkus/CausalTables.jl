@@ -66,7 +66,7 @@ end
 
     # Extra causal-related functions
     more_sums = (S = Sum(:X, :G), T = Sum(:Z, :G), U = Sum(:Y, :G))
-    coltbl2 = CausalTables.replace(coltbl, arrays = (G = [1 0 1; 0 1 1; 0 0 1],), summaries = more_sums)
+    coltbl2 = replace(coltbl, arrays = (G = [1 0 1; 0 1 1; 0 0 1],), summaries = more_sums)
     coltbl2 = summarize(coltbl2) 
     @test coltbl2.treatment == [:X, :S]
     @test coltbl2.causes == (X = [:Z, :T], Y = [:Z, :X, :T, :S], S = [:Z, :T], U = [:Z, :X, :T, :S])
@@ -84,11 +84,11 @@ end
     array = Graphs.adjacency_matrix(Graphs.path_graph(2))
     causalbaz = CausalTables.CausalTable(baz, :X, :Y, (X = [:Z], Y = [:X, :Z]), (A = array,), (B = CausalTables.Sum(:X, :A),))
     @test causalbaz isa CausalTables.CausalTable
-    @test CausalTables.replace(rowtbl; data = baz).data == baz
+    @test replace(rowtbl; data = baz).data == baz
     Tables.subset(coltbl, 1:2)
     @test Tables.subset(coltbl, 1:2).data == (X = X[1:2], Y = Y[1:2], Z = Z[1:2])
     @test Tables.subset(coltbl, 1:2; viewhint = false).data == (X = X[1:2], Y = Y[1:2], Z = Z[1:2])
-    @test CausalTables.replace(rowtbl; treatment = :X).treatment == [:X]
+    @test replace(rowtbl; treatment = :X).treatment == [:X]
     @test vec(CausalTables.treatmentmatrix(coltbl)) == X
     @test vec(CausalTables.responsematrix(coltbl)) == Y
 
