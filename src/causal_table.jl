@@ -182,8 +182,7 @@ Replace the fields of a `CausalTable` object with the provided keyword arguments
 A new `CausalTable` object with the specified fields replaced.
 
 """
-replace(o::CausalTable; kwargs...) = CausalTable([field in keys(kwargs) ?  kwargs[field] : getfield(o, field) for field in fieldnames(typeof(o))]...)
-
+Base.replace(o::CausalTable; kwargs...) = CausalTable([field in keys(kwargs) ?  kwargs[field] : getfield(o, field) for field in fieldnames(typeof(o))]...)
 
 """
     getscm(o::CausalTable)
