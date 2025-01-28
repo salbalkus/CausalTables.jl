@@ -88,6 +88,9 @@ output_distribution = @dgp(
 )
 # Merge our previous `many_distributions` with the new `output_distribution`
 new_distributions = merge(many_distributions, output_distribution)
+
+# output
+DataGeneratingProcess
 ```
 
 ## Defining a StructuralCausalModel
