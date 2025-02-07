@@ -93,7 +93,7 @@ probabilistic programming packages like Turing.jl [@turing] or Gen.jl
 `CausalTables.jl` allows extracting *closed-form distributions*
 conditional on data drawn in previous steps of the process.
 
-# Example 1: Data With Causal Structure
+# Example 1: Data with causal structure
 
 `CausalTables.jl` supports causal inference problems that involve
 estimating the effect of at least one treatment on at least one
@@ -140,7 +140,7 @@ parents(ct_wrap, :Y)
 :::
 ::::
 
-## Example 2: Ground truths in simulations
+# Example 2: Simulation with ground truth
 
 An SCM defines causal structure by envisaging a data-generating process
 as random draws from a sequence of non-parametric structural equations,

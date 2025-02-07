@@ -38,7 +38,7 @@ Implementing and testing causal inference methods in Julia involves two main cha
 
 While R and Python include many causal packages [@tlverse; @Chen2020], Julia has relatively fewer. Recent Julia packages for causal inference include `TMLE.jl` [@TMLE.jl] and `CausalELM.jl` [@CausalELM.jl]. These focus on specific estimators, rather than general data processing and simulation like `CausalTables.jl`. The package `CausalInference.jl` [@Schauer2024] implements causal graphs and discovery algorithms, similar to CausalDAG [@squires2018causaldag] or DoWhy [@dowhy] in Python and daggity [@Textor2017] in R. That said, it is generally incompatible with the tabular data used in practice and does not support simulations. The simulation capabilities of `CausalTables.jl` are similar to those of probabilistic programming packages like Turing.jl [@turing] or Gen.jl [@gen]. However, while other packages can *sample* data from SCMs, only `CausalTables.jl` allows extracting *closed-form distributions* conditional on data drawn in previous steps of the process.
 
-# Example 1: Data With Causal Structure
+# Example 1: Data with causal structure
 
 `CausalTables.jl` supports causal inference problems that involve estimating the effect of at least one treatment on at least one response. Using the `CausalTable` constructor, one can wrap an existing Table with causal structure:
 
@@ -70,7 +70,7 @@ Convenience functions perform causal data processing. For example, the general `
 parents(ct_wrap, :Y)
 ```
 
-## Example 2: Ground truths in simulations
+# Example 2: Simulation with ground truth
 
 An SCM defines causal structure by envisaging a data-generating process as random draws from a sequence of non-parametric structural equations, with each draw depending on the draws preceding it. For example:
 
