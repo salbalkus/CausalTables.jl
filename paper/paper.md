@@ -88,10 +88,11 @@ similar to CausalDAG [@squires2018causaldag] or DoWhy [@dowhy] in Python
 and daggity [@Textor2017] in R. That said, it is generally incompatible
 with the tabular data used in practice and does not support simulations.
 The simulation capabilities of `CausalTables.jl` are similar to those of
-probabilistic programming packages like Turing.jl [@turing] or Gen.jl
-[@gen]. However, while other packages can *sample* data from SCMs, only
-`CausalTables.jl` allows extracting *closed-form distributions*
-conditional on data drawn in previous steps of the process.
+probabilistic programming packages like `Turing.jl` [@turing] or
+`Gen.jl` [@gen]. However, while other packages can *sample* data from
+SCMs, only `CausalTables.jl` allows extracting *closed-form
+distributions* conditional on data drawn in previous steps of the
+process.
 
 # Example 1: Data with causal structure
 
