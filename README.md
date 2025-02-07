@@ -5,16 +5,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![JOSS Status](https://joss.theoj.org/papers/68c43e832d063050a4e67528191e8148/status.svg)](https://joss.theoj.org/papers/68c43e832d063050a4e67528191e8148)
 
-*A package for storing and simulating data for causal inference in Julia.*
+*A common interface for storing and simulating data for causal inference in Julia.*
 
-Causal inference is the process of estimating, from data, the effect of a treatment variable on an outcome variable -- typically in the presence of confounders. CausalTables.jl makes it easier to store, process, and simulate datasets involving causal structure. Specifically, the package provides:
+[Causal inference](https://en.wikipedia.org/wiki/Causal_inference) is the process of estimating, from data, the effect of a treatment variable on an outcome variable -- typically in the presence of confounders. The goal of `CausalTables.jl` is to simplify the development of statistical causal inference methods in Julia. To this end, the package provides two sets of tools:
 
-1. A `CausalTable` data structure that wraps any dataset stored in a [Tables.jl](https://tables.juliadata.org/stable/)-compatible format with a causal structure (i.e. labeling treatment, response, confounders, and other variables).
-2. Utility methods for easily extracting relevant causal variables and applying interventions. 
-3. A `StructuralCausalModel` data structure for generating random datasets endowed with a given causal structure.
-4. Methods to computing true conditional distributions and approximate ground truth causal effect estimands.
+1. The `CausalTable`, a [Tables.jl](https://tables.juliadata.org/stable/)-compliant data structure that wraps a table of data with labels of the causes of relevant variables, denoted via a type of [directed acyclic graph (DAG)](https://en.wikipedia.org/wiki/Directed_acyclic_graph). Users can call existing functions to easily intervene on treatment variables, identify common subsets of variables (confounders, mediators, instruments, etc.) or use causal labels in other ways -- all while still allowing the data to be used with other Julia packages that accept Tables.jl data structures.
+2. The `StructuralCausalModel` interface, which allows users to encode a Structural Causal Model (SCM), a sequence of conditional distributions where each distribution can depend (causally) on any of the previous. This supports simulating data from arbitrary causal structures, extract ground truth distributions conditional on the data generated in previous steps, and approximating common ground-truth estimands such as the average treatment effect or policy effect. 
 
-When used together, these functionalities make it easier to implement new causal inference methods in Julia, as well as randomly generate data to evaluate their performance against the ground truth in simulation studies. 
+**What sets this package apart?** `CausalTables.jl` provides a common interface for manipulating tabular data for causal inference. While packages like [CausalInference.jl](https://mschauer.github.io/CausalInference.jl/latest/) only focus on causal graphs and discovery algorithms, the `CausalTable` interface provides utility functions to clean and manipulate practical datasets for input into statistical estimators. The simulation capabilities of `CausalTables.jl` are similar to those of probabilistic programming languages like [Turing.jl](https://turing.ml/dev/) or [Gen.jl](https://www.gen.dev/); however, unlike these packages, with `CausalTables.jl` users can extract the true conditional distributions of relevant variables from a dataset in closed-form *after* data has been generated. This makes it easy to extract parameters like ground-truth ("oracle") conditional means or propensity scores, which are often helpful for testing whether an estimator is behaving as intended.
 
 ## Installation
 CausalTables.jl can be installed using the Julia package manager. From the Julia REPL, type `]` to enter the Pkg REPL mode and run
@@ -36,7 +34,7 @@ dgp = @dgp(
     Y ~ (@. Normal(A + W, 1))
 )
 
-scm = StructuralCausalModel(dgp; treatment = :A, response = :Y, confounders = [:W])
+scm = StructuralCausalModel(dgp; treatment = :A, response = :Y, causes = (A = [:W], Y = [:A, :W]))
 ```
 
 Once a `StructuralCausalModel` is defined, one can then draw a randomly-generated `CausalTable` according to the SCM using the `rand` function:
@@ -64,7 +62,7 @@ Summaries: NamedTuple()
 Arrays: NamedTuple()
 ```
 
-A `CausalTable` is a Table with a causal structure, such as labels for treatment, response, and confounder variables. In addition to implementing the standard Tables.jl interface, CausalTables.jl also provides extra functions to make working with causal data easier. See the [documentation](https://salbalkus.github.io/CausalTables.jl/dev/) for more information.
+A `CausalTable` is a Table with a causal structure, such as labels for treatment, response, and causes. In addition to implementing the standard Tables.jl interface, CausalTables.jl also provides extra functions to make working with causal data easier. See the [documentation](https://salbalkus.github.io/CausalTables.jl/dev/) for more information.
 
 Given an SCM, it is also possible to approximate the "ground truth" value of a variety of relevant causal estimands from this SCM, including counterfactual means (`cfmean`), as well as average treatment effects (`ate`) and average policy effects (`ape`). For example, the ground truth average treatment effect for this SCM can be approximated like so:
 
