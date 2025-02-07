@@ -6,6 +6,7 @@ using Graphs
 using Distributions
 using Random
 using LinearAlgebra
+using DataAPI
 
 within(x, ε) = abs(x) < ε
 
@@ -27,8 +28,8 @@ end
     df = CausalTables.CausalTable(foo1, [:X, :Z], :Y, (X = [:Z], Z = [], Y = [:X, :Z]))  
     @test Tables.istable(df)
     @test Tables.columntable(foo1) == df.data
-    @test ncol(df) == 3
-    @test nrow(df) == 3
+    @test DataAPI.ncol(df) == 3
+    @test DataAPI.nrow(df) == 3
     @test Tables.getindex(df, 1, 2) == 4
     @test Tables.getcolumn(df, :X) == X    
     @test Tables.getcolumn(df, 1) == X
@@ -45,8 +46,8 @@ end
     rowtbl = CausalTables.CausalTable(foo3, :X, [:Y, :Z]; causes = (X = [], Y = [:X, :Z], Z = [:X]))
     @test Tables.istable(rowtbl)
     @test Tables.rowtable(rowtbl.data) == foo3
-    @test ncol(rowtbl) == 3
-    @test nrow(rowtbl) == 3
+    @test DataAPI.ncol(rowtbl) == 3
+    @test DataAPI.nrow(rowtbl) == 3
     @test Tables.getcolumn(rowtbl, :Y) == Y
     @test Tables.getcolumn(rowtbl, 1) == X
     @test Tables.columnindex(rowtbl, :X) == 1
@@ -56,8 +57,8 @@ end
     coltbl = CausalTables.CausalTable(foo2, :X, :Y)
     @test Tables.istable(coltbl)
     @test coltbl.data == foo2
-    @test ncol(coltbl) == 3
-    @test nrow(coltbl) == 3
+    @test DataAPI.ncol(coltbl) == 3
+    @test DataAPI.nrow(coltbl) == 3
     @test Tables.getcolumn(rowtbl, :Y) == Y
     @test Tables.getcolumn(rowtbl, 1) == X
     @test Tables.columnindex(rowtbl, :X) == 1
@@ -195,7 +196,7 @@ end
     qux = CausalTables.conmean(scm, foo, :Y)
     quux = CausalTables.convar(scm, foo, :Y)
 
-    @test nrow(foo.data) == length(bar)
+    @test DataAPI.nrow(foo.data) == length(bar)
     @test typeof(bar) <: Vector{T} where {T <: UnivariateDistribution}
     @test typeof(baz) <: Vector{T} where {T <: Real}
     @test typeof(qux) <: Vector{T} where {T <: Real}
@@ -227,7 +228,7 @@ end
     @test Tables.columnnames(foo.data) == (:L1, :A, :Y)
 
     bar = CausalTables.condensity(scm, foo, :A_s)
-    @test nrow(foo) == length(bar)
+    @test DataAPI.nrow(foo) == length(bar)
     @test typeof(bar) <: Vector{T} where {T <: UnivariateDistribution}
 
     foo_sum = CausalTables.summarize(foo)
@@ -310,7 +311,7 @@ end
     @test stbl.causes == (A = [:L, :Lo1, :Lo2, :Lm], Y = [:L, :A,  :Lo1, :Lo2, :Lm, :As], As = [:L, :Lo1, :Lo2, :Lm])
     
     sub = Tables.subset(stbl, 1:3)
-    @test nrow(sub) == 3
+    @test DataAPI.nrow(sub) == 3
     @test size(sub.arrays.G) == (3, 3)
 
     adj = CausalTables.adjacency_matrix(tbl)
