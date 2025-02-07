@@ -27,18 +27,17 @@ toc-title: Table of contents
 
 Estimating the strength of causal relationships between treatment and
 response variables is an important problem across many scientific
-disciplines. `CausalTables.jl` is a package providing two important
-functionalities to support causal inference in Julia. First, it provides
-the `CausalTable`, which bundles tabular data with causal structure.
-This allows users to automatically subset and manipulate variables such
-as treatment and confounders that are often provided as input to causal
-estimators. Second, the package's `StructuralCausalModel` interface
-simplifies running simulations with a given causal structure -- unlike
-existing simulation tools, users can extract the ground truth
-distributions and their properties conditional on the data generated in
-previous steps. In this way, `CausalTables.jl` makes it easier to
-develop and experimentally evaluate new statistical causal inference
-methods in Julia.
+disciplines. `CausalTables.jl` is a package that supports causal
+inference in Julia by providing two important functionalities. First, it
+implements the `CausalTable`, bundling tabular data with a type of
+directed acyclic graph (DAG) encoding features' causes. Users can
+intervene on treatments and identify causal-relevant variables like
+confounders automatically. Second, the package's `StructuralCausalModel`
+interface simplifies simulating data from arbitrary causal structures --
+and unlike other packages, users can extract ground truth distributions
+conditional on the data generated in previous steps. In this way,
+`CausalTables.jl` makes it easier to develop and experimentally evaluate
+new statistical causal inference methods in Julia.
 
 # Statement of need
 
