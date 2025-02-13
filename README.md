@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![JOSS Status](https://joss.theoj.org/papers/68c43e832d063050a4e67528191e8148/status.svg)](https://joss.theoj.org/papers/68c43e832d063050a4e67528191e8148)
 
-*A common interface for storing and simulating data for causal inference in Julia.*
+*A common interface for processing and simulating data for causal inference in Julia.*
 
 [Causal inference](https://en.wikipedia.org/wiki/Causal_inference) is the process of estimating, from data, the effect of a treatment variable on an outcome variable -- typically in the presence of confounders. The goal of `CausalTables.jl` is to simplify the development of statistical causal inference methods in Julia. To this end, the package provides two sets of tools:
 

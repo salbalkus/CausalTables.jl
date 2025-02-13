@@ -52,7 +52,6 @@ To evaluate the causal effects of continuous treatments, one can apply the `addi
 Once we've defined an SCM (see [Generating data for statistical experiments](generating-data.md)) and have some table of intervened data with variables matching those of our DGP, we can compute the ground truth conditional distributions of any variable (given a corresponding DGP) using the `condensity` function. For any line starting with a `~` in the DGP, `condensity` will be able to return the true conditional distribution, a Distribution object from the package [Distributions.jl](https://juliastats.org/Distributions.jl/stable/), given the data. Some examples are shown below:
 
 ```jldoctest truthtest; output = false, filter = r"(?<=.{18}).*"s
-
 # Distribution of the treatment in the observed data
 A_distribution = condensity(scm, ct, :A)
 

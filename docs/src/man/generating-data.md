@@ -128,9 +128,6 @@ In the above, the keys of `causes` denote the variables whose causes are being s
 
     `causes` must be specified manually unless the user is assuming that all unlabeled variables cause both `treatment` and `outcome`. This is the default assumption of a `StructuralCausalModel`, but it may not not factually match the model encoded by the `DataGeneratingProcess`. This behavior is allowed for two reasons: (1) to permit a random draw of a `CausalTable` with an 'incorrect' causal model, which can be useful for benchmarking the robustness of different causal inference methods to model misspecification, and (2) to simulate causal models that implicitly condition on a particular set of variables by leaving them out of the `causes` argument. Otherwise, ensure that labels in `causes` do not contradict the data generating process! 
 
-Finally, in some cases it may be convenient to define intermediate variables within a DGP
-
-
 ## Networks of Causally-Connected Units
 
 In some cases, we might work with data in which units may *not* be causally independent, but rather, in which one unit's variables could dependent on some summary function of its neighbors. Generating data from such a model can be done by adding lines of the form `Xs $ NetworkSummary` to the `@dgp` macro.

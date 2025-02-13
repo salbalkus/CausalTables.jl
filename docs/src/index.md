@@ -1,6 +1,6 @@
 # CausalTables.jl
 
-*A common interface for storing and simulating data for causal inference in Julia.*
+*A common interface for processing and simulating data for causal inference in Julia.*
 
 ## Overview
 

@@ -1,5 +1,5 @@
 ---
-title: "CausalTables.jl: Simulating and storing data for statistical causal inference in Julia"
+title: "CausalTables.jl: Simulating and processing data for statistical causal inference in Julia"
 tags:
   - Julia
   - statistics
@@ -16,7 +16,7 @@ authors:
 affiliations:
  - name: Department of Biostatistics, Harvard T.H. Chan School of Public Health
    index: 1
-date: 6 February 2025
+date: 13 February 2025
 bibliography: paper.bib
 format: markdown
 engine: julia
@@ -76,7 +76,7 @@ An SCM defines causal structure by envisaging a data-generating process as rando
 
 \begin{align*}
 W &\sim Beta(2, 4) \\
-A &\sim Bernoulli(W) \\
+A &\sim Bernoulli(0.5W + 0.2) \\
 Y &\sim Normal(A + W, 1)
 \end{align*}
 
@@ -104,6 +104,7 @@ ct = rand(scm, 5) # randomly sample
 Many causal estimands involve applying some intervention to a treatment. For instance, computing an ATE compares hypothetical responses had everyone been treated versus no one treated; one can apply these interventions on a `CausalTable` using the `intervene` function:
 
 ```{julia}
+#| output: false
 treated = intervene(ct, treat_all)
 untreated = intervene(ct, treat_none)
 ```

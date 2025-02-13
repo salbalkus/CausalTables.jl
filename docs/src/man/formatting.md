@@ -51,7 +51,7 @@ In addition, the `CausalTable` object has several utility functions that can be 
 # Additional utility functions for CausalTables
 treatment(ctbl)              # get CausalTable of treatment variables
 response(ctbl)               # get CausalTable of response variables
-treatmentparents(ctbl)      # get CausalTable of treatment and response
+treatmentparents(ctbl)       # get CausalTable of treatment and response
 responseparents(ctbl)        # get CausalTable of treatment and confounders
 
 parents(ctbl, :NOX)          # get CausalTable of parents of a particular variable

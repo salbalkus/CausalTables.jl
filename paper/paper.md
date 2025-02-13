@@ -12,13 +12,13 @@ authors:
   name: Nima S. Hejazi
   orcid: 0000-0002-7127-2789
 bibliography: paper.bib
-date: 6 February 2025
+date: 13 February 2025
 tags:
 - Julia
 - statistics
 - causal inference
 - tables
-title: "CausalTables.jl: Simulating and storing data for statistical
+title: "CausalTables.jl: Simulating and processing data for statistical
   causal inference in Julia"
 toc-title: Table of contents
 ---
@@ -148,7 +148,7 @@ with each draw depending on the draws preceding it. For example:
 
 `\begin{align*}
 W &\sim Beta(2, 4) \\
-A &\sim Bernoulli(W) \\
+A &\sim Bernoulli(0.5W + 0.2) \\
 Y &\sim Normal(A + W, 1)
 \end{align*}`{=tex}
 
@@ -181,28 +181,12 @@ For instance, computing an ATE compares hypothetical responses had
 everyone been treated versus no one treated; one can apply these
 interventions on a `CausalTable` using the `intervene` function:
 
-:::: {.cell execution_count="1"}
+::: {.cell execution_count="1"}
 ``` {.julia .cell-code}
 treated = intervene(ct, treat_all)
 untreated = intervene(ct, treat_none)
 ```
-
-::: {.cell-output .cell-output-display execution_count="1"}
-    CausalTable
-    ┌─────────┬─────────┬─────────┐
-    │       W │       A │       Y │
-    │ Float64 │ Float64 │ Float64 │
-    ├─────────┼─────────┼─────────┤
-    │     0.4 │     0.0 │     2.0 │
-    │     0.3 │     0.0 │     1.1 │
-    │     0.2 │     0.0 │     3.3 │
-    │     0.2 │     0.0 │    -1.3 │
-    │     0.4 │     0.0 │    -1.0 │
-    └─────────┴─────────┴─────────┘
-    Summaries: NamedTuple()
-    Arrays: NamedTuple()
 :::
-::::
 
 After simulating data, the true ("oracle") distribution can be obtained
 using `condensity`. Other functions obtain specific features, such as
