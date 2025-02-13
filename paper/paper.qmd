@@ -1,5 +1,5 @@
 ---
-title: "CausalTables.jl: Simulating and processing data for statistical causal inference in Julia"
+title: "CausalTables.jl: Simulating and storing data for statistical causal inference in Julia"
 tags:
   - Julia
   - statistics
