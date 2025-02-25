@@ -1,0 +1,38 @@
+cff-version: "1.2.0"
+authors:
+- family-names: Balkus
+  given-names: Salvador V.
+  orcid: "https://orcid.org/0000-0003-4695-833X"
+- family-names: Hejazi
+  given-names: Nima S.
+  orcid: "https://orcid.org/0000-0002-7127-2789"
+contact:
+- family-names: Balkus
+  given-names: Salvador V.
+  orcid: "https://orcid.org/0000-0003-4695-833X"
+doi: 10.5281/zenodo.14867116
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - family-names: Balkus
+    given-names: Salvador V.
+    orcid: "https://orcid.org/0000-0003-4695-833X"
+  - family-names: Hejazi
+    given-names: Nima S.
+    orcid: "https://orcid.org/0000-0002-7127-2789"
+  date-published: 2025-02-24
+  doi: 10.21105/joss.07580
+  issn: 2475-9066
+  issue: 106
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 7580
+  title: "CausalTables.jl: Simulating and storing data for statistical
+    causal inference in Julia"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.07580"
+  volume: 10
+title: "CausalTables.jl: Simulating and storing data for statistical
+  causal inference in Julia"
