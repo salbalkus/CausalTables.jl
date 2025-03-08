@@ -110,7 +110,7 @@ function cfmean(scm::StructuralCausalModel, intervention::Function; samples = 10
     ct = rand(scm, samples)
     parents = responseparents(ct)
     Y_counterfactual = draw_counterfactual(scm, parents, intervention)
-    return((μ = mean(Y_counterfactual), eff_bound = var(Y_counterfactual)))
+    return((μ = mean(Y_counterfactual),))
 end
 
 @doc raw"""
@@ -154,7 +154,7 @@ function cfdiff(scm::StructuralCausalModel, intervention1::Function, interventio
     Y_cf1 = draw_counterfactual(scm, parents, intervention1)
     Y_cf2 = draw_counterfactual(scm, parents, intervention2)
     diff_cf = Y_cf1 .- Y_cf2
-    return((μ = mean(diff_cf), eff_bound = var(diff_cf)))
+    return((μ = mean(diff_cf),))
 end
 
 # TODO: Assume only a single treatment!!!
@@ -251,12 +251,19 @@ function ate(scm::StructuralCausalModel; samples = 10^6)
     ct = rand(scm, samples)
     check_treatment_binary(ct)
 
-    parents = responseparents(ct)
-    Y_cf1 = draw_counterfactual(scm, parents, treat_all)
-    Y_cf2 = draw_counterfactual(scm, parents, treat_none)
-    diff_cf = Y_cf1 .- Y_cf2
+    ct1 = intervene(ct, treat_all)
+    ct0 = intervene(ct, treat_none)
 
-    return((μ = mean(diff_cf), eff_bound = var(diff_cf)))
+    responsesymb = scm.response[1]
+    diff = (conmean(scm, ct1, responsesymb) - conmean(scm, ct0, responsesymb))
+
+    Y = vec(responsematrix(ct))
+    A = vec(treatmentmatrix(ct))
+    p = propensity(scm, ct, scm.treatment[1])
+    μ = conmean(scm, ct, responsesymb)
+    eif = (@. diff  + (((2 * A) -1) / p) * (Y - μ))
+
+    return((μ = mean(diff), eff_bound = var(eif)))
 end
 
 @doc raw"""
@@ -288,7 +295,7 @@ dgp = @dgp(
     Y ~ @.(Normal(A + L))
 )
 scm = StructuralCausalModel(dgp, :A, :Y, [:L])
-att(scm, treat_all, treat_none)
+att(scm)
 ```
 """
 function att(scm::StructuralCausalModel; samples = 10^6)
@@ -298,12 +305,21 @@ function att(scm::StructuralCausalModel; samples = 10^6)
     ct = rand(scm, samples)
     check_treatment_binary(ct)
 
-    ct_treated = Tables.subset(ct, Tables.getcolumn(treatment(ct), 1))
-    parents = responseparents(ct_treated)
-    Y_cf1 = draw_counterfactual(scm, parents, treat_all)
-    Y_cf2 = draw_counterfactual(scm, parents, treat_none)
-    diff_cf = Y_cf1 .- Y_cf2
-    return((μ = mean(diff_cf), eff_bound = var(diff_cf)))
+    ct1 = intervene(ct, treat_all)
+    ct0 = intervene(ct, treat_none)
+
+    rs = scm.response[1]
+    Y = vec(responsematrix(ct))
+    A = vec(treatmentmatrix(ct))
+    p = propensity(scm, ct1, scm.treatment[1])
+    q = mean(A)
+
+    # Compute the EIF from Theorem 1 of Kennedy, Sjolander, and Small (2015): Semiparametric causal inference in matched cohort studies.
+    # Or, check against the code from npcausal: https://rdrr.io/github/ehkennedy/npcausal/src/R/att.R
+    μ0 = conmean(scm, ct0, rs)
+    eif = (@. (A/q) * (Y - μ0) - ((1-A)/(1-q)) * (p / (1-p)) * (Y - μ0))
+
+    return((μ = mean(eif), eff_bound = var(eif)))
 end
 
 @doc raw"""
@@ -335,7 +351,7 @@ dgp = @dgp(
     Y ~ @.(Normal(A + L))
 )
 scm = StructuralCausalModel(dgp, :A, :Y, [:L])
-atu(scm, treat_all, treat_none)
+atu(scm)
 ```
 """
 function atu(scm::StructuralCausalModel; samples = 10^6)
@@ -345,12 +361,21 @@ function atu(scm::StructuralCausalModel; samples = 10^6)
     ct = rand(scm, samples)
     check_treatment_binary(ct)
 
-    ct_treated = Tables.subset(ct, .!(Tables.getcolumn(treatment(ct), 1)))
-    parents = responseparents(ct_treated)
-    Y_cf1 = draw_counterfactual(scm, parents, treat_all)
-    Y_cf2 = draw_counterfactual(scm, parents, treat_none)
-    diff_cf = Y_cf1 .- Y_cf2
-    return((μ = mean(diff_cf), eff_bound = var(diff_cf)))
+    ct1 = intervene(ct, treat_all)
+    ct0 = intervene(ct, treat_none)
+
+    rs = scm.response[1]
+    Y = vec(responsematrix(ct))
+    # Flip the treatment variable
+    A = vec(treatmentmatrix(ct)) .== 0
+    p = propensity(scm, ct0, scm.treatment[1])
+    q = mean(A)
+
+    # Invert the mean from above to estimate E{Y(1)-Y|A=0}
+    μ0 = conmean(scm, ct1, rs)
+    eif = (@. ((1-A) / (1-q)) * (p / (1-p)) * (Y - μ0) - (A / q) * (Y - μ0))
+
+    return((μ = mean(eif), eff_bound = var(eif)))
 end
 
 treatment_identity(ct) = columntable(treatment(ct))
