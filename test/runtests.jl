@@ -323,7 +323,7 @@ end
     @test all(map(x -> x ∈ [0.0, 1.0], vec(dep)))
 end
 
-#@testset "Counterfactual estimand approximation" begin
+@testset "Counterfactual estimand approximation" begin
     Random.seed!(1234)
 
     # Test binary random variables
