@@ -1,4 +1,4 @@
-# TODO: Currently assumes a single outcome!!
+# TODO: Currently assumes a single outcome
 # TODO: Assumes intervention produces a table
 # TODO: Needs better input processing
 
@@ -317,6 +317,7 @@ function att(scm::StructuralCausalModel; samples = 10^6)
     # Compute the EIF from Theorem 1 of Kennedy, Sjolander, and Small (2015): Semiparametric causal inference in matched cohort studies.
     # Or, check against the code from npcausal: https://rdrr.io/github/ehkennedy/npcausal/src/R/att.R
     μ0 = conmean(scm, ct0, rs)
+
     eif = (@. (A/q) * (Y - μ0) - ((1-A)/(1-q)) * (p / (1-p)) * (Y - μ0))
 
     return((μ = mean(eif), eff_bound = var(eif)))
@@ -372,8 +373,8 @@ function atu(scm::StructuralCausalModel; samples = 10^6)
     q = mean(A)
 
     # Invert the mean from above to estimate E{Y(1)-Y|A=0}
-    μ0 = conmean(scm, ct1, rs)
-    eif = (@. ((1-A) / (1-q)) * (p / (1-p)) * (Y - μ0) - (A / q) * (Y - μ0))
+    μ1 = conmean(scm, ct1, rs)
+    eif = (@. ((1-A) / (1-q)) * (p / (1-p)) * (Y - μ1) - (A / q) * (Y - μ1))
 
     return((μ = mean(eif), eff_bound = var(eif)))
 end
