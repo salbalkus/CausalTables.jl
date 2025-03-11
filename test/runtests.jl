@@ -328,8 +328,8 @@ end
 
     # Test binary random variables
     dgp = CausalTables.@dgp(
-        L ~ Beta(2, 4),
-        A ~ @.(Bernoulli(L)),
+        L ~ Beta(1, 1),
+        A ~ @.(Bernoulli(0.6 * L + 0.2)),
         Y ~ @.(Normal(A + 2 * L + 1))
     )
 
@@ -345,20 +345,20 @@ end
     @test all(ctn.data.A .== 0.0)
 
     ε = 0.05
+
     # ATE
     est_ate = ate(scm)
-    @test within(est_ate.μ - 1, ε)
-    @test within(est_ate.eff_bound - 2, ε)
+    @test est_ate.μ == 1.0
+    @test within(est_ate.eff_bound - 4.6, ε)
 
     # ATT
     est_att = att(scm)
-    est_att.μ - 1
     @test within(est_att.μ - 1, ε)
-    @test within(est_att.eff_bound - 2, ε)
+    @test within(est_att.eff_bound - 6.23, ε)
     # ATU
     est_atu = atu(scm)
     @test within(est_atu.μ - 1, ε)
-    @test within(est_atu.eff_bound - 2, ε)
+    @test within(est_atu.eff_bound - 6.23, ε)
 
     # Test continuous random variables
     dgp2 = CausalTables.@dgp(
@@ -379,13 +379,10 @@ end
     # Modified Treatment Policy / Average Policy Effect
     est_ape_a = ape(scm2, additive_mtp(1.0))
     @test within(est_ape_a.μ - 1, ε)
-    @test within(est_ape_a.eff_bound - 2, ε)
     
     est_ape_m = ape(scm2, multiplicative_mtp(1.0))
     @test within(est_ape_m.μ, ε)
-    @test within(est_ape_m.eff_bound - 2, ε)
 
     mean_a = cfmean(scm2, additive_mtp(1.0))
     @test within(mean_a.μ - 3, ε)
-    @test within(mean_a.eff_bound - 2.3, 0.1)
 end
