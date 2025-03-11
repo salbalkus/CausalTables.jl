@@ -86,7 +86,7 @@ For the complete API of available ground truth causal estimands, see [Estimands]
 cfmean(scm, additive_mtp(1))
 
 # output
-(μ = 4.599337273915866, eff_bound = 4.881412474779794)
+(μ = 4.599337273915866,)
 ```
 
 For problems that involving functionals not available through CausalTables.jl or that require more fine-grained knowledge of the true conditional distributions for a given dataset, this package also implements the `condensity` function. This function computes the true conditional distributions of any variable in a CausalTable (given a corresponding DGP). The function returns a vector of Distribution objects from the package [Distributions.jl](https://juliastats.org/Distributions.jl/stable/)

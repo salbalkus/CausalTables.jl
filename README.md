@@ -69,7 +69,7 @@ Given an SCM, it is also possible to approximate the "ground truth" value of a v
 ```
 ate(scm)
 
-(μ = 1.0006736394005957, eff_bound = 2.0019300075151616)
+(μ = 1.0, eff_bound = 6.767108201891064)
 ```
 
 Alternatively, one can compute the ground truth of low-level statistical functionals, such as conditional means or propensity scores, for use in downstream analyses. 

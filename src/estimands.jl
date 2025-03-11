@@ -90,7 +90,6 @@ where ``d(a)`` represents an intervention on the treatment variable(s) ``A``. Th
 # Returns
 A named tuple containing:
 - `μ`: The mean of the counterfactual outcomes.
-- `eff_bound`: The variance of the counterfactual response, which is equal to the efficiency bound for IID data. If observations are correlated, this may not have a meaningful interpretation.
 
 # Example
 ```@example
@@ -133,7 +132,6 @@ where ``d_1`` and ``d_2`` represent `intervention1` and `intervention2` being ap
 # Returns
 A named tuple containing:
 - `μ`: The mean difference in counterfactual outcomes.
-- `eff_bound`: The variance of the difference in counterfactual responses, which is equal to the efficiency bound for IID data. If observations are correlated, this may not have a meaningful interpretation.
 
 # Example
 ```@example
@@ -478,7 +476,6 @@ Convenience functions for generating `intervention` functions include `additive_
 # Returns
 A named tuple containing:
 - `μ`: The ATU approximation.
-- `eff_bound`: The variance of the difference between the natural and counterfactual responses, which is equal to the efficiency bound for IID data. If observations are correlated, this may not have a meaningful interpretation.
 
 # Example
 ```@example
