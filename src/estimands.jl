@@ -45,7 +45,7 @@ function intervene(ct::CausalTable, intervention::Function)
 
     # merge intervened treatments with the rest of the data
     unintervened = CausalTables.reject(ct, keys(intervened))
-    newtbl = CausalTables.replace(ct, data = merge(unintervened.data, intervened) |> Select(Tables.columnnames(ct))) 
+    newtbl = CausalTables.replace(ct, data = NamedTupleTools.select(merge(unintervened.data, intervened), Tables.columnnames(ct)))
     return(newtbl)
 end
 

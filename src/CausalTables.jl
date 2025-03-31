@@ -3,13 +3,14 @@ module CausalTables
 # Imports
 using Distributions
 using Tables
-using TableTransforms
+using NamedTupleTools
 using PrettyTables
 using DataAPI
 using StatsBase
 using LinearAlgebra
 using SparseArrays
 using Missings
+
 import Base: getindex
 import MacroTools: postwalk
 

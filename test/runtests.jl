@@ -188,6 +188,9 @@ end
     scm = CausalTables.StructuralCausalModel(dgp, :A, :Y)
     foo = rand(scm, 10)
 
+    name = :Z
+    findfirst(x -> x == name, scm.dgp.names)
+
     @test typeof(foo) == CausalTables.CausalTable
     @test Tables.columnnames(foo.data) == (:L1, :L2, :A, :Y)
 
@@ -386,3 +389,25 @@ end
     mean_a = cfmean(scm2, additive_mtp(1.0))
     @test within(mean_a.μ - 3, ε)
 end
+
+@testset "Odd edge cases" begin
+    d = 5
+    many_distributions = DataGeneratingProcess(
+        [O -> Bernoulli(1.0) for _ in 1:d]
+    )
+    output_distribution = @dgp(
+        A ~ Normal.(reduce(+, values(O)), 0),
+        Y ~ Normal.(reduce(+, values(O)), 0)
+    )
+
+    scm = StructuralCausalModel(merge(many_distributions, output_distribution), :A, :Y)
+
+    ct = rand(scm, 10)
+
+    @test all(ct.data.A .== d)
+    @test all(ct.data.Y .== d*2)
+
+    @test all(condensity(scm, ct, :A).== Normal(d, 0))
+    @test all(condensity(scm, ct, :Y).== Normal(d*2, 0))
+end
+

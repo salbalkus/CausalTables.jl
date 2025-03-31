@@ -223,8 +223,8 @@ Selects specified columns from a `CausalTable` object.
 - A new `CausalTable` object with only the selected columns.
 
 """
-select(o::CausalTable, symbols::Symbol) = replace(o; data = o.data |> TableTransforms.Select(symbols))
-select(o::CausalTable, symbols) = replace(o; data = (length(symbols) == 0 ? (;) : o.data |> TableTransforms.Select(symbols...)))
+select(o::CausalTable, symbols::Symbol) = replace(o; data = NamedTupleTools.select(o.data, (symbols,)))
+select(o::CausalTable, symbols) = replace(o; data = NamedTupleTools.select(o.data, symbols))
 
 """
     reject(o::CausalTable, symbols)
@@ -239,8 +239,8 @@ Removes the columns specified by `symbols` from the `CausalTable` object `o`.
 A new `CausalTable` object with the specified symbols removed from its data.
 
 """
-reject(o::CausalTable, symbols::Symbol) = replace(o; data = o.data |> TableTransforms.Reject(symbols))
-reject(o::CausalTable, symbols) = replace(o; data = o.data |> TableTransforms.Reject(symbols...))
+reject(o::CausalTable, symbols::Symbol) = replace(o; data = NamedTupleTools.delete(o.data, symbols))
+reject(o::CausalTable, symbols) = replace(o; data = NamedTupleTools.delete(o.data, symbols...))
 
 
 """

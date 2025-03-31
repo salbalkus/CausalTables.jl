@@ -16,8 +16,9 @@ function condensity(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
     
     varpos = findfirst(scm.dgp.names .== name)
     isnothing(varpos) && throw(ArgumentError("Argument `var` is not contained within the StructuralCausalModel"))
-    
-    scm_result = getscm(ct)
+
+    prev_names = scm.dgp.names[1:(varpos-1)]
+    scm_result = NamedTupleTools.select(getscm(ct), prev_names)
 
     try
         if scm.dgp.types[varpos] == :distribution
