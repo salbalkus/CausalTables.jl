@@ -34,7 +34,11 @@ dgp(a, b; σ2 = 1) = @dgp(
     Y ~ (@. Normal(A + W, σ2))
 )
 
-scm = StructuralCausalModel(dgp(2, 2; σ2 = 2); treatment = :A, response = :Y, causes = (A = [:W], Y = [:A, :W]))
+scm = StructuralCausalModel(
+    dgp(2, 2; σ2 = 2); 
+    treatment = :A, 
+    response = :Y, 
+    causes = (A = [:W], Y = [:A, :W]))
 ```
 
 Once a `StructuralCausalModel` is defined, one can then draw a randomly-generated `CausalTable` according to the SCM using the `rand` function:
