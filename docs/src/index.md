@@ -65,6 +65,8 @@ scm_family(a, b; σ2X = 1, σ2Y = 1) = StructuralCausalModel(
 scm_family(1, 5)
 scm_family(1, 10; σ2X = 2, σ2Y = 2)
 
+# output
+StructuralCausalModel
 ```
 
 One we've defined our list of distribution functions, we can generate data from the DGP using the `rand` function:
