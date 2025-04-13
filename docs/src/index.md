@@ -50,6 +50,23 @@ scm = StructuralCausalModel(
 StructuralCausalModel
 ```
 
+To create multiple versions of an SCM with different parameters, simply define a function and call it:
+
+```jldoctest quicktest; output = false, filter = r"(?<=.{21}).*"s
+scm_family(a, b; σ2X = 1, σ2Y = 1) = StructuralCausalModel(
+    @dgp(
+        W ~ DiscreteUniform(a, b),
+        X ~ (@. Normal(W, σ2X)),
+        Y ~ (@. Normal(X + 0.2 * W, σ2Y))
+    ); 
+    treatment = :X, response = :Y
+)
+
+scm_family(1, 5)
+scm_family(1, 10; σ2X = 2, σ2Y = 2)
+
+```
+
 One we've defined our list of distribution functions, we can generate data from the DGP using the `rand` function:
 
 ```jldoctest quicktest; output = false, filter = r"(?<=.{11}).*"s

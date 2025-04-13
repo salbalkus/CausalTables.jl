@@ -22,19 +22,19 @@ Pkg> add CausalTables
 ```
 
 ## Running a simulation with CausalTables.jl
-To simulate data, one must first define a `StructuralCausalModel` (SCM). An SCM is composed of a `DataGeneratingProcess`, which is a sequence of random variables, along with labels for treatment, response, and confounder variables. For example, the following code defines an SCM with a binary treatment $A$, a continuous confounder $W$, and a continuous response $Y$. The `@dgp` macro constructs a `DataGeneratingProcess` object according to the simple syntax `name ~ distribution`, where `rhs` is a `Distribution` object from [Distributions.jl](https://juliastats.org/Distributions.jl/stable/). More advanced syntax is detailed in the [documentation](https://salbalkus.github.io/CausalTables.jl/dev/).
+To simulate data, one must first define a `StructuralCausalModel` (SCM). An SCM is composed of a `DataGeneratingProcess`, which is a sequence of random variables, along with labels for treatment, response, and confounder variables. For example, the following code defines an SCM with a binary treatment $A$, a continuous confounder $W$, and a continuous response $Y$. The `@dgp` macro constructs a `DataGeneratingProcess` object according to the simple syntax `name ~ distribution`, where `rhs` is a `Distribution` object from [Distributions.jl](https://juliastats.org/Distributions.jl/stable/). This object can also be a function of parameters defined outside of the macro. More advanced syntax is detailed in the [documentation](https://salbalkus.github.io/CausalTables.jl/dev/).
 
 ```
 using CausalTables
 using Distributions
 
-dgp = @dgp(
-    W ~ Beta(2, 4),
+dgp(a, b; σ2 = 1) = @dgp(
+    W ~ Beta(a, b),
     A ~ (@. Bernoulli(W)),
-    Y ~ (@. Normal(A + W, 1))
+    Y ~ (@. Normal(A + W, σ2))
 )
 
-scm = StructuralCausalModel(dgp; treatment = :A, response = :Y, causes = (A = [:W], Y = [:A, :W]))
+scm = StructuralCausalModel(dgp(2, 2; σ2 = 2); treatment = :A, response = :Y, causes = (A = [:W], Y = [:A, :W]))
 ```
 
 Once a `StructuralCausalModel` is defined, one can then draw a randomly-generated `CausalTable` according to the SCM using the `rand` function:
@@ -43,21 +43,21 @@ Once a `StructuralCausalModel` is defined, one can then draw a randomly-generate
 ctbl = rand(scm, 100)
 
 CausalTable
-┌───────────┬───────┬───────────┐
-│         W │     A │         Y │
-│   Float64 │  Bool │   Float64 │
-├───────────┼───────┼───────────┤
-│  0.381527 │  true │  0.809227 │
-│  0.576206 │  true │   3.22163 │
-│  0.380546 │ false │   1.70505 │
-│  0.226648 │ false │  0.185022 │
-│     ⋮     │   ⋮   │     ⋮     │
-│  0.385836 │ false │ -0.392848 │
-│  0.204554 │ false │  0.638084 │
-│  0.232177 │  true │  0.832707 │
-│ 0.0465189 │ false │   1.29168 │
-└───────────┴───────┴───────────┘
-                  92 rows omitted
+┌──────────┬───────┬───────────┐
+│        W │     A │         Y │
+│  Float64 │  Bool │   Float64 │
+├──────────┼───────┼───────────┤
+│ 0.715179 │  true │    5.5174 │
+│ 0.267457 │ false │   1.16403 │
+│ 0.563615 │  true │  -3.89226 │
+│ 0.777111 │  true │   4.98015 │
+│    ⋮     │   ⋮   │     ⋮     │
+│ 0.481617 │  true │   5.87858 │
+│   0.2251 │ false │   -1.5951 │
+│ 0.214866 │  true │ -0.733905 │
+│ 0.548646 │  true │  -1.37903 │
+└──────────┴───────┴───────────┘
+                 92 rows omitted
 Summaries: NamedTuple()
 Arrays: NamedTuple()
 ```
@@ -69,7 +69,7 @@ Given an SCM, it is also possible to approximate the "ground truth" value of a v
 ```
 ate(scm)
 
-(μ = 1.0, eff_bound = 6.767108201891064)
+(μ = 1.0, eff_bound = 24.423232546851047)
 ```
 
 Alternatively, one can compute the ground truth of low-level statistical functionals, such as conditional means or propensity scores, for use in downstream analyses. 
@@ -78,10 +78,11 @@ Alternatively, one can compute the ground truth of low-level statistical functio
 propensity(scm, ctbl, :A)
 
 100-element Vector{Float64}:
- 0.17900559797871887
- 0.653489070854697
+ 0.7151793080118533
+ 0.7325427650946469
  ⋮
- 0.8247576289722464
+ 0.2148661580024375
+ 0.5486463146032539
 ```
 
 See the [documentation](https://salbalkus.github.io/CausalTables.jl/dev/) for more information and tutorials. 

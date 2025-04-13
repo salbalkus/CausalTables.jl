@@ -39,7 +39,6 @@ where `O` is an object that stores the output of each previous function in the s
 However, a much more convenient way to define this DGP is using the `@dgp` macro, which takes a sequence of conditional distributions of the form `[variable name] ~ Distribution(args...)` and deterministic variable assignments of the form `[variable name] = f(...)` and automatically generates a valid DataGeneratingProcess. For example, the *easier* way to define the DGP above is as follows:
 
 ```jldoctest generation; output = false, filter = r"(?<=.{21}).*"s
-using CausalTables
 distributions = @dgp(
         W ~ DiscreteUniform(1, 5),
         X ~ Normal.(W, 1),
@@ -92,6 +91,24 @@ new_distributions = merge(many_distributions, output_distribution)
 DataGeneratingProcess
 ```
 
+Finally, note that a DGP can depend on external variables. This is especially useful for running multiple simulations with different parameters, as one can define a function to generate DGPs from various sets of parameters:
+
+```jldoctest generation; output = false, filter = r"(?<=.{21}).*"s
+# Define a DGP that takes in parameters
+dgp_family(a, b; σ2X = 1, σ2Y = 1) = @dgp(
+        W ~ DiscreteUniform(a, b),
+        X ~ Normal.(W, σ2X),
+        Y ~ (@. Normal(X + 0.2 * W, σ2Y))
+    )
+
+# Create the same DGP but with different parameters
+dgp_family(1, 5)
+dgp_family(1, 10; σ2X = 2, σ2Y = 2)
+
+# output
+DataGeneratingProcess
+```
+
 ## Defining a StructuralCausalModel
 
 In CausalTables.jl, a StructuralCausalModel is a data generating process endowed with some causal interpretation. Constructing a StructuralCausalModel allows users to randomly draw a CausalTable with the necessary components from the DataGeneratingProcess they've defined. With the previous DataGeneratingProcess in hand, we can define a `StructuralCausalModel` object like so -- treatment and response in the causal model are specified as keyword arguments to the `DataGeneratingProcess` constructor:
@@ -127,6 +144,27 @@ In the above, the keys of `causes` denote the variables whose causes are being s
 !!! note
 
     `causes` must be specified manually unless the user is assuming that all unlabeled variables cause both `treatment` and `outcome`. This is the default assumption of a `StructuralCausalModel`, but it may not not factually match the model encoded by the `DataGeneratingProcess`. This behavior is allowed for two reasons: (1) to permit a random draw of a `CausalTable` with an 'incorrect' causal model, which can be useful for benchmarking the robustness of different causal inference methods to model misspecification, and (2) to simulate causal models that implicitly condition on a particular set of variables by leaving them out of the `causes` argument. Otherwise, ensure that labels in `causes` do not contradict the data generating process! 
+
+Finally, when setting up multiple simulations with similar DGPs and treatment/response labels, remember one can define a function to avoid repeating boilerplate code. Similar to how we defined a function earlier to generate multiple DGPs based on different sets of parameters, we can bundle everything together to create multiple SCMs:  
+
+```jldoctest generation; output = false, filter = r"(?<=.{21}).*"s
+
+scm_family(a, b; σ2X = 1, σ2Y = 1) = StructuralCausalModel(
+    @dgp(
+        W ~ DiscreteUniform(a, b),
+        X ~ Normal.(W, σ2X),
+        Y ~ (@. Normal(X + 0.2 * W, σ2Y))
+    ); 
+    treatment = :X,
+    response = :Y
+)
+
+scm_family(1, 5)
+scm_family(1, 10; σ2X = 2, σ2Y = 2)
+
+# output
+StructuralCausalModel
+```
 
 ## Networks of Causally-Connected Units
 
