@@ -46,7 +46,7 @@ function get_conditional_distribution(ns::Sum, scm::StructuralCausalModel, scm_r
     m = .!(iszero.(scm_result[ns.matrix]))
 
     # Compute the conditional distribution of the sum using convolution formula defined in utilities.jl
-    return Distributions.convolve(targetdist, m)
+    return convolve(targetdist, m)
 end
 
 # Fallback for when no closed-form distribution is implemented

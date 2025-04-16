@@ -1,2 +1,2 @@
 using Aqua
-Aqua.test_all(YourPackage)
+Aqua.test_all(CausalTables)

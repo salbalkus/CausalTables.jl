@@ -10,7 +10,7 @@ A `convolve` function that works on a vector of `UnivariateDistribution`.
 - `output`: The result of convolving all the distributions in `ds`. If `ds` is empty, will return `Binomial(0, 0.5)` denoting a point mass at 0.
 
 """
-function convolve(ds::Vector{T}) where {T <: UnivariateDistribution}
+function convolve(ds::AbstractArray{T}) where {T <: UnivariateDistribution}
     try
         if length(ds) == 0
             return Binomial(0, 0.5)
@@ -22,7 +22,7 @@ function convolve(ds::Vector{T}) where {T <: UnivariateDistribution}
     end
 end
 
-function convolve(ds::Vector{T}, m) where {T <: UnivariateDistribution}
+function convolve(ds::AbstractArray{T}, m::AbstractArray) where {T <: UnivariateDistribution}
     try
         result = Vector{UnivariateDistribution}(undef, length(ds))
         result .= Binomial(0, 0.5)
