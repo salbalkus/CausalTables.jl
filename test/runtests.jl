@@ -411,3 +411,7 @@ end
     @test all(condensity(scm, ct, :Y).== Normal(d*2, 0))
 end
 
+# Other quality checkers
+include("Aqua.jl")
+
+
