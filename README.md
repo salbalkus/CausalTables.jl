@@ -4,6 +4,8 @@
 [![Coverage Status](https://coveralls.io/repos/github/salbalkus/CausalTables.jl/badge.svg?branch=main)](https://coveralls.io/github/salbalkus/CausalTables.jl?branch=main)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![JOSS Status](https://joss.theoj.org/papers/68c43e832d063050a4e67528191e8148/status.svg)](https://joss.theoj.org/papers/68c43e832d063050a4e67528191e8148)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
+
 
 *A common interface for processing and simulating data for causal inference in Julia.*
 
