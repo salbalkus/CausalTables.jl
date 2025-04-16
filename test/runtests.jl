@@ -11,9 +11,9 @@ using DataAPI
 within(x, ε) = abs(x) < ε
 
 @testset "convolve function" begin
-    @test convolve([Normal(0, 1), Normal(0, 1)]) == Normal(0, sqrt(2))
-    @test convolve(Vector{Normal}(undef, 0)) == Binomial(0, 0.5)
-    @test_throws ArgumentError convolve([Normal(0, 1), Uniform(0, 1)])
+    @test CausalTables.convolve([Normal(0, 1), Normal(0, 1)]) == Normal(0, sqrt(2))
+    @test CausalTables.convolve(Vector{Normal}(undef, 0)) == Binomial(0, 0.5)
+    @test_throws ArgumentError CausalTables.convolve([Normal(0, 1), Uniform(0, 1)])
 end
 
 @testset "CausalTables" begin

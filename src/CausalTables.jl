@@ -32,8 +32,9 @@ include("estimands.jl")
 # Exports
 
 # causal_table.jl
-export CausalTable, istable, columns, columnaccess
-export nrow, ncol, subset, select, reject
+export CausalTable#, istable, columns, columnaccess
+#export nrow, ncol, subset
+export select, reject
 export replace, treatment, response, confounders, data
 export treatmentmatrix, responsematrix, treatmentparents, responseparents, parents
 export confounders, confoundernames, confoundersmatrix
