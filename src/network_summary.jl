@@ -68,7 +68,7 @@ mutable struct AllOrderStatistics <: NetworkSummaryMultivariate
     matrix::Symbol
 end
 
-summarize(o::NamedTuple, x::AllOrderStatistics) = order_statistic_matrix(o[x.target], o[x.matrix] .!= 0, Int(maximum(sum(G .!= 0, dims = 2))), true)
+summarize(o::NamedTuple, x::AllOrderStatistics) = order_statistic_matrix(o[x.target], o[x.matrix] .!= 0, Int(maximum(sum(o[x.matrix] .!= 0, dims = 2))), true)
 
 """
     KOrderStatistics <: NetworkSummary

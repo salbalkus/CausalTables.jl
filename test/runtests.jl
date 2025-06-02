@@ -251,8 +251,6 @@ end
 
 @testset "DGP Exception throwing" begin
 
-    ### Test that the DGP macro throws an error when it should ###
-
     # Test LHS
     @test_throws ArgumentError CausalTables._parse_name(:(a() ~ Normal(0, 1))) 
     @test_throws ArgumentError CausalTables._parse_name(:(1 ~ Normal(0, 1)))
@@ -298,6 +296,7 @@ end
         H = Graphs.adjacency_matrix(erdos_renyi(length(L), 0.5)),
         As $ Sum(:A, :G),
         Lo $ KOrderStatistics(:L, :G, 2),
+        LoH $ AllOrderStatistics(:L, :H),
         F $ Friends(:G),
         Lm $ Mean(:L, :H),
         Y ~ Normal(0,1)
@@ -309,9 +308,9 @@ end
 
     @test stbl.data.As ==  stbl.arrays.G * stbl.data.A
     @test stbl.data.F == [2.0, 2.0, 3.0, 3.0, 2.0]
-    @test Tables.columnnames(stbl) == (:A, :L, :Y, :As, :Lo1, :Lo2, :F, :Lm)
+    @test Tables.columnnames(stbl) == (:A, :L, :Y, :As, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :F, :Lm)
     @test stbl.treatment == [:A, :As]
-    @test stbl.causes == (A = [:L, :Lo1, :Lo2, :Lm], Y = [:L, :A,  :Lo1, :Lo2, :Lm, :As], As = [:L, :Lo1, :Lo2, :Lm])
+    @test stbl.causes == (A = [:L, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :Lm], Y = [:L, :A, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :Lm, :As], As = [:L, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :Lm])
     
     sub = Tables.subset(stbl, 1:3)
     @test DataAPI.nrow(sub) == 3
@@ -390,7 +389,7 @@ end
     @test within(mean_a.μ - 3, ε)
 end
 
-@testset "Odd edge cases" begin
+#@testset "Odd edge cases" begin
     d = 5
     many_distributions = DataGeneratingProcess(
         [O -> Bernoulli(1.0) for _ in 1:d]
@@ -407,8 +406,8 @@ end
     @test all(ct.data.A .== d)
     @test all(ct.data.Y .== d*2)
 
-    @test all(condensity(scm, ct, :A).== Normal(d, 0))
-    @test all(condensity(scm, ct, :Y).== Normal(d*2, 0))
+    @test all(condensity(scm, ct, :A) .== Normal(d, 0))
+    @test all(condensity(scm, ct, :Y) .== Normal(d*2, 0))
 end
 
 # Other quality checkers
