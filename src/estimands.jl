@@ -475,7 +475,7 @@ Convenience functions for generating `intervention` functions include `additive_
 
 # Returns
 A named tuple containing:
-- `μ`: The ATU approximation.
+- `μ`: The APE approximation.
 
 # Example
 ```@example
