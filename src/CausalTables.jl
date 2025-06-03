@@ -33,7 +33,7 @@ include("estimands.jl")
 
 # causal_table.jl
 export CausalTable
-export select, reject
+export select, reject, select_summaries
 export replace, treatment, response, confounders, data
 export treatmentmatrix, responsematrix, treatmentparents, responseparents, parents
 export confounders, confoundernames, confoundersmatrix

@@ -15,7 +15,7 @@ The conditional density of the variable `var` given the observed data.
 function condensity(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
     
     varpos = findfirst(scm.dgp.names .== name)
-    isnothing(varpos) && throw(ArgumentError("Argument `var` is not contained within the StructuralCausalModel"))
+    isnothing(varpos) && throw(ArgumentError("Variable $(name) is not contained within the StructuralCausalModel"))
 
     prev_names = scm.dgp.names[1:(varpos-1)]
     scm_result = NamedTupleTools.select(getscm(ct), prev_names)
@@ -26,7 +26,7 @@ function condensity(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
         elseif scm.dgp.types[varpos] == :transformation
             return get_conditional_distribution(scm.dgp.funcs[varpos](scm_result), scm, scm_result)
         else
-            throw(ArgumentError("Cannot get conditional density. Variable $name is not a distribution or transformation of distributions in the StructuralCausalModel."))
+            throw(ArgumentError("Cannot get conditional density. Variable $(name) is not a distribution or transformation of distributions in the StructuralCausalModel."))
         end
     catch e
         error(DIST_ERR_MSG(name))
