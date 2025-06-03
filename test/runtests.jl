@@ -70,15 +70,19 @@ end
     coltbl2 = replace(coltbl, arrays = (G = [1 0 1; 0 1 1; 0 0 1],), summaries = more_sums)
     coltbl2 = summarize(coltbl2) 
     @test coltbl2.treatment == [:X, :S]
-    @test coltbl2.causes == (X = [:Z, :T], Y = [:Z, :X, :T, :S], S = [:Z, :T], U = [:Z, :X, :T, :S])
+    coltbl2.causes
+
+    # Since this table was created from a CausalTable that didn't originally have any summaries,
+    # this and subsequent tests should exclude the summaries as causes
+    @test coltbl2.causes == (X = [:Z], Y = [:Z, :X], S = [:Z], U = [:Z, :X])
     @test coltbl2.response == [:Y, :U]
     
     @test Tables.columnnames(CausalTables.treatment(coltbl2)) == (:X, :S)
     @test Tables.columnnames(CausalTables.response(coltbl2)) == (:Y, :U)
-    @test Tables.columnnames(CausalTables.treatmentparents(coltbl2)) == (:Z, :T)
-    @test Tables.columnnames(CausalTables.parents(coltbl2, :X)) == (:Z, :T)
+    @test Tables.columnnames(CausalTables.treatmentparents(coltbl2)) == (:Z,)
+    @test Tables.columnnames(CausalTables.parents(coltbl2, :X)) == (:Z,)
     @test Tables.columnnames(CausalTables.parents(coltbl2, :Z)) == ()
-    @test Tables.columnnames(CausalTables.responseparents(coltbl2)) == (:Z, :X, :T, :S)
+    @test Tables.columnnames(CausalTables.responseparents(coltbl2)) == (:Z, :X,)
     @test Tables.columnnames(CausalTables.parents(coltbl2, :Y)) == Tables.columnnames(CausalTables.responseparents(coltbl2))
     
     # Other convenience
