@@ -135,7 +135,7 @@ Summarizes the data in a `CausalTable` object according to the NetworkSummary ob
 - A new `CausalTable` object with the original data merged with the summarized data.
 
 """
-function summarize(o::CausalTable)
+function summarize(o::CausalTable; add_summaries_as_causes = false)
     
     # If we summarize a CausalTable that has already been summarized,
     # we need to replace the previous summary results.
@@ -190,14 +190,16 @@ function summarize(o::CausalTable)
     originals = vcat([repeat([targets[i]], length(headers[i])) for i in 1:length(headers) if !isnothing(targets[i])]...)
     additions = vcat([headers[i] for i in 1:length(headers) if !isnothing(targets[i])]...)
 
-    # add each summary as a cause if its original variables was also a cause
-    for cause in new_causes
-        for c in cause
-            append!(cause, additions[c .== originals])
+    # option to add each summary as a cause if its original variables was also a cause
+    if add_summaries_as_causes
+        for cause in new_causes
+            for c in cause
+                append!(cause, additions[c .== originals])
+            end
         end
     end
 
-    # create a new data talble and construct CausalTable
+    # create a new data table and construct CausalTable
     new_table = merge(o.data, tables...)
     return CausalTable(new_table, new_treatment, new_response, new_causes, o.arrays, o.summaries)
 end

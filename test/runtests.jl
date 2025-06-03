@@ -72,6 +72,7 @@ end
     @test coltbl2.treatment == [:X, :S]
     @test coltbl2.causes == (X = [:Z, :T], Y = [:Z, :X, :T, :S], S = [:Z, :T], U = [:Z, :X, :T, :S])
     @test coltbl2.response == [:Y, :U]
+    
     @test Tables.columnnames(CausalTables.treatment(coltbl2)) == (:X, :S)
     @test Tables.columnnames(CausalTables.response(coltbl2)) == (:Y, :U)
     @test Tables.columnnames(CausalTables.treatmentparents(coltbl2)) == (:Z, :T)
@@ -79,7 +80,7 @@ end
     @test Tables.columnnames(CausalTables.parents(coltbl2, :Z)) == ()
     @test Tables.columnnames(CausalTables.responseparents(coltbl2)) == (:Z, :X, :T, :S)
     @test Tables.columnnames(CausalTables.parents(coltbl2, :Y)) == Tables.columnnames(CausalTables.responseparents(coltbl2))
-
+    
     # Other convenience
     baz = (X = [4, 5], Y = ["foo", "bar"], Z = [0.1, 0.2])
     array = Graphs.adjacency_matrix(Graphs.path_graph(2))
@@ -216,19 +217,21 @@ end
 @testset "DataGeneratingProcess with graphs using dgp macro" begin
     dgp = @dgp(
         L1 ~ DiscreteUniform(1, 5),
+        L2 ~ DiscreteUniform(1, 5),
         n = length(L1),
         ER = Graphs.adjacency_matrix(erdos_renyi(n, 0.3)),
         L1_s $ Sum(:L1, :ER),
-        A ~ (@. Normal(L1 + L1_s, 1)),
+        L2_s $ Sum(:L2, :ER),
+        A ~ (@. Normal(L1 + L2 + L1_s + L2_s, 1)),
         A_s $ Sum(:A, :ER),
         Y ~ (@. Normal(A + A_s + 0.2 * L1 + 0.05 * L1_s, 1))
     )
     
-    scm = CausalTables.StructuralCausalModel(dgp, :A, [:Y])
+    scm = CausalTables.StructuralCausalModel(dgp, :A, [:Y]; causes = (A = [:L1, :L2, :L1_s], Y = [:A, :L1, :L2, :L1_s]))
     foo = rand(scm, 10) 
 
     @test typeof(foo) == CausalTables.CausalTable
-    @test Tables.columnnames(foo.data) == (:L1, :A, :Y)
+    @test Tables.columnnames(foo.data) == (:L1, :L2, :A, :Y)
 
     bar = CausalTables.condensity(scm, foo, :A_s)
     @test DataAPI.nrow(foo) == length(bar)
@@ -236,11 +239,21 @@ end
 
     foo_sum = CausalTables.summarize(foo)
 
-    @test issetequal(Tables.columnnames(foo_sum), (:L1, :L1_s, :A, :A_s, :Y))
+    @test issetequal(Tables.columnnames(foo_sum), (:L1, :L1_s, :L2, :L2_s, :A, :A_s, :Y))
     @test foo.arrays.L1_s == Tables.getcolumn(foo_sum, :L1_s)
+    @test foo.arrays.L2_s == Tables.getcolumn(foo_sum, :L2_s)
     @test foo.arrays.A_s == Tables.getcolumn(foo_sum, :A_s)
-
     
+    @test Tables.columnnames(confounders(foo)) == (:L1, :L2)
+    summarize(foo).causes
+
+    @test Tables.columnnames(confounders(summarize(foo))) == (:L1, :L2, :L1_s)
+    @test Tables.columnnames(confounders(summarize(foo, add_summaries_as_causes = true))) == (:L1, :L2, :L1_s, :L2_s)
+    @test Tables.columnnames(summarize(confounders(foo))) == (:L1, :L2, :L1_s)
+
+    @test Tables.columnnames(treatment(foo)) == (:A,)
+    @test Tables.columnnames(treatment(summarize(foo))) == (:A, :A_s)
+
     # Test the graph subsetting capabilities of CausalTable
     indices = [1, 3, 7, 8]
 
@@ -304,7 +317,7 @@ end
     scm = CausalTables.StructuralCausalModel(dgp; treatment = :A, response = :Y, causes = (A = [:L], Y = [:L, :A]))
     tbl = rand(scm, 5)
 
-    stbl = CausalTables.summarize(tbl)
+    stbl = CausalTables.summarize(tbl, add_summaries_as_causes = true)
 
     @test stbl.data.As ==  stbl.arrays.G * stbl.data.A
     @test stbl.data.F == [2.0, 2.0, 3.0, 3.0, 2.0]
@@ -389,7 +402,7 @@ end
     @test within(mean_a.μ - 3, ε)
 end
 
-#@testset "Odd edge cases" begin
+@testset "Odd edge cases" begin
     d = 5
     many_distributions = DataGeneratingProcess(
         [O -> Bernoulli(1.0) for _ in 1:d]

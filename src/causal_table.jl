@@ -54,17 +54,22 @@ function _check_dag(causes_original)
     return any(length.(values(causes)) .!= 0)
 end
 
-# Default assumption: if not specified, set anything not labeled as a cause of all treatments and all responses
-function set_unlabeled_causes(data, treatment, response)
-    u = vcat(treatment, response)
-    confounders = setdiff(Tables.columnnames(data), u)
+# Default assumption: if not specified, set anything not labeled as a cause of all treatments and all responses,
+#                     and that treatments do not cause other treatments
+function set_unlabeled_causes(data, summaries, treatment, response)
+    labeled = vcat(treatment, response)
+    labeled = union(select_summaries(summaries, labeled), labeled)
+    everything = Tables.columnnames(data)
+    everything = union(select_summaries(summaries, everything), everything)
+
+    confounders = setdiff(everything, labeled)
     causes = Dict()
 
     for t in treatment
         causes[t] = confounders
     end
 
-    confounders_and_treatment = vcat(confounders, treatment)
+    confounders_and_treatment = union(confounders, treatment)
     for r in response
         causes[r] = confounders_and_treatment
     end
@@ -97,7 +102,7 @@ mutable struct CausalTable
 
         # Decide what to do when no causes are provided
         if(isnothing(causes))
-            causes = set_unlabeled_causes(data, treatment, response)
+            causes = set_unlabeled_causes(data, summaries, treatment, response)
         end
         
         # Construct a CausalTable with an underlying MatrixTable to store random vectors
@@ -209,6 +214,9 @@ function Base.show(io::IO, o::CausalTable)
 end
 
 # Functions to select variables from the data
+select_summaries(summaries::NamedTuple, symbols) = keys(summaries)[findall(map(x -> x ∈ symbols, CausalTables.gettarget.(values(summaries))))]
+select_summaries(o::CausalTable, symbols) = keys(o.summaries)[findall(map(x -> x ∈ symbols, CausalTables.gettarget.(values(o.summaries))))]
+
 
 """
     select(o::CausalTable, symbols)
@@ -223,8 +231,9 @@ Selects specified columns from a `CausalTable` object.
 - A new `CausalTable` object with only the selected columns.
 
 """
-select(o::CausalTable, symbols::Symbol) = replace(o; data = NamedTupleTools.select(o.data, (symbols,)))
-select(o::CausalTable, symbols) = replace(o; data = NamedTupleTools.select(o.data, symbols))
+select(o::CausalTable, symbols::Symbol) = replace(o; data = NamedTupleTools.select(o.data, symbols ∈ keys(o.data) ? (symbols,) : (;)), summaries = NamedTupleTools.select(o.summaries, symbols ∈ keys(o.summaries) ? (symbols,) : (;)))
+select(o::CausalTable, symbols) = replace(o; data = NamedTupleTools.select(o.data, intersect(symbols, keys(o.data))),
+                                             summaries = NamedTupleTools.select(o.summaries, intersect(symbols, keys(o.summaries))))
 
 """
     reject(o::CausalTable, symbols)
@@ -239,8 +248,10 @@ Removes the columns specified by `symbols` from the `CausalTable` object `o`.
 A new `CausalTable` object with the specified symbols removed from its data.
 
 """
-reject(o::CausalTable, symbols::Symbol) = replace(o; data = NamedTupleTools.delete(o.data, symbols))
-reject(o::CausalTable, symbols) = replace(o; data = NamedTupleTools.delete(o.data, symbols...))
+reject(o::CausalTable, symbols::Symbol) = replace(o; data = NamedTupleTools.delete(o.data, symbols),
+                                                     summaries = NamedTupleTools.delete(o.summaries, symbols)) 
+reject(o::CausalTable, symbols) = replace(o; data = NamedTupleTools.delete(o.data, symbols...),
+                                             summaries = NamedTupleTools.delete(o.summaries, symbols...))
 
 
 """
@@ -374,9 +385,10 @@ map_over_dicts(tbl, f::Function) = Dict(k => Dict(k2 => f(v2) for (k2, v2) in v)
 
 function select_over_dicts(o::CausalTable, varnames; collapse_parents = true) 
     # When possible, only select a single `CausalTable` representing the selection of all variables
+    flattened_dicts = reduce(vcat, collect.(values.(values(varnames))))
     if(collapse_parents && 
-        (length(o.response) + length(o.treatment) == 1 || #  if there is only one treatment-response pair
-        all(x -> x == varnames[o.treatment[1]][o.response[1]], reduce(vcat, values.(values(varnames)))))) # if all pairs share the same set of variables
+        (length(o.response) == 1 && length(o.treatment) == 1) || #  if there is only one treatment-response pair
+        all( ==(flattened_dicts[1]), flattened_dicts))# if all pairs share the same set of variables
 
         return(select(o, varnames[o.treatment[1]][o.response[1]]))
     # Otherwise, return a matrix of `CausalTables` representing the selection of each treatment-response pair
