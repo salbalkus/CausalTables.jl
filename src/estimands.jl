@@ -29,7 +29,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, :A, :Y, [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 ct = rand(scm, 100)
 intervene(ct, treat_all)
 ```
@@ -99,7 +99,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, :A, :Y, [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 cfmean(scm, treat_all)
 cfmean(scm, treat_none)
 ```
@@ -141,7 +141,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, :A, :Y, [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 cfdiff(scm, treat_all, treat_none)
 ```
 """
@@ -177,7 +177,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, :A, :Y, [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 data = rand(scm, 100)
 treat_all(data)
 ```
@@ -203,7 +203,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, :A, :Y, [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 data = rand(scm, 100)
 treat_none(data)
 ```
@@ -238,7 +238,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, :A, :Y, [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 ate(scm)
 ```
 """
@@ -292,7 +292,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, :A, :Y, [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 att(scm)
 ```
 """
@@ -349,7 +349,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, :A, :Y, [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 atu(scm)
 ```
 """
@@ -418,7 +418,7 @@ dgp = @dgp(
     A ~ @.(Normal(L)),
     Y ~ @.(Normal(A + 2 * L + 1))
 )
-scm = StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 ape(scm, additive_mtp(0.5))
 ```
 """
@@ -446,7 +446,7 @@ dgp = CausalTables.@dgp(
     A ~ @.(Normal(L)),
     Y ~ @.(Normal(A + 2 * L + 1))
 )
-scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = CausalTables.StructuralCausalModel(dgp, :A, :Y)
 ape(scm, multiplicative_mtp(2.0))
 ```
 """
@@ -485,7 +485,7 @@ dgp = CausalTables.@dgp(
     A ~ @.(Normal(L)),
     Y ~ @.(Normal(A + 2 * L + 1))
 )
-scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = CausalTables.StructuralCausalModel(dgp, :A, :Y)
 ape(scm, additive_mtp(0.5))
 ape(scm, multiplicative_mtp(2.0))
 
