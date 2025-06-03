@@ -13,6 +13,7 @@ The conditional density of the variable `var` given the observed data.
 
 """
 function condensity(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
+    ct = summarize(ct) # summarize the CausalTable to propagate any interventions downstream
     
     varpos = findfirst(scm.dgp.names .== name)
     isnothing(varpos) && throw(ArgumentError("Variable $(name) is not contained within the StructuralCausalModel"))

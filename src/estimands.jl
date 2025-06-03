@@ -5,8 +5,11 @@
 check_response(scm) = (length(scm.response) != 1 && throw(ArgumentError("More than one response not allowed")))
 check_treatment(scm) = (length(scm.treatment) != 1 && throw(ArgumentError("More than one treatment not allowed")))
 function check_treatment_binary(ct)
-    treatcol = Tables.getcolumn(ct, ct.treatment[1])
-    all((treatcol .== 1) .| (treatcol .== 0)) || throw(ArgumentError("Treatment variable must be binary (only either 0 or 1 valued)"))
+    # Iterate through the treatments that are not downstream summaries
+    for treatment_name in setdiff(ct.treatment, keys(ct.summaries))
+        treatcol = Tables.getcolumn(ct, treatment_name)
+        all((treatcol .== 1) .| (treatcol .== 0)) || throw(ArgumentError("Treatment variable must be binary (only either 0 or 1 valued)"))
+    end
 end
 
 @doc raw"""
@@ -29,7 +32,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, :A, :Y, [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 ct = rand(scm, 100)
 intervene(ct, treat_all)
 ```
@@ -65,7 +68,7 @@ A vector of counterfactual responses.
 
 """
 function draw_counterfactual(scm::StructuralCausalModel, parents::CausalTable, intervention::Function)
-    counterfactual_covariates = intervene(parents, intervention)
+    counterfactual_covariates = summarize(intervene(parents, intervention))
     Ystar = rand.(condensity(scm, counterfactual_covariates, scm.response[1]))
     return(Ystar)
 end
@@ -99,7 +102,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, :A, :Y, [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 cfmean(scm, treat_all)
 cfmean(scm, treat_none)
 ```
@@ -141,7 +144,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, :A, :Y, [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 cfdiff(scm, treat_all, treat_none)
 ```
 """
@@ -155,8 +158,29 @@ function cfdiff(scm::StructuralCausalModel, intervention1::Function, interventio
     return((μ = mean(diff_cf),))
 end
 
-# TODO: Assume only a single treatment!!!
+"""
+    set_treatment_value(ct::CausalTable, value::Float64)
 
+Sets all treatments present in the data of a `CausalTable` to a specified value. This function is primarily used for interventions where the treatment value is set to a constant, such as in the case of binary treatments.
+
+# Arguments
+- `ct::CausalTable`: The causal table object containing treatment information and data.
+- `value::Float64`: (Currently unused) A float value intended to represent the treatment value to set.
+
+# Returns
+- `NamedTuple`: A named tuple mapping each treatment variable to a vector of ones.
+"""
+function set_treatment_value(ct::CausalTable, value::Float64)
+    treatment_names = Vector{Symbol}()
+    treatment_values = Vector{Vector}()
+    for treatment_name in ct.treatment
+        if treatment_name ∈ Tables.columnnames(ct.data)
+            push!(treatment_names, treatment_name)
+            push!(treatment_values, value .* ones(DataAPI.nrow(ct)))
+        end
+    end
+    return NamedTuple{Tuple(treatment_names)}(Tuple(treatment_values))
+end
 
 """
     treat_all(ct::CausalTable)
@@ -177,15 +201,15 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, :A, :Y, [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 data = rand(scm, 100)
 treat_all(data)
 ```
 """
-treat_all(ct::CausalTable) = NamedTuple{Tuple(ct.treatment)}((ones(DataAPI.nrow(ct)),))
+treat_all(ct::CausalTable) = set_treatment_value(ct, 1.0)
 
 """
-    treat_all(ct::CausalTable)
+    treat_none(ct::CausalTable)
 
 Intervenes on a `CausalTable` object by setting all treatment variables to 0.
 
@@ -203,12 +227,12 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, :A, :Y, [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 data = rand(scm, 100)
 treat_none(data)
 ```
 """
-treat_none(ct) = NamedTuple{Tuple(ct.treatment)}((zeros(DataAPI.nrow(ct)),))
+treat_none(ct) = set_treatment_value(ct, 0.0)
 
 @doc raw"""
     ate(scm::StructuralCausalModel; samples = 10^6)
@@ -238,7 +262,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, :A, :Y, [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 ate(scm)
 ```
 """
@@ -292,7 +316,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, :A, :Y, [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 att(scm)
 ```
 """
@@ -349,7 +373,7 @@ dgp = @dgp(
     A ~ @.(Bernoulli(L)),
     Y ~ @.(Normal(A + L))
 )
-scm = StructuralCausalModel(dgp, :A, :Y, [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 atu(scm)
 ```
 """
@@ -396,7 +420,7 @@ custom_intervention = cast_matrix_to_table_function(x -> exp.(x))
 ```
 """
 function cast_matrix_to_table_function(func::Function) 
-    ct -> Tables.columntable(Tables.table(func(Tables.matrix(treatment(ct))); header = ct.treatment))
+    ct -> Tables.columntable(Tables.table(func(Tables.matrix(treatment(ct))); header = Tables.columnnames(treatment(ct))))
 end
 
 """
@@ -418,7 +442,7 @@ dgp = @dgp(
     A ~ @.(Normal(L)),
     Y ~ @.(Normal(A + 2 * L + 1))
 )
-scm = StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = StructuralCausalModel(dgp, :A, :Y)
 ape(scm, additive_mtp(0.5))
 ```
 """
@@ -446,7 +470,7 @@ dgp = CausalTables.@dgp(
     A ~ @.(Normal(L)),
     Y ~ @.(Normal(A + 2 * L + 1))
 )
-scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = CausalTables.StructuralCausalModel(dgp, :A, :Y)
 ape(scm, multiplicative_mtp(2.0))
 ```
 """
@@ -475,7 +499,7 @@ Convenience functions for generating `intervention` functions include `additive_
 
 # Returns
 A named tuple containing:
-- `μ`: The ATU approximation.
+- `μ`: The APE approximation.
 
 # Example
 ```@example
@@ -485,7 +509,7 @@ dgp = CausalTables.@dgp(
     A ~ @.(Normal(L)),
     Y ~ @.(Normal(A + 2 * L + 1))
 )
-scm = CausalTables.StructuralCausalModel(dgp, [:A], [:Y], [:L])
+scm = CausalTables.StructuralCausalModel(dgp, :A, :Y)
 ape(scm, additive_mtp(0.5))
 ape(scm, multiplicative_mtp(2.0))
 

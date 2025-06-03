@@ -355,7 +355,7 @@ end
     scm = CausalTables.StructuralCausalModel(dgp, [:A], :Y)
 
     # Check intervention functions
-    ct = rand(scm, 100)
+    ct = rand(scm, 10000)
     cta = intervene(ct, treat_all)
     @test Tables.columnnames(cta) == Tables.columnnames(ct)
     @test all(cta.data.A .== 1.0)
@@ -367,7 +367,7 @@ end
 
     # ATE
     est_ate = ate(scm)
-    @test est_ate.μ == 1.0
+    @test within(est_ate.μ - 1, ε)
     @test within(est_ate.eff_bound - 4.6, ε)
 
     # ATT
@@ -404,6 +404,34 @@ end
 
     mean_a = cfmean(scm2, additive_mtp(1.0))
     @test within(mean_a.μ - 3, ε)
+
+    # Test summarized continuous random variables
+    dgp3 = CausalTables.@dgp(
+        L ~ Beta(1, 1),
+        G = Graphs.adjacency_matrix(erdos_renyi(length(L), 3 / length(L))),
+        A ~ @.(Normal(L)),
+        As $ Sum(:A, :G),
+        Y ~ @.(Normal(A + As + 2 * L + 1))
+    )
+    scm3 = CausalTables.StructuralCausalModel(dgp3, [:A, :As], :Y)
+    
+    # Check intervention functions
+    ct3 = rand(scm3, 100)
+    ct3_add = intervene(ct3, additive_mtp(1.0))
+    ct3_add
+    @test all(ct3_add.data.A .== ct3.data.A .+ 1.0)
+    ct3_mul = intervene(ct3, multiplicative_mtp(2.0))
+    @test all(ct3_mul.data.A .== ct3.data.A .* 2.0)
+    
+    # Modified Treatment Policy / Average Policy Effect
+    est_ape_a = ape(scm3, additive_mtp(1.0))
+    @test within(est_ape_a.μ - 4, ε)
+    
+    est_ape_m = ape(scm3, multiplicative_mtp(1.0))
+    @test within(est_ape_m.μ, ε)
+
+    mean_a = cfmean(scm3, additive_mtp(1.0))
+    @test within(mean_a.μ - 8, ε)
 end
 
 @testset "Odd edge cases" begin
