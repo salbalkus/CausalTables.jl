@@ -131,5 +131,43 @@ _scm_draw(x::T, o::NamedTuple, n::Int64) where {T<:NetworkSummary} = summarize(o
 # Fallback: Pass previous result directly
 _scm_draw(x, o::NamedTuple, n::Int64) = x
 
+"""
+    update_arrays(scm::StructuralCausalModel, ct::CausalTable)
+
+Propagate updates (e.g. interventions on treatment) through the `:code` portions of a Structural Causal Model (SCM), generating a new `CausalTable`.
+
+# Arguments
+- `scm::StructuralCausalModel`: The Structural Causal Model describing how each variable was drawn.
+- `ct::CausalTable`: The `CausalTable` to update
+
+# Returns
+A `CausalTable` object containing the generated data.
+
+"""
+function update_arrays(scm::StructuralCausalModel, ct::CausalTable)
+
+    scm_result = (;)
+    new_arrays = (;)
+
+    # Iterate through each step of the SCM
+    for i_step in 1:length(scm)
+        type = scm.dgp.types[i_step]
+        name = scm.dgp.names[i_step]
+        if type == :code
+            scm_update = scm.dgp.funcs[i_step](scm_result)
+            new_arrays = merge(new_arrays, NamedTuple{(name,)}((scm_update,)))
+        elseif type == :distribution
+            scm_update = Tables.getcolumn(ct, name)
+        elseif type == :transformation
+            scm_update = summarize(scm_result, scm.dgp.funcs[i_step](scm_result))
+            new_arrays = merge(new_arrays, NamedTuple{(name,)}((scm_update,)))
+        end
+        scm_result = merge(scm_result, NamedTuple{(name,)}((scm_update,)))
+    end
+
+    # Store the recorded draws in a CausalTable format
+    return CausalTable(ct.data, ct.treatment, ct.response, ct.causes, new_arrays, ct.summaries)
+end
+
 
 

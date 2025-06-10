@@ -193,9 +193,6 @@ end
     scm = CausalTables.StructuralCausalModel(dgp, :A, :Y)
     foo = rand(scm, 10)
 
-    name = :Z
-    findfirst(x -> x == name, scm.dgp.names)
-
     @test typeof(foo) == CausalTables.CausalTable
     @test Tables.columnnames(foo.data) == (:L1, :L2, :A, :Y)
 
@@ -216,9 +213,16 @@ end
 
     @test CausalTables.adjacency_matrix(foo) == LinearAlgebra.I
     @test CausalTables.dependency_matrix(foo) == LinearAlgebra.I
+
+    # Test the update_arrays function
+    foo_update = CausalTables.update_arrays(scm, foo)
+    @test foo_update.arrays == foo.arrays
+    foo2 = intervene(foo, additive_mtp(1.0))
+    foo2_update = CausalTables.update_arrays(scm, foo2)
+    @test all(foo2_update.arrays.regr .≈ (foo2.arrays.regr .+ 1.0))
 end
 
-@testset "DataGeneratingProcess with graphs using dgp macro" begin
+#@testset "DataGeneratingProcess with graphs using dgp macro" begin
     dgp = @dgp(
         L1 ~ DiscreteUniform(1, 5),
         L2 ~ DiscreteUniform(1, 5),
@@ -228,7 +232,8 @@ end
         L2_s $ Sum(:L2, :ER),
         A ~ (@. Normal(L1 + L2 + L1_s + L2_s, 1)),
         A_s $ Sum(:A, :ER),
-        Y ~ (@. Normal(A + A_s + 0.2 * L1 + 0.05 * L1_s, 1))
+        μ = (@. A + A_s + 0.2 * L1 + 0.05 * L1_s),
+        Y ~ (@. Normal(μ, 1))
     )
     
     scm = CausalTables.StructuralCausalModel(dgp, :A, [:Y]; causes = (A = [:L1, :L2, :L1_s], Y = [:A, :L1, :L2, :L1_s]))
@@ -264,6 +269,15 @@ end
     baz = Tables.subset(foo, indices)
     @test baz.data == Tables.subset(foo.data, indices)
     @test size(baz.arrays.ER) == (length(indices), length(indices))
+
+    # Test the update_arrays function
+    foo_update = CausalTables.update_arrays(scm, foo)
+    foo_update.arrays
+    foo.arrays
+    @test foo_update.arrays == foo.arrays
+    foo2 = intervene(foo, additive_mtp(1.0))
+    foo2_update = CausalTables.update_arrays(scm, foo2)
+    @test all(foo2_update.arrays.regr .≈ (foo2.arrays.regr .+ 1.0))
 end
 
 @testset "DGP Exception throwing" begin
