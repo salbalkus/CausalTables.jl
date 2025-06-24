@@ -20,13 +20,14 @@ Functions = AbstractArray{Function, 1}
 
 # Includes
 include("utilities.jl")
-include("causal_table.jl")
-include("network_summary.jl")
+include("a-causal_table.jl")
+include("f-network_summary.jl")
 
-include("data_generating_process.jl")
-include("structural_causal_model.jl")
-include("conditional_density.jl")
-include("estimands.jl")
+include("b-data_generating_process.jl")
+include("c-structural_causal_model.jl")
+include("d-conditional_density.jl")
+include("e-estimands.jl")
+
 
 
 # Exports

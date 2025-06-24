@@ -189,20 +189,6 @@ A new `CausalTable` object with the specified fields replaced.
 """
 Base.replace(o::CausalTable; kwargs...) = CausalTable([field in keys(kwargs) ?  kwargs[field] : getfield(o, field) for field in fieldnames(typeof(o))]...)
 
-"""
-    getscm(o::CausalTable)
-
-This function merges the column table of the `CausalTable` object with its arrays.
-
-# Arguments
-- `o::CausalTable`: The `CausalTable` object.
-
-# Returns
-- A merged table containing the column table and arrays of the `CausalTable` object.
-
-"""
-getscm(o::CausalTable) = merge(o.arrays, Tables.columntable(o.data)) # arrays must come first so that any summaries that are changed in the data are updated
-
 Base.getindex(o::CausalTable, i::Int, j::Int) = Base.getindex(Tables.matrix(o.data), i, j)
 
 function Base.show(io::IO, o::CausalTable)

@@ -1,5 +1,67 @@
 
 """
+    mutable struct DataGeneratingProcess
+
+A struct representing a data generating process.
+
+# Fields
+- `names`: An array of symbols representing the names of the variables.
+- `types`: An array of symbols representing the types of the variables.
+- `funcs`: An array of functions representing the generating functions for each variable.
+
+"""
+mutable struct DataGeneratingProcess
+    names::Symbols
+    types::Symbols
+    funcs::Functions
+end
+
+# Utility functions for quickly creating DataGeneratingProcesses
+DataGeneratingProcess(funcs; varsymb = "X", type = "distribution") = DataGeneratingProcess([Symbol("$(varsymb)$(i)") for i in 1:length(funcs)], [Symbol("$(type)") for i in 1:length(funcs)], funcs)
+DataGeneratingProcess(names::Symbols, funcs; type = "distribution") = DataGeneratingProcess(names, [Symbol("$(type)") for i in 1:length(funcs)], funcs)
+
+# Base functions for DataGeneratingProcess
+Base.length(x::DataGeneratingProcess) = length(x.names)
+
+function Base.merge(x1::DataGeneratingProcess, x2::DataGeneratingProcess)
+    if any([any(name ∈ x2.names) for name in x1.names])
+        throw(ArgumentError("Cannot merge DataGeneratingProcess that share variable names; please ensure the name of each step is unique across both DataGeneratingProcesses."))
+    end
+    return DataGeneratingProcess(vcat(x1.names, x2.names), vcat(x1.types, x2.types), vcat(x1.funcs, x2.funcs))
+end
+
+function Base.rand(dgp::DataGeneratingProcess, n::Int)
+    # Create a NamedTuple to hold the results
+    path = (;)
+    # Iterate through each step of the DGP
+    for i_step in 1:length(dgp)
+        # Draw from the result of the step function,
+        # based on values previously generated
+        step_output = dgp.funcs[i_step](path)
+        step_draw = dgp_draw(step_output, n)
+
+        # Append the latest output to the previous output,
+        # casting names to symbols when needed
+        step_name = Symbol(dgp.names[i_step])
+        path = NamedTupleTools.merge(path, NamedTuple{(step_name,)}((step_draw,)))
+    end
+
+    return path
+end
+
+# Multiple Dispatch for drawing from different types of outputs
+dgp_draw(step_output::Distributions.UnivariateDistribution, n::Int) = rand(step_output, n)
+dgp_draw(step_output::AbstractArray{<:Distributions.UnivariateDistribution}, n::Int) = rand.(step_output)
+
+# Note that matrix output from Distributions.jl is transposed automatically
+# to match the column-wise format of vectors generated from Univariate distributions
+dgp_draw(step_output::Distributions.MultivariateDistribution, n::Int) = transpose(rand(step_output, n)) 
+dgp_draw(step_output::Distributions.MatrixDistribution, n::Int) = rand(step_output)
+dgp_draw(step_output::NetworkSummary, n::Int) = summarize(step_output)
+dgp_draw(step_output, n::Int) = step_output # Fallback for non-distribution outputs
+
+
+"""
     macro dgp(args...)
 
 A macro to construct a DataGeneratingProcess (DGP) from a sequence of distributions and transformations. A data generating process is a sequence of steps that generates a dataset. It can be used to encode the causal structure of a given statistical problem; for instance, if \$Y=f(X)\$ where \$f\$ is some function of \$X\$, then it can be said that \$X\$ *causes* \$Y\$. 
@@ -48,36 +110,7 @@ macro dgp(args...)
     return :(DataGeneratingProcess($(names), $(types), $(esc(funcs))))
 end
 
-"""
-    mutable struct DataGeneratingProcess
-
-A struct representing a data generating process.
-
-# Fields
-- `names`: An array of symbols representing the names of the variables.
-- `types`: An array of symbols representing the types of the variables.
-- `funcs`: An array of functions representing the generating functions for each variable.
-
-"""
-mutable struct DataGeneratingProcess
-    names::Symbols
-    types::Symbols
-    funcs::Functions
-end
-
-# Utility functions for quickly creating DataGeneratingProcesses
-DataGeneratingProcess(funcs; varsymb = "X", type = "distribution") = DataGeneratingProcess([Symbol("$(varsymb)$(i)") for i in 1:length(funcs)], [Symbol("$(type)") for i in 1:length(funcs)], funcs)
-DataGeneratingProcess(names::Symbols, funcs; type = "distribution") = DataGeneratingProcess(names, [Symbol("$(type)") for i in 1:length(funcs)], funcs)
-
-# Base functions for DataGeneratingProcess
-Base.length(x::DataGeneratingProcess) = length(x.names)
-function Base.merge(x1::DataGeneratingProcess, x2::DataGeneratingProcess)
-    if any([any(name ∈ x2.names) for name in x1.names])
-        throw(ArgumentError("Cannot merge DataGeneratingProcess that share variable names; please ensure the name of each step is unique across both DataGeneratingProcesses."))
-    end
-    return DataGeneratingProcess(vcat(x1.names, x2.names), vcat(x1.types, x2.types), vcat(x1.funcs, x2.funcs))
-end
-
+# Helper function to parse variable names in the DGP maco
 function _parse_name(expr)
     # Get the first value in the expression
     name = expr.args[length(expr.args)-1]
@@ -93,9 +126,8 @@ end
 # Helper function to parse each line in the dgp macro
 function _parse_step(expr, names)
 
-    # `=` means that the step is a transformation of a random variable or a deterministic function
-    # `~` indicates the step creates a distribution, which can either be sampled or used to compute a conditional density
-    # `$` indicates the step is a summary of distributions which may itself admit a closed-form conditional density
+    # `=` means the step is a deterministic function of previous variables, and any interventions should be propagated through it
+    # `~` means the step is random function of previous variables, and interventions should not be propagated
 
     if length(expr.args) == 3 && expr.args[1] == :(~)
         # construct a function representing the step at the DGP
