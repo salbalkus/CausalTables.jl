@@ -179,22 +179,22 @@ end
     @test Tables.columnnames(ct) == Tuple(Symbol("X$(i)") for i in 1:10)
 end
 
-@testset "DataGeneratingProcess using dgp macro, no graphs" begin
+#@testset "DataGeneratingProcess using dgp macro, no graphs" begin
     dgp = CausalTables.@dgp(
         L1 ~ Beta(1,1),
         N = length(L1),
         L1_norm = L1 ./ sum(L1),
-        L2 ~ Multinomial(N, L1_norm),
+        L_long ~ Multinomial(N, L1_norm),
         A ~ (@. Normal(L1, 1)),
-        regr = (@. A + 0.2 * L2),
+        regr = A .+ 0.2 .* vec(sum(L_long, dims=2)),
         Y ~ Normal.(regr, 1)
     )
 
     scm = CausalTables.StructuralCausalModel(dgp, :A, :Y)
-    foo = rand(scm, 10)
+    foo = rand(scm, 4)
 
     @test typeof(foo) == CausalTables.CausalTable
-    @test Tables.columnnames(foo.data) == (:L1, :L2, :A, :Y)
+    @test Tables.columnnames(foo.data) == (:L1, :L_long1, :L_long2, :L_long3, :L_long4, :A, :Y)
 
     bar = CausalTables.condensity(scm, foo, :A)
     baz = CausalTables.propensity(scm, foo, :L1)
@@ -222,7 +222,7 @@ end
     @test all(foo2_update.arrays.regr .≈ (foo2.arrays.regr .+ 1.0))
 end
 
-#@testset "DataGeneratingProcess with graphs using dgp macro" begin
+@testset "DataGeneratingProcess with graphs using dgp macro" begin
     dgp = @dgp(
         L1 ~ DiscreteUniform(1, 5),
         L2 ~ DiscreteUniform(1, 5),

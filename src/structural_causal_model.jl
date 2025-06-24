@@ -82,7 +82,7 @@ function Base.rand(scm::StructuralCausalModel, n::Int)
         end
         result_draw =  CausalTables._scm_draw(result_step, result, n)
         result = merge(result, NamedTuple{(scm.dgp.names[i_step],)}((result_draw,)))
-        
+            
         # Determine where the resulting output should be placed in the CausalTable
         typeof_result_step = typeof(result_step)
         if (typeof_result_step <: Distribution) || (typeof_result_step <: AbstractArray{<:Distribution})
@@ -96,16 +96,34 @@ function Base.rand(scm::StructuralCausalModel, n::Int)
         end    
     end
 
-    # Collect the data
+    # Collect the variables to be stored as covariates in the CausalTable
+    # We need to split apart any that generate matrices (e.g. draws from MvNormal)
+    # from those that generate vectors (e.g. draws from Normal)
     data_tag = (tag .== :data)
-    data = NamedTuple{keys(result)[data_tag]}(values(result)[data_tag],)
+    data_values = values(result)[data_tag]
+    data_names = keys(result)[data_tag]
+
+    # Iterate through the data, either re-storing the vectors or converting matrices 
+    # to column tables, which are NamedTuples with each column as a separate variable,
+    # and merging them into a single NamedTuple to store in the CausalTable
+    data_output = (;)
+    for (name, val) in zip(data_names, data_values)
+        if length(size(val)) == 1
+            # If the variable is a vector, we can just store it directly
+            data_output = merge(data_output, NamedTuple{(name,)}((val,)))
+        else
+            new_val = Tables.table(val; header = [Symbol(name, i) for i in 1:size(val, 2)])
+            # Store each column as a separate variable in the output
+            data_output = NamedTupleTools.merge(data_output, Tables.columntable(new_val))
+        end
+    end
 
     # Collect extra arrays
     array_tag = (tag .!= :data)
     arrays = NamedTuple{keys(result)[array_tag]}(values(result)[array_tag],)    
 
     # Store the recorded draws in a CausalTable format
-    return CausalTable(data, scm.treatment, scm.response, scm.causes, arrays, summaries)
+    return CausalTable(data_output, scm.treatment, scm.response, scm.causes, arrays, summaries)
 end
 
 Base.rand(scm::StructuralCausalModel) = rand(scm, 1)
@@ -113,16 +131,12 @@ Base.rand(scm::StructuralCausalModel) = rand(scm, 1)
 ### Helper functions for drawing a random CausalTable ###
 # Single Distributions: Draw n samples
 _scm_draw(x::T, o::NamedTuple, n::Int64) where {T <: UnivariateDistribution}     = rand(x, n)
-_scm_draw(x::T, o::NamedTuple, n::Int64) where {T <: MultivariateDistribution}   = rand(x)
+_scm_draw(x::T, o::NamedTuple, n::Int64) where {T <: MultivariateDistribution}   = transpose(rand(x, n))
 _scm_draw(x::T, o::NamedTuple, n::Int64) where {T <: MatrixDistribution}         = rand(x)
 
 # Vectors of Distributions: Draw a single sample (assumes user input sample n into the distribution)
 function _scm_draw(x::AbstractArray{<:Distribution}, o::NamedTuple, n::Int64)
-#    if length(x) == n
         return rand.(x)
-#    else 
-#        throw(ArgumentError("Length of vector of distributions in DataGeneratingProcess must be equal to n"))
-#    end
 end
 
 # Summary Function: Compute the summary
