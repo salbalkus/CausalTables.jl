@@ -12,7 +12,8 @@ Compute the conditional density of variable `name` in CausalTable `ct` that has 
 The conditional density of the variable `var` given the observed data.
 
 """
-function condensity(scm::StructuralCausalModel, ct::CausalTable, name::Symbol; dup_sep = "_")
+function condensity(scm::StructuralCausalModel, ct::CausalTable, name::Union{Symbol, String}; dup_sep = "_")
+    name = Symbol(name)
     ct = summarize(ct) # summarize the CausalTable to propagate any interventions downstream
     
     varpos = findfirst(scm.dgp.names .== name)
@@ -70,7 +71,7 @@ Compute the conditional mean of variable `name` in CausalTable `ct` that has bee
 An array of conditional means for the specified variable.
 
 """
-conmean(scm::StructuralCausalModel, ct::CausalTable, name::Symbol) = mean.(condensity(scm, ct, name))
+conmean(scm::StructuralCausalModel, ct::CausalTable, name::Union{Symbol, String}) = mean.(condensity(scm, ct, name))
 
 """
     convar(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
@@ -86,7 +87,7 @@ Compute the conditional variance of variable `name` in CausalTable `ct` that has
 An array of conditional variances for the specified variable.
 
 """
-convar(scm::StructuralCausalModel, ct::CausalTable, name::Symbol) = var.(condensity(scm, ct, name))
+convar(scm::StructuralCausalModel, ct::CausalTable, name::Union{Symbol, String}) = var.(condensity(scm, ct, name))
 
 """
     propensity(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
@@ -102,7 +103,7 @@ Compute the (generalized) propensity score of variable `name` in CausalTable `ct
 An array of conditional probabilities for the specified variable (or densities, if the specified variable is continuous).
 
 """
-propensity(scm::StructuralCausalModel, ct::CausalTable, name::Symbol) = pdf.(condensity(scm, ct, name), Tables.getcolumn(ct, name))
+propensity(scm::StructuralCausalModel, ct::CausalTable, name::Union{Symbol, String}) = pdf.(condensity(scm, ct, name), Tables.getcolumn(ct, Symbol(name)))
 
 
 

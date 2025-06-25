@@ -235,9 +235,15 @@ Selects specified columns from a `CausalTable` object.
 - A new `CausalTable` object with only the selected columns.
 
 """
-select(o::CausalTable, symbols::Symbol) = replace(o; data = NamedTupleTools.select(o.data, symbols ∈ keys(o.data) ? (symbols,) : (;)), summaries = NamedTupleTools.select(o.summaries, symbols ∈ keys(o.summaries) ? (symbols,) : (;)))
-select(o::CausalTable, symbols) = replace(o; data = NamedTupleTools.select(o.data, intersect(symbols, keys(o.data))),
+function select(o::CausalTable, symbols::Symbol)
+    return replace(o; data = NamedTupleTools.select(o.data, symbols ∈ keys(o.data) ? (symbols,) : (;)), 
+                      summaries = NamedTupleTools.select(o.summaries, symbols ∈ keys(o.summaries) ? (symbols,) : (;)))
+end
+
+function select(o::CausalTable, symbols)
+    replace(o; data = NamedTupleTools.select(o.data, intersect(symbols, keys(o.data))),
                                              summaries = NamedTupleTools.select(o.summaries, intersect(symbols, keys(o.summaries))))
+end
 
 """
     reject(o::CausalTable, symbols)
@@ -252,10 +258,15 @@ Removes the columns specified by `symbols` from the `CausalTable` object `o`.
 A new `CausalTable` object with the specified symbols removed from its data.
 
 """
-reject(o::CausalTable, symbols::Symbol) = replace(o; data = NamedTupleTools.delete(o.data, symbols),
-                                                     summaries = NamedTupleTools.delete(o.summaries, symbols)) 
-reject(o::CausalTable, symbols) = replace(o; data = NamedTupleTools.delete(o.data, symbols...),
+function reject(o::CausalTable, symbols::Symbol)
+    replace(o; data = NamedTupleTools.delete(o.data, symbols),
+                summaries = NamedTupleTools.delete(o.summaries, symbols)) 
+end
+
+function reject(o::CausalTable, symbols)
+    replace(o; data = NamedTupleTools.delete(o.data, symbols...),
                                              summaries = NamedTupleTools.delete(o.summaries, symbols...))
+end
 
 
 """
@@ -322,7 +333,7 @@ Selects the variables that precede `symbol` causally from the CausalTable `o`, b
 # Returns
 A new `CausalTable` containing only the parents of `symbol`
 """
-function parents(o::CausalTable, symbol)
+function parents(o::CausalTable, symbol::Symbol)
     if symbol in keys(o.causes)
         select(o, o.causes[symbol])
     else

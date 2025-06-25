@@ -16,7 +16,6 @@ import MacroTools: postwalk
 
 # New types
 Symbols = AbstractArray{Symbol, 1}
-SymbolsOrStrings = AbstractArray{Union{Symbol, String}, 1}
 Functions = AbstractArray{Function, 1}
 
 # Includes
