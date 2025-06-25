@@ -38,7 +38,14 @@ function Base.rand(dgp::DataGeneratingProcess, n::Int)
         # Draw from the result of the step function,
         # based on values previously generated
         step_output = dgp.funcs[i_step](path)
-        step_draw = dgp_draw(step_output, n)
+
+        # If the step is some sort of summary function, we need to summarize the previous output.
+        # Otherwise, we can use the dgp_draw function
+        if dgp.types[i_step] == :transformation
+            step_draw = summarize(path, step_output)
+        else
+            step_draw = dgp_draw(step_output, n)
+        end
 
         # Append the latest output to the previous output,
         # casting names to symbols when needed
@@ -59,6 +66,64 @@ dgp_draw(step_output::Distributions.MultivariateDistribution, n::Int) = transpos
 dgp_draw(step_output::Distributions.MatrixDistribution, n::Int) = rand(step_output)
 dgp_draw(step_output::NetworkSummary, n::Int) = summarize(step_output)
 dgp_draw(step_output, n::Int) = step_output # Fallback for non-distribution outputs
+
+
+# Function to reverse-engineer a CausalTable into a DGP path
+function get_path(dgp::DataGeneratingProcess, ct::CausalTable; dup_sep = "_", max_step::Int = 0)
+
+    # Set the last step to the length of the DGP if not specified
+    if max_step <= 0
+        max_step = length(dgp)
+    end
+
+    # Start iterating through the steps of the DGP
+    path = (;)
+    for i in 1:max_step
+        step_name = dgp.names[i]
+        step_type = dgp.types[i]
+
+        # Distributions are considered "fixed", so we can extract them directly
+        if step_type == :distribution
+
+            # If the variable is already in the CausalTable, extract it
+            if step_name ∈ Tables.columnnames(ct)
+                path = NamedTupleTools.merge(path, NamedTuple{(step_name,)}((ct.data[step_name],)))
+            # Otherwise, it must have originally been a matrix that has been shattered into multiple columns.
+            # If so, we need to find the columns that match the current name with an integer concatenated at the end,
+            # separate by `dup_sep`. Then, we glue the matrix back together
+            else
+                # Create a list of column names that match the current name with an integer concatenation
+                step_name_string = String(step_name)
+                regex = Regex("^" * step_name_string * dup_sep * raw"[0-9]+$")
+                tbl_names = [nm for nm in Tables.columnnames(ct) if occursin(regex, String(nm))]
+                
+                # Check to make sure a selection has been made; if not, throw an error
+                isempty(tbl_names) && throw(ArgumentError("Neither variable $(step_name_string) nor any $(step_name_string * dup_sep) integer concatenations found in CausalTable."))
+
+                # If we have a selection, we can create a matrix from the columns
+                mat = Tables.matrix(NamedTupleTools.select(ct.data, tbl_names))
+                path = NamedTupleTools.merge(path, NamedTuple{(step_name,)}((mat,)))
+            end
+        # Summary functions are not considered fixed, so we need to summarize the previous output
+        # in case interventions have been made
+        elseif step_type == :transformation
+            # If the step is a transformation, we can extract it from the summaries
+            updated_summary = summarize(path, ct.summaries[step_name])
+            path = NamedTupleTools.merge(path, NamedTuple{(step_name,)}((updated_summary,)))
+
+        # Don't update random variables
+        elseif step_type == :random
+            path = NamedTupleTools.merge(path, NamedTuple{(step_name,)}((ct.arrays[step_name],)))
+
+        # Otherwise, we update the arrays attribute of the CausalTable
+        # in case any interventions have been made
+        else
+            step_output = dgp.funcs[i](path)
+            path = NamedTupleTools.merge(path, NamedTuple{(step_name,)}((step_output,)))
+        end
+    end
+    return path
+end
 
 
 """
@@ -141,8 +206,12 @@ function _parse_step(expr, names)
         # construct a function representing the step at the DGP
         func = :(O -> $(expr.args[3]))
         type = :transformation
+    elseif length(expr.args) == 3 && expr.args[1] == :(≈)
+        # construct a function representing the step at the DGP
+        func = :(O -> $(_replace_symbols_with_index(expr.args[3], names)))
+        type = :random
     else
-        throw(ArgumentError("Invalid expression. Each line in the dgp macro must be of the form `var ~ distribution`, `var = code`, or `var \$ transformation`"))
+        throw(ArgumentError("Invalid expression. Each line in the dgp macro must be of the form `var ~ distribution`, `var = code`, `var \$ transformation`, or `var ≈ random`."))
     end
 
     return (type, func)

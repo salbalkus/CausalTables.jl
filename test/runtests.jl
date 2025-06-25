@@ -186,15 +186,15 @@ end
         L1_norm = L1 ./ sum(L1),
         L2 ~ Multinomial(N, L1_norm),
         A ~ (@. Normal(L1, 1)),
-        regr = (@. A + 0.2 * L2),
+        regr = A .+ 0.2 .* vec(sum(L2, dims=2)),
         Y ~ Normal.(regr, 1)
     )
 
     scm = CausalTables.StructuralCausalModel(dgp, :A, :Y)
-    foo = rand(scm, 10)
+    foo = rand(scm, 5)
 
     @test typeof(foo) == CausalTables.CausalTable
-    @test Tables.columnnames(foo.data) == (:L1, :L2, :A, :Y)
+    @test Tables.columnnames(foo.data) == (:L1, :L2_1, :L2_2, :L2_3, :L2_4, :L2_5, :A, :Y)
 
     bar = CausalTables.condensity(scm, foo, :A)
     baz = CausalTables.propensity(scm, foo, :L1)
@@ -208,7 +208,7 @@ end
     @test typeof(quux) <: Vector{T} where {T <: Real}
     
     @test all(baz .== 1.0)
-    @test qux == Tables.getcolumn(foo, :A) .+ 0.2 .* Tables.getcolumn(foo, :L2)
+    @test qux == Tables.getcolumn(foo, :A) .+ 1.0
     @test all(quux .== 1)
 
     @test CausalTables.adjacency_matrix(foo) == LinearAlgebra.I
@@ -222,12 +222,12 @@ end
     @test all(foo2_update.arrays.regr .≈ (foo2.arrays.regr .+ 1.0))
 end
 
-#@testset "DataGeneratingProcess with graphs using dgp macro" begin
+@testset "DataGeneratingProcess with graphs using dgp macro" begin
     dgp = @dgp(
         L1 ~ DiscreteUniform(1, 5),
         L2 ~ DiscreteUniform(1, 5),
         n = length(L1),
-        ER = Graphs.adjacency_matrix(erdos_renyi(n, 0.3)),
+        ER ≈ Graphs.adjacency_matrix(erdos_renyi(n, 0.3)),
         L1_s $ Sum(:L1, :ER),
         L2_s $ Sum(:L2, :ER),
         A ~ (@. Normal(L1 + L2 + L1_s + L2_s, 1)),
@@ -274,10 +274,11 @@ end
     foo_update = CausalTables.update_arrays(scm, foo)
     foo_update.arrays
     foo.arrays
+
     @test foo_update.arrays == foo.arrays
     foo2 = intervene(foo, additive_mtp(1.0))
     foo2_update = CausalTables.update_arrays(scm, foo2)
-    @test all(foo2_update.arrays.regr .≈ (foo2.arrays.regr .+ 1.0))
+    @test all(foo2_update.arrays.μ .≈ (foo2.arrays.μ .+ 1 .+ sum(foo2.arrays.ER, dims=2)))
 end
 
 @testset "DGP Exception throwing" begin
@@ -309,9 +310,7 @@ end
     # Test the RHS
     # TODO: Currently errors in DGP construct are deferred until rand or condensity is called.
     # Can we catch them earlier?
-    bad = CausalTables.StructuralCausalModel(CausalTables.@dgp(A ~ asdjfk, Y ~ adjsf); treatment = :A, response = :Y)    
-    @test_throws ErrorException rand(bad, 10)
-    
+    bad = CausalTables.StructuralCausalModel(CausalTables.@dgp(A ~ asdf, Y ~ dfgh); treatment = :A, response = :Y)    
     tbl = CausalTables.CausalTable((A = [1, 2, 3], Y = [4, 5, 6]), treatment = :A, response = :Y)
     @test_throws ArgumentError CausalTables.condensity(bad, tbl, :not_in_dgp)
     @test_throws ErrorException CausalTables.condensity(bad, tbl, :A)

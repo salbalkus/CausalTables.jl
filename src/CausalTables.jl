@@ -49,10 +49,12 @@ export summarize
 # data_generating_process.jl
 export DataGeneratingProcess
 export @dgp
+export rand
+export get_path
 
 # structural_causal_model.jl
-export StructuralCausalModel, getscm
-export rand, condensity, conmean, convar, propensity
+export StructuralCausalModel
+export condensity, conmean, convar, propensity
 export update_arrays
 
 # estimands.jl

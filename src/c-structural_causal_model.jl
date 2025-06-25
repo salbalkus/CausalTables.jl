@@ -65,7 +65,7 @@ Generate random data from a Structural Causal Model (SCM) using the specified nu
 A `CausalTable` object containing the generated data.
 
 """
-function Base.rand(scm::StructuralCausalModel, n::Int)
+function Base.rand(scm::StructuralCausalModel, n::Int; dup_sep = "_")
 
     ###  First, generate a direct sample from the DGP
     path = rand(scm.dgp, n)
@@ -75,31 +75,46 @@ function Base.rand(scm::StructuralCausalModel, n::Int)
 
     # Iterate through each of the "objects" we've generated,
     # and decide where to place them in the CausalTable
-    for i in 1:length(scm.dgp)
-        cur_name = scm.dgp.names[i]
 
-        # If the step in the path is a distribution,
-        # put it in the data attribute of the CausalTable
-        if scm.dgp.types[i] == :distribution
-            if ndims(path[cur_name]) == 1
-                ct_data = NamedTupleTools.merge(ct_data, NamedTuple{(cur_name,)}((path[cur_name],)))
-            else
-                # Split the matrix into a NamedTuple of vectors and merge it
-                tbl = Tables.columntable(Tables.table(path[scm.dgp.names[i]]; header = [Symbol(scm.dgp.names[i], j) for j in 1:size(path[cur_name], 2)]))
-                ct_data = NamedTupleTools.merge(ct_data, tbl)
-            end
+    # If the step in the path is a distribution,
+    # put it in the data attribute of the CausalTable
+    for i in findall(scm.dgp.types .== :distribution)
+        cur_name = scm.dgp.names[i]
+        # If the distribution is a vector, we can just put it in the NamedTuple
+        if ndims(path[cur_name]) == 1
+            ct_data = NamedTupleTools.merge(ct_data, NamedTuple{(cur_name,)}((path[cur_name],)))
+        # If the distribution is a 1-D matrix, we can also put it in the NamedTuple
+        elseif size(path[cur_name], 2) == 1
+            ct_data = NamedTupleTools.merge(ct_data, NamedTuple{(cur_name,)}((vec(path[cur_name]),)))
+        # Otherwise, split the matrix into a NamedTuple of vectors and merge it
+        else
+            tbl = Tables.columntable(Tables.table(path[scm.dgp.names[i]]; header = [Symbol(scm.dgp.names[i], dup_sep, j) for j in 1:size(path[cur_name], 2)]))
+            ct_data = NamedTupleTools.merge(ct_data, tbl)
         end
     end
 
-    # Put any parts of the path that were not already processed into the arrays attribute
-    ct_arrays = NamedTupleTools.select(path, scm.dgp.names[scm.dgp.types .== :code])
-    summaries = (;)
+    # Put transformations in the summaries attribute of the CausalTable
+    summary_ind = scm.dgp.types .== :transformation
+    summary_vec = Tuple(f(path) for f in scm.dgp.funcs[summary_ind])
+    ct_summaries = NamedTuple{Tuple(scm.dgp.names[summary_ind])}(summary_vec)
 
-    return CausalTable(ct_data, scm.treatment, scm.response, scm.causes, ct_arrays, summaries)
+    # Put any parts of the path that were not already processed into the arrays attribute
+    ct_arrays = NamedTupleTools.select(path, scm.dgp.names[scm.dgp.types .!= :distribution])
+
+    return CausalTable(ct_data, scm.treatment, scm.response, scm.causes, ct_arrays, ct_summaries)
 end
 
 Base.rand(scm::StructuralCausalModel) = rand(scm, 1)
 
+function update_arrays(scm::StructuralCausalModel, ct::CausalTable; dup_sep = "_")
 
+    # Run through path to recompute the arrays
+    path = get_path(scm.dgp, ct)
 
+    # Select the arrays from the path
+    new_arrays = NamedTupleTools.select(path, scm.dgp.names[scm.dgp.types .!= :distribution])
+
+    # Construct new CausalTable with updated arrays
+    return CausalTable(ct.data, scm.treatment, scm.response, scm.causes, new_arrays, ct.summaries)
+end
 
