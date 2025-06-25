@@ -65,109 +65,56 @@ Generate random data from a Structural Causal Model (SCM) using the specified nu
 A `CausalTable` object containing the generated data.
 
 """
-function Base.rand(scm::StructuralCausalModel, n::Int)
+function Base.rand(scm::StructuralCausalModel, n::Int; dup_sep = "_")
 
-    # Construct a Vector as subsequent inputs into each step function of the DGP
-    result = (;)
-    tag = Vector{Symbol}(undef, length(scm))
-    summaries = (;)
+    ###  First, generate a direct sample from the DGP
+    path = rand(scm.dgp, n)
 
-    # Iterate through each step of the SCM
-    for i_step in 1:length(scm)
-        # Draw from the result of the step function
-        result_step = try
-            scm.dgp.funcs[i_step](result)
-        catch e
-            error(DIST_ERR_MSG(scm.dgp.names[i_step]))
-        end
-        result_draw =  CausalTables._scm_draw(result_step, result, n)
-        result = merge(result, NamedTuple{(scm.dgp.names[i_step],)}((result_draw,)))
-        
-        # Determine where the resulting output should be placed in the CausalTable
-        typeof_result_step = typeof(result_step)
-        if (typeof_result_step <: Distribution) || (typeof_result_step <: AbstractArray{<:Distribution})
-            tag[i_step] = :data
+    ### Second, process the path into a CausalTable
+    ct_data = (;)
+
+    # Iterate through each of the "objects" we've generated,
+    # and decide where to place them in the CausalTable
+
+    # If the step in the path is a distribution,
+    # put it in the data attribute of the CausalTable
+    for i in findall(scm.dgp.types .== :distribution)
+        cur_name = scm.dgp.names[i]
+        # If the distribution is a vector, we can just put it in the NamedTuple
+        if ndims(path[cur_name]) == 1
+            ct_data = NamedTupleTools.merge(ct_data, NamedTuple{(cur_name,)}((path[cur_name],)))
+        # If the distribution is a 1-D matrix, we can also put it in the NamedTuple
+        elseif size(path[cur_name], 2) == 1
+            ct_data = NamedTupleTools.merge(ct_data, NamedTuple{(cur_name,)}((vec(path[cur_name]),)))
+        # Otherwise, split the matrix into a NamedTuple of vectors and merge it
         else
-            tag[i_step] = :arrays
+            tbl = Tables.columntable(Tables.table(path[scm.dgp.names[i]]; header = [Symbol(scm.dgp.names[i], dup_sep, j) for j in 1:size(path[cur_name], 2)]))
+            ct_data = NamedTupleTools.merge(ct_data, tbl)
         end
-        # If the initial output was a NetworkSummary, record this to include in the CausalTable
-        if typeof(result_step) <: CausalTables.NetworkSummary
-            summaries = merge(summaries, NamedTuple{(scm.dgp.names[i_step],)}((result_step,)))
-        end    
     end
 
-    # Collect the data
-    data_tag = (tag .== :data)
-    data = NamedTuple{keys(result)[data_tag]}(values(result)[data_tag],)
+    # Put transformations in the summaries attribute of the CausalTable
+    summary_ind = scm.dgp.types .== :transformation
+    summary_vec = Tuple(f(path) for f in scm.dgp.funcs[summary_ind])
+    ct_summaries = NamedTuple{Tuple(scm.dgp.names[summary_ind])}(summary_vec)
 
-    # Collect extra arrays
-    array_tag = (tag .!= :data)
-    arrays = NamedTuple{keys(result)[array_tag]}(values(result)[array_tag],)    
+    # Put any parts of the path that were not already processed into the arrays attribute
+    ct_arrays = NamedTupleTools.select(path, scm.dgp.names[scm.dgp.types .!= :distribution])
 
-    # Store the recorded draws in a CausalTable format
-    return CausalTable(data, scm.treatment, scm.response, scm.causes, arrays, summaries)
+    return CausalTable(ct_data, scm.treatment, scm.response, scm.causes, ct_arrays, ct_summaries)
 end
 
 Base.rand(scm::StructuralCausalModel) = rand(scm, 1)
 
-### Helper functions for drawing a random CausalTable ###
-# Single Distributions: Draw n samples
-_scm_draw(x::T, o::NamedTuple, n::Int64) where {T <: UnivariateDistribution}     = rand(x, n)
-_scm_draw(x::T, o::NamedTuple, n::Int64) where {T <: MultivariateDistribution}   = rand(x)
-_scm_draw(x::T, o::NamedTuple, n::Int64) where {T <: MatrixDistribution}         = rand(x)
+function update_arrays(scm::StructuralCausalModel, ct::CausalTable; dup_sep = "_")
 
-# Vectors of Distributions: Draw a single sample (assumes user input sample n into the distribution)
-function _scm_draw(x::AbstractArray{<:Distribution}, o::NamedTuple, n::Int64)
-#    if length(x) == n
-        return rand.(x)
-#    else 
-#        throw(ArgumentError("Length of vector of distributions in DataGeneratingProcess must be equal to n"))
-#    end
+    # Run through path to recompute the arrays
+    path = get_path(scm.dgp, ct)
+
+    # Select the arrays from the path
+    new_arrays = NamedTupleTools.select(path, scm.dgp.names[scm.dgp.types .!= :distribution])
+
+    # Construct new CausalTable with updated arrays
+    return CausalTable(ct.data, scm.treatment, scm.response, scm.causes, new_arrays, ct.summaries)
 end
-
-# Summary Function: Compute the summary
-_scm_draw(x::T, o::NamedTuple, n::Int64) where {T<:NetworkSummary} = summarize(o, x)
-
-# Fallback: Pass previous result directly
-_scm_draw(x, o::NamedTuple, n::Int64) = x
-
-"""
-    update_arrays(scm::StructuralCausalModel, ct::CausalTable)
-
-Propagate updates (e.g. interventions on treatment) through the `:code` portions of a Structural Causal Model (SCM), generating a new `CausalTable`.
-
-# Arguments
-- `scm::StructuralCausalModel`: The Structural Causal Model describing how each variable was drawn.
-- `ct::CausalTable`: The `CausalTable` to update
-
-# Returns
-A `CausalTable` object containing the generated data.
-
-"""
-function update_arrays(scm::StructuralCausalModel, ct::CausalTable)
-
-    scm_result = (;)
-    new_arrays = (;)
-
-    # Iterate through each step of the SCM
-    for i_step in 1:length(scm)
-        type = scm.dgp.types[i_step]
-        name = scm.dgp.names[i_step]
-        if type == :code
-            scm_update = scm.dgp.funcs[i_step](scm_result)
-            new_arrays = merge(new_arrays, NamedTuple{(name,)}((scm_update,)))
-        elseif type == :distribution
-            scm_update = Tables.getcolumn(ct, name)
-        elseif type == :transformation
-            scm_update = summarize(scm_result, scm.dgp.funcs[i_step](scm_result))
-            new_arrays = merge(new_arrays, NamedTuple{(name,)}((scm_update,)))
-        end
-        scm_result = merge(scm_result, NamedTuple{(name,)}((scm_update,)))
-    end
-
-    # Store the recorded draws in a CausalTable format
-    return CausalTable(ct.data, ct.treatment, ct.response, ct.causes, new_arrays, ct.summaries)
-end
-
-
 

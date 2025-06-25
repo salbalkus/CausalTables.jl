@@ -14,11 +14,23 @@ mutable struct DataGeneratingProcess
     names::Symbols
     types::Symbols
     funcs::Functions
+
+    function DataGeneratingProcess(names, types, funcs)
+        if length(names) != length(types) || length(names) != length(funcs)
+            throw(ArgumentError("All fields of DataGeneratingProcess must have the same length."))
+        end
+        # Cast any Strings into Symbols
+        try
+            new(Symbol.(names), Symbol.(types), funcs)
+        catch e
+            throw(ArgumentError("All names and types in DataGeneratingProcess must be able to cast into a Symbol type."))
+        end
+    end
 end
 
 # Utility functions for quickly creating DataGeneratingProcesses
 DataGeneratingProcess(funcs; varsymb = "X", type = "distribution") = DataGeneratingProcess([Symbol("$(varsymb)$(i)") for i in 1:length(funcs)], [Symbol("$(type)") for i in 1:length(funcs)], funcs)
-DataGeneratingProcess(names::Symbols, funcs; type = "distribution") = DataGeneratingProcess(names, [Symbol("$(type)") for i in 1:length(funcs)], funcs)
+DataGeneratingProcess(names, funcs; type = "distribution") = DataGeneratingProcess(names, [Symbol("$(type)") for i in 1:length(funcs)], funcs)
 
 # Base functions for DataGeneratingProcess
 Base.length(x::DataGeneratingProcess) = length(x.names)

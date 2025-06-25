@@ -1,12 +1,22 @@
+CASTABLE_ERR(name) = throw(ArgumentError("All $(name) must be able to be cast into Symbols. Check to make sure elements of `$(treatment)` are provided as a Symbol or Vector of Symbol, or a castable type such as String or Vector of String."))
+
+# Helper functions to wrap singular Symbols as lists
+wrap_list(x::Symbol) = [x]
+wrap_list(x::AbstractArray) = x
+
 function _process_causal_variable_names(treatment, response, causes)
 
-    # Wrap symbols in lists if they haven't been already
-    if treatment isa Symbol
-        treatment = [treatment]
+    # Cast any Strings into Symbols, and wrap them in lists if they haven't been already
+    try
+        treatment = wrap_list(Symbol.(treatment))
+    catch e
+        CASTABLE_ERR("treatment")
     end
 
-    if response isa Symbol
-        response = [response]
+    try
+        response = wrap_list(Symbol.(response))
+    catch e
+        CASTABLE_ERR("response")
     end
 
     # Ensure treatment and response do not overlap
@@ -15,6 +25,14 @@ function _process_causal_variable_names(treatment, response, causes)
     length(name_repeats) > 0 && throw(ArgumentError("The following variable names are repeated across treatment and response lists: $(keys(name_repeats))")) 
     
     if !isnothing(causes)
+
+        # Convert all causes to Symbols
+        try
+            causes = NamedTuple{keys(causes)}(wrap_list(Symbol.(causes[k])) for k in keys(causes))
+        catch e
+            CASTABLE_ERR("causes")
+        end
+
         # Check that `causes` is acyclic
         _check_dag(causes) && throw(ArgumentError("`causes` contains a cycle, but causal relationships must form a directed acyclic graph (DAG), meaning no cycles are allowed."))
 
@@ -98,7 +116,7 @@ mutable struct CausalTable
         data_table = Tables.columntable(data)
 
         ## Process treatment and response variables into vectors
-        treatment, response, _ = _process_causal_variable_names(treatment, response, causes)        
+        treatment, response, causes = _process_causal_variable_names(treatment, response, causes)        
 
         # Decide what to do when no causes are provided
         if(isnothing(causes))

@@ -25,7 +25,7 @@ end
     foo3 = Tables.rowtable(foo1)
 
     # DataFrame form
-    df = CausalTables.CausalTable(foo1, [:X, :Z], :Y, (X = [:Z], Z = [], Y = [:X, :Z]))  
+    df = CausalTables.CausalTable(foo1, ["X", :Z], "Y", (X = ["Z"], Z = [], Y = ["X", :Z]))  
     @test Tables.istable(df)
     @test Tables.columntable(foo1) == df.data
     @test DataAPI.ncol(df) == 3
