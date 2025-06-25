@@ -59,8 +59,9 @@ using Graphs
     W ~ Poisson(1),
     θ = exp.(W .+ 1),
     X ~ Normal.(θ, θ),
-    G ≈ erdos_renyi(10, 0.5)
-    Xs $ Sum(:X, :G),
+    G ≈ erdos_renyi(10, 0.5),
+    M = Graphs.adjacency_matrix(ER),
+    Xs $ Sum(:X, :G)
 )
 
 # output
