@@ -1,12 +1,22 @@
+CASTABLE_ERR(name) = throw(ArgumentError("All $(name) must be able to be cast into Symbols. Check to make sure elements of `$(treatment)` are provided as a Symbol or Vector of Symbol, or a castable type such as String or Vector of String."))
+
+# Helper functions to wrap singular Symbols as lists
+wrap_list(x::Symbol) = [x]
+wrap_list(x::AbstractArray) = x
+
 function _process_causal_variable_names(treatment, response, causes)
 
-    # Wrap symbols in lists if they haven't been already
-    if treatment isa Symbol
-        treatment = [treatment]
+    # Cast any Strings into Symbols, and wrap them in lists if they haven't been already
+    try
+        treatment = wrap_list(Symbol.(treatment))
+    catch e
+        CASTABLE_ERR("treatment")
     end
 
-    if response isa Symbol
-        response = [response]
+    try
+        response = wrap_list(Symbol.(response))
+    catch e
+        CASTABLE_ERR("response")
     end
 
     # Ensure treatment and response do not overlap
@@ -15,6 +25,14 @@ function _process_causal_variable_names(treatment, response, causes)
     length(name_repeats) > 0 && throw(ArgumentError("The following variable names are repeated across treatment and response lists: $(keys(name_repeats))")) 
     
     if !isnothing(causes)
+
+        # Convert all causes to Symbols
+        try
+            causes = NamedTuple{keys(causes)}(wrap_list(Symbol.(causes[k])) for k in keys(causes))
+        catch e
+            CASTABLE_ERR("causes")
+        end
+
         # Check that `causes` is acyclic
         _check_dag(causes) && throw(ArgumentError("`causes` contains a cycle, but causal relationships must form a directed acyclic graph (DAG), meaning no cycles are allowed."))
 
@@ -98,7 +116,7 @@ mutable struct CausalTable
         data_table = Tables.columntable(data)
 
         ## Process treatment and response variables into vectors
-        treatment, response, _ = _process_causal_variable_names(treatment, response, causes)        
+        treatment, response, causes = _process_causal_variable_names(treatment, response, causes)        
 
         # Decide what to do when no causes are provided
         if(isnothing(causes))
@@ -189,20 +207,6 @@ A new `CausalTable` object with the specified fields replaced.
 """
 Base.replace(o::CausalTable; kwargs...) = CausalTable([field in keys(kwargs) ?  kwargs[field] : getfield(o, field) for field in fieldnames(typeof(o))]...)
 
-"""
-    getscm(o::CausalTable)
-
-This function merges the column table of the `CausalTable` object with its arrays.
-
-# Arguments
-- `o::CausalTable`: The `CausalTable` object.
-
-# Returns
-- A merged table containing the column table and arrays of the `CausalTable` object.
-
-"""
-getscm(o::CausalTable) = merge(o.arrays, Tables.columntable(o.data)) # arrays must come first so that any summaries that are changed in the data are updated
-
 Base.getindex(o::CausalTable, i::Int, j::Int) = Base.getindex(Tables.matrix(o.data), i, j)
 
 function Base.show(io::IO, o::CausalTable)
@@ -231,9 +235,15 @@ Selects specified columns from a `CausalTable` object.
 - A new `CausalTable` object with only the selected columns.
 
 """
-select(o::CausalTable, symbols::Symbol) = replace(o; data = NamedTupleTools.select(o.data, symbols ∈ keys(o.data) ? (symbols,) : (;)), summaries = NamedTupleTools.select(o.summaries, symbols ∈ keys(o.summaries) ? (symbols,) : (;)))
-select(o::CausalTable, symbols) = replace(o; data = NamedTupleTools.select(o.data, intersect(symbols, keys(o.data))),
+function select(o::CausalTable, symbols::Symbol)
+    return replace(o; data = NamedTupleTools.select(o.data, symbols ∈ keys(o.data) ? (symbols,) : (;)), 
+                      summaries = NamedTupleTools.select(o.summaries, symbols ∈ keys(o.summaries) ? (symbols,) : (;)))
+end
+
+function select(o::CausalTable, symbols)
+    replace(o; data = NamedTupleTools.select(o.data, intersect(symbols, keys(o.data))),
                                              summaries = NamedTupleTools.select(o.summaries, intersect(symbols, keys(o.summaries))))
+end
 
 """
     reject(o::CausalTable, symbols)
@@ -248,10 +258,15 @@ Removes the columns specified by `symbols` from the `CausalTable` object `o`.
 A new `CausalTable` object with the specified symbols removed from its data.
 
 """
-reject(o::CausalTable, symbols::Symbol) = replace(o; data = NamedTupleTools.delete(o.data, symbols),
-                                                     summaries = NamedTupleTools.delete(o.summaries, symbols)) 
-reject(o::CausalTable, symbols) = replace(o; data = NamedTupleTools.delete(o.data, symbols...),
+function reject(o::CausalTable, symbols::Symbol)
+    replace(o; data = NamedTupleTools.delete(o.data, symbols),
+                summaries = NamedTupleTools.delete(o.summaries, symbols)) 
+end
+
+function reject(o::CausalTable, symbols)
+    replace(o; data = NamedTupleTools.delete(o.data, symbols...),
                                              summaries = NamedTupleTools.delete(o.summaries, symbols...))
+end
 
 
 """
@@ -318,7 +333,7 @@ Selects the variables that precede `symbol` causally from the CausalTable `o`, b
 # Returns
 A new `CausalTable` containing only the parents of `symbol`
 """
-function parents(o::CausalTable, symbol)
+function parents(o::CausalTable, symbol::Symbol)
     if symbol in keys(o.causes)
         select(o, o.causes[symbol])
     else
