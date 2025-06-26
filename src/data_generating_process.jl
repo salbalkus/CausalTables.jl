@@ -68,6 +68,8 @@ function Base.rand(dgp::DataGeneratingProcess, n::Int)
     return path
 end
 
+Base.rand(dgp::DataGeneratingProcess) = rand(dgp, 1)
+
 # Multiple Dispatch for drawing from different types of outputs
 dgp_draw(step_output::Distributions.UnivariateDistribution, n::Int) = rand(step_output, n)
 dgp_draw(step_output::AbstractArray{<:Distributions.UnivariateDistribution}, n::Int) = rand.(step_output)

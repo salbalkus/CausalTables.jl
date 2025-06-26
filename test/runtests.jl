@@ -72,17 +72,15 @@ end
     @test coltbl2.treatment == [:X, :S]
     coltbl2.causes
 
-    # Since this table was created from a CausalTable that didn't originally have any summaries,
-    # this and subsequent tests should exclude the summaries as causes
-    @test coltbl2.causes == (X = [:Z], Y = [:Z, :X], S = [:Z], U = [:Z, :X])
+    @test coltbl2.causes == (X = [:Z, :T], Y = [:Z, :X, :T, :S], S = [:Z, :T], U = [:Z, :X, :T, :S])
     @test coltbl2.response == [:Y, :U]
     
     @test Tables.columnnames(CausalTables.treatment(coltbl2)) == (:X, :S)
     @test Tables.columnnames(CausalTables.response(coltbl2)) == (:Y, :U)
-    @test Tables.columnnames(CausalTables.treatmentparents(coltbl2)) == (:Z,)
-    @test Tables.columnnames(CausalTables.parents(coltbl2, :X)) == (:Z,)
+    @test Tables.columnnames(CausalTables.treatmentparents(coltbl2)) == (:Z, :T)
+    @test Tables.columnnames(CausalTables.parents(coltbl2, :X)) == (:Z, :T)
     @test Tables.columnnames(CausalTables.parents(coltbl2, :Z)) == ()
-    @test Tables.columnnames(CausalTables.responseparents(coltbl2)) == (:Z, :X,)
+    @test Tables.columnnames(CausalTables.responseparents(coltbl2)) == (:Z, :X, :T, :S)
     @test Tables.columnnames(CausalTables.parents(coltbl2, :Y)) == Tables.columnnames(CausalTables.responseparents(coltbl2))
     
     # Other convenience
@@ -256,9 +254,9 @@ end
     @test Tables.columnnames(confounders(foo)) == (:L1, :L2)
     summarize(foo).causes
 
-    @test Tables.columnnames(confounders(summarize(foo))) == (:L1, :L2, :L1_s)
+    @test Tables.columnnames(confounders(summarize(foo))) == (:L1, :L2, :L1_s, :L2_s)
     @test Tables.columnnames(confounders(summarize(foo, add_summaries_as_causes = true))) == (:L1, :L2, :L1_s, :L2_s)
-    @test Tables.columnnames(summarize(confounders(foo))) == (:L1, :L2, :L1_s)
+    @test Tables.columnnames(summarize(confounders(foo))) == (:L1, :L2, :L1_s, :L2_s)
 
     @test Tables.columnnames(treatment(foo)) == (:A,)
     @test Tables.columnnames(treatment(summarize(foo))) == (:A, :A_s)
@@ -331,10 +329,10 @@ end
         Lm $ Mean(:L, :H),
         Y ~ Normal(0,1)
     )
-    scm = CausalTables.StructuralCausalModel(dgp; treatment = :A, response = :Y, causes = (A = [:L], Y = [:L, :A]))
+    scm = CausalTables.StructuralCausalModel(dgp; treatment = :A, response = :Y)
     tbl = rand(scm, 5)
 
-    stbl = CausalTables.summarize(tbl, add_summaries_as_causes = true)
+    stbl = CausalTables.summarize(tbl)
 
     @test stbl.data.As ==  stbl.arrays.G * stbl.data.A
     @test stbl.data.F == [2.0, 2.0, 3.0, 3.0, 2.0]
