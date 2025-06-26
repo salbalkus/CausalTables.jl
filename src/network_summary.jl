@@ -135,7 +135,7 @@ Summarizes the data in a `CausalTable` object according to the NetworkSummary ob
 - A new `CausalTable` object with the original data merged with the summarized data.
 
 """
-function summarize(o::CausalTable; add_summaries_as_causes = false)
+function summarize(o::CausalTable; add_summaries_as_causes = true)
     
     # If we summarize a CausalTable that has already been summarized,
     # we need to replace the previous summary results.

@@ -316,7 +316,7 @@ end
     @test_throws ErrorException CausalTables.condensity(bad, tbl, :A)
 end
     
-@testset "NetworkSummary" begin
+#@testset "NetworkSummary" begin
     Random.seed!(1234)
 
     dgp = CausalTables.@dgp(
@@ -331,11 +331,12 @@ end
         Lm $ Mean(:L, :H),
         Y ~ Normal(0,1)
     )
-    scm = CausalTables.StructuralCausalModel(dgp; treatment = :A, response = :Y, causes = (A = [:L], Y = [:L, :A]))
+    scm = CausalTables.StructuralCausalModel(dgp; treatment = :A, response = :Y)
     tbl = rand(scm, 5)
 
-    stbl = CausalTables.summarize(tbl, add_summaries_as_causes = true)
+    stbl = CausalTables.summarize(tbl)
 
+    ape(scm, additive_mtp(1.0); samples = 10)
     @test stbl.data.As ==  stbl.arrays.G * stbl.data.A
     @test stbl.data.F == [2.0, 2.0, 3.0, 3.0, 2.0]
     @test Tables.columnnames(stbl) == (:A, :L, :Y, :As, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :F, :Lm)

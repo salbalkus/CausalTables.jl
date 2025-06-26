@@ -76,9 +76,9 @@ end
 #                     and that treatments do not cause other treatments
 function set_unlabeled_causes(data, summaries, treatment, response)
     labeled = vcat(treatment, response)
-    labeled = union(select_summaries(summaries, labeled), labeled)
+    #labeled = union(select_summaries(summaries, labeled), labeled)
     everything = Tables.columnnames(data)
-    everything = union(select_summaries(summaries, everything), everything)
+    #everything = union(select_summaries(summaries, everything), everything)
 
     confounders = setdiff(everything, labeled)
     causes = Dict()
