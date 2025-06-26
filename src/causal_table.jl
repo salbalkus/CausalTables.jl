@@ -236,13 +236,23 @@ Selects specified columns from a `CausalTable` object.
 
 """
 function select(o::CausalTable, symbols::Symbol)
-    return replace(o; data = NamedTupleTools.select(o.data, symbols ∈ keys(o.data) ? (symbols,) : (;)), 
-                      summaries = NamedTupleTools.select(o.summaries, symbols ∈ keys(o.summaries) ? (symbols,) : (;)))
+    # Get all variables that summarize the given symbol (or are solely a function of `arrays`, like Friends)
+    summary_targets = gettarget.(values(o.summaries))
+    selected_summaries = keys(o.summaries)[findall((symbols .== summary_targets) .| isnothing.(summary_targets))]
+
+    # Select only `symbols` from the data, and any relevant summaries
+    return replace(o; data = NamedTupleTools.select(o.data, symbols ∈ keys(o.data) ? (symbols,) : (;)),
+                      summaries = NamedTupleTools.select(o.summaries, selected_summaries))
 end
 
 function select(o::CausalTable, symbols)
-    replace(o; data = NamedTupleTools.select(o.data, intersect(symbols, keys(o.data))),
-                                             summaries = NamedTupleTools.select(o.summaries, intersect(symbols, keys(o.summaries))))
+    # Get all variables that summarize the given symbol (or are solely a function of arrays, like Friends)
+    summary_targets = gettarget.(values(o.summaries))
+    selected_summaries = keys(o.summaries)[findall(map(st -> isnothing(st) || (st ∈ symbols), summary_targets))]
+
+    # Select only `symbols` from the data, and any relevant summaries
+    replace(o; data = NamedTupleTools.select(o.data, intersect(symbols, keys(o.data))), 
+               summaries = NamedTupleTools.select(o.summaries, selected_summaries))
 end
 
 """
@@ -259,13 +269,23 @@ A new `CausalTable` object with the specified symbols removed from its data.
 
 """
 function reject(o::CausalTable, symbols::Symbol)
-    replace(o; data = NamedTupleTools.delete(o.data, symbols),
-                summaries = NamedTupleTools.delete(o.summaries, symbols)) 
+    # Get all variables that summarize the given symbol (or are solely a function of `arrays`, like Friends)
+    summary_targets = gettarget.(values(o.summaries))
+    selected_summaries = keys(o.summaries)[findall(symbols .!= summary_targets)]
+
+    # Remove only `symbols` from the data, and any summaries of it
+    replace(o; data = NamedTupleTools.delete(o.data, symbols), 
+               summaries = NamedTupleTools.select(o.summaries, selected_summaries))
 end
 
 function reject(o::CausalTable, symbols)
+    # Get all variables that summarize the given symbol (or are solely a function of arrays, like Friends)
+    summary_targets = gettarget.(values(o.summaries))
+    selected_summaries = keys(o.summaries)[findall(map(st -> isnothing(st) || (st ∈ symbols), summary_targets))]
+
+    # Select only `symbols` from the data, and any summaries of them
     replace(o; data = NamedTupleTools.delete(o.data, symbols...),
-                                             summaries = NamedTupleTools.delete(o.summaries, symbols...))
+               summaries = NamedTupleTools.select(o.summaries, selected_summaries))
 end
 
 
