@@ -66,21 +66,19 @@ end
     @test Tables.columnnames(coltbl) == (:X, :Y, :Z)
 
     # Extra causal-related functions
-    more_sums = (S = Sum(:X, :G), T = Sum(:Z, :G), U = Sum(:Y, :G))
-    coltbl2 = replace(coltbl, arrays = (G = [1 0 1; 0 1 1; 0 0 1],), summaries = more_sums)
+    more_sums = (S = Sum(:X, :G), T = Sum(:Z, :G), U = Sum(:Y, :G), F = Friends(:G))
+    coltbl2 = CausalTable(coltbl.data, :X, :Y; arrays = (G = [1 0 1; 0 1 1; 0 0 1],), summaries = more_sums)
     coltbl2 = summarize(coltbl2) 
     @test coltbl2.treatment == [:X, :S]
-    coltbl2.causes
-
-    @test coltbl2.causes == (X = [:Z, :T], Y = [:Z, :X, :T, :S], S = [:Z, :T], U = [:Z, :X, :T, :S])
+    @test coltbl2.causes == (U = [:Z, :X, :S, :T, :F], S = [:Z, :T, :F], X = [:Z, :T, :F], Y = [:Z, :X, :S, :T, :F])
     @test coltbl2.response == [:Y, :U]
     
     @test Tables.columnnames(CausalTables.treatment(coltbl2)) == (:X, :S)
     @test Tables.columnnames(CausalTables.response(coltbl2)) == (:Y, :U)
-    @test Tables.columnnames(CausalTables.treatmentparents(coltbl2)) == (:Z, :T)
-    @test Tables.columnnames(CausalTables.parents(coltbl2, :X)) == (:Z, :T)
+    @test Tables.columnnames(CausalTables.treatmentparents(coltbl2)) == (:Z, :T, :F)
+    @test Tables.columnnames(CausalTables.parents(coltbl2, :X)) == (:Z, :T, :F)
     @test Tables.columnnames(CausalTables.parents(coltbl2, :Z)) == ()
-    @test Tables.columnnames(CausalTables.responseparents(coltbl2)) == (:Z, :X, :T, :S)
+    @test Tables.columnnames(CausalTables.responseparents(coltbl2)) == (:Z, :X, :S, :T, :F)
     @test Tables.columnnames(CausalTables.parents(coltbl2, :Y)) == Tables.columnnames(CausalTables.responseparents(coltbl2))
     
     # Other convenience
@@ -338,7 +336,7 @@ end
     @test stbl.data.F == [2.0, 2.0, 3.0, 3.0, 2.0]
     @test Tables.columnnames(stbl) == (:A, :L, :Y, :As, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :F, :Lm)
     @test stbl.treatment == [:A, :As]
-    @test stbl.causes == (A = [:L, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :Lm], Y = [:L, :A, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :Lm, :As], As = [:L, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :Lm])
+    @test stbl.causes == (As = [:L, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :F, :Lm], A = [:L, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :F, :Lm], Y = [:L, :A, :As, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :F, :Lm])
     
     sub = Tables.subset(stbl, 1:3)
     @test DataAPI.nrow(sub) == 3

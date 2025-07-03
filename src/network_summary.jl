@@ -141,7 +141,7 @@ function summarize(o::CausalTable; add_summaries_as_causes = true)
     # we need to replace the previous summary results.
     scm_result = merge(o.data, o.arrays)
     new_treatment = o.treatment
-    new_causes = deepcopy(o.causes)
+    new_causes = convert(Dict, o.causes)
     new_response = o.response
 
     nsummaries = length(o.summaries)
@@ -179,29 +179,31 @@ function summarize(o::CausalTable; add_summaries_as_causes = true)
 
         # update cause tuple
         if origin ∈ keys(o.causes)
-            new_causes = merge(new_causes, NamedTuple{Tuple(header)}(repeat([deepcopy(o.causes[origin])], length(header))))
+            for h in header
+                new_causes[h] = o.causes[origin]
+            end
         end
         headers[i] = header
     end
 
     # setup to update causes by adding summarized symbols next to original symbols
     # need to extract headers from iteration above because some summaries add multiple new variables
-    targets = CausalTables.gettarget.(values(o.summaries))
-    originals = vcat([repeat([targets[i]], length(headers[i])) for i in 1:length(headers) if !isnothing(targets[i])]...)
-    additions = vcat([headers[i] for i in 1:length(headers) if !isnothing(targets[i])]...)
+    if nsummaries > 0
+        targets = CausalTables.gettarget.(values(o.summaries))
+        originals = reduce(vcat, repeat([targets[i]], length(headers[i])) for i in 1:length(headers))
+        additions = reduce(vcat, headers)
 
-    # option to add each summary as a cause if its original variables was also a cause
-    if add_summaries_as_causes
-        for cause in new_causes
-            for c in cause
-                append!(cause, additions[c .== originals])
+        # option to add each summary as a cause if its original variable was also a cause
+        if add_summaries_as_causes
+            for name in keys(new_causes)
+                new_causes[name] = union(new_causes[name], additions[map(x -> isnothing(x) || x ∈ new_causes[name], originals)])
             end
         end
     end
 
     # create a new data table and construct CausalTable
     new_table = merge(o.data, tables...)
-    return CausalTable(new_table, new_treatment, new_response, new_causes, o.arrays, o.summaries)
+    return CausalTable(new_table, new_treatment, new_response, namedtuple(new_causes), o.arrays, o.summaries)
 end
 
 gettarget(s::Friends) = nothing
