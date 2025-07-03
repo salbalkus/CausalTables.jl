@@ -76,9 +76,7 @@ end
 #                     and that treatments do not cause other treatments
 function set_unlabeled_causes(data, summaries, treatment, response)
     labeled = vcat(treatment, response)
-    #labeled = union(select_summaries(summaries, labeled), labeled)
     everything = Tables.columnnames(data)
-    #everything = union(select_summaries(summaries, everything), everything)
 
     confounders = setdiff(everything, labeled)
     causes = Dict()
@@ -490,7 +488,7 @@ Selects the common causes for a specific pair of variables (x,y) from the given 
 # Returns
 A new `CausalTable` containing only the confounders of both x and y.
 """
-confounders(o::CausalTable, x::Symbol, y::Symbol) = select(o, confoundernames(o, x, y))
+confounders(o::CausalTable, x::Symbol, y::Symbol) = CausalTables.select(o, confoundernames(o, x, y))
 
 """
     confoundersmatrix(o::CausalTable; collapse_parents = true)
@@ -561,7 +559,7 @@ Selects the mediators for a specific pair of variables (x,y) from the given `Cau
 # Returns
 A new `CausalTable` containing only the mediators of both x and y.
 """
-mediators(o::CausalTable, x::Symbol, y::Symbol) = select(o, mediatornames(o, x, y))
+mediators(o::CausalTable, x::Symbol, y::Symbol) = CausalTables.select(o, mediatornames(o, x, y))
 
 """
     mediatorsmatrix(o::CausalTable; collapse_parents = true)
@@ -632,7 +630,7 @@ Selects the instruments for a specific pair of variables (x,y) from the given `C
 # Returns
 A new `CausalTable` containing only the instruments of both x and y.
 """
-instruments(o::CausalTable, x::Symbol, y::Symbol) = select(o, instrumentnames(o, x, y))
+instruments(o::CausalTable, x::Symbol, y::Symbol) = CausalTables.select(o, instrumentnames(o, x, y))
 
 """
     instrumentsmatrix(o::CausalTable; collapse_parents = true)
