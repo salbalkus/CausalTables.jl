@@ -159,24 +159,24 @@ function cfdiff(scm::StructuralCausalModel, intervention1::Function, interventio
 end
 
 """
-    set_treatment_value(ct::CausalTable, value::Float64)
+    set_treatment_value(ct::CausalTable, value)
 
 Sets all treatments present in the data of a `CausalTable` to a specified value. This function is primarily used for interventions where the treatment value is set to a constant, such as in the case of binary treatments.
 
 # Arguments
 - `ct::CausalTable`: The causal table object containing treatment information and data.
-- `value::Float64`: (Currently unused) A float value intended to represent the treatment value to set.
+- `value`: A value intended to represent the treatment value to set.
 
 # Returns
 - `NamedTuple`: A named tuple mapping each treatment variable to a vector of ones.
 """
-function set_treatment_value(ct::CausalTable, value::Float64)
+function set_treatment_value(ct::CausalTable, value)
     treatment_names = Vector{Symbol}()
     treatment_values = Vector{Vector}()
     for treatment_name in ct.treatment
         if treatment_name ∈ Tables.columnnames(ct.data)
             push!(treatment_names, treatment_name)
-            push!(treatment_values, value .* ones(DataAPI.nrow(ct)))
+            push!(treatment_values, fill(value, DataAPI.nrow(ct)))
         end
     end
     return NamedTuple{Tuple(treatment_names)}(Tuple(treatment_values))
@@ -206,7 +206,7 @@ data = rand(scm, 100)
 treat_all(data)
 ```
 """
-treat_all(ct::CausalTable) = set_treatment_value(ct, 1.0)
+treat_all(ct::CausalTable) = set_treatment_value(ct, true)
 
 """
     treat_none(ct::CausalTable)
@@ -232,7 +232,7 @@ data = rand(scm, 100)
 treat_none(data)
 ```
 """
-treat_none(ct) = set_treatment_value(ct, 0.0)
+treat_none(ct) = set_treatment_value(ct, false)
 
 @doc raw"""
     ate(scm::StructuralCausalModel; samples = 10^6)

@@ -366,11 +366,12 @@ end
     # Check intervention functions
     ct = rand(scm, 10000)
     cta = intervene(ct, treat_all)
+    treat_all(ct)
     @test Tables.columnnames(cta) == Tables.columnnames(ct)
-    @test all(cta.data.A .== 1.0)
+    @test all(cta.data.A .== true)
 
     ctn = intervene(ct, treat_none)
-    @test all(ctn.data.A .== 0.0)
+    @test all(ctn.data.A .== false)
 
     ε = 0.05
 
