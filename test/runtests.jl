@@ -7,6 +7,7 @@ using Distributions
 using Random
 using LinearAlgebra
 using DataAPI
+using SparseArrays
 
 within(x, ε) = abs(x) < ε
 
@@ -126,7 +127,7 @@ end
 
     # Test mediators
     @test mediatorsmatrix(ctbl) == Dict(:A1 => Dict(:Y2 => hcat(tbl[:M1], tbl[:M2]), :Y1 => hcat(tbl[:M1])),
-                                        :A2 => Dict(:Y2 => hcat(tbl[:M2]), :Y1 => [;]))
+                                        :A2 => Dict(:Y2 => hcat(tbl[:M2]), :Y1 => []))
     @test mediators(ctbl, :L1, :Y1).data  == (A1 = tbl[:A1],)
 
     # Test instrumental variables
@@ -315,11 +316,21 @@ end
 @testset "NetworkSummary" begin
     Random.seed!(1234)
 
+    Gmat = sparse([1 0 1 0 0;
+         0 1 1 0 0;
+         0 1 1 1 0;
+         0 0 0 1 1;
+         0 0 0 0 1])
+    Hmat = sparse([1 0 0 0 0;
+         0 1 1 0 0;
+         1 1 1 1 0;
+         0 0 0 1 0;
+         1 0 1 0 1])
     dgp = CausalTables.@dgp(
         A ~ Normal(0,1),
         L ~ Binomial(6, 0.5),
-        G = Graphs.adjacency_matrix(erdos_renyi(length(L), 0.5)),
-        H = Graphs.adjacency_matrix(erdos_renyi(length(L), 0.5)),
+        G = Gmat,
+        H = Hmat,
         As $ Sum(:A, :G),
         Lo $ KOrderStatistics(:L, :G, 2),
         LoH $ AllOrderStatistics(:L, :H),
@@ -333,21 +344,21 @@ end
     stbl = CausalTables.summarize(tbl)
 
     @test stbl.data.As ==  stbl.arrays.G * stbl.data.A
-    @test stbl.data.F == [2.0, 2.0, 3.0, 3.0, 2.0]
-    @test Tables.columnnames(stbl) == (:A, :L, :Y, :As, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :F, :Lm)
+    @test stbl.data.F == [2.0, 2.0, 3.0, 2.0, 1.0]
+    @test Tables.columnnames(stbl) == (:A, :L, :Y, :As, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :LoH4, :F, :Lm)
     @test stbl.treatment == [:A, :As]
-    @test stbl.causes == (As = [:L, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :F, :Lm], A = [:L, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :F, :Lm], Y = [:L, :A, :As, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :F, :Lm])
+    @test stbl.causes == (As = [:L, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :LoH4, :F, :Lm], A = [:L, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :LoH4, :F, :Lm], Y = [:L, :A, :As, :Lo1, :Lo2, :LoH1, :LoH2, :LoH3, :LoH4, :F, :Lm])
     
     sub = Tables.subset(stbl, 1:3)
     @test DataAPI.nrow(sub) == 3
     @test size(sub.arrays.G) == (3, 3)
 
     adj = CausalTables.adjacency_matrix(tbl)
-    @test sum(adj) == 18
+    @test sum(adj) == 13
     @test all(map(x -> x ∈ [0.0, 1.0], vec(adj)))
 
     dep = CausalTables.dependency_matrix(tbl)
-    @test sum(dep) == 25
+    @test sum(dep) == 20
     @test all(map(x -> x ∈ [0.0, 1.0], vec(dep)))
 end
 

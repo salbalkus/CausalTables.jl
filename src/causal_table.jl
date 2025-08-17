@@ -430,7 +430,7 @@ function select_over_dicts(o::CausalTable, varnames; collapse_parents = true)
     end
 end
 
-matrix(tbl::Dict{Symbol, Dict{Symbol, CausalTable}}) = map_over_dicts(tbl, x -> isempty(x) ? [;] : Tables.matrix(x))
+matrix(tbl::Dict{Symbol, Dict{Symbol, CausalTable}}) = map_over_dicts(tbl, x -> isempty(x) ? [] : Tables.matrix(x))
 matrix(tbl::CausalTable) = Tables.matrix(tbl)
 
 ### Confounders ###
@@ -675,7 +675,7 @@ function adjacency_matrix(o::CausalTable)
     # Get the matrices used to summarize across observations in the table
     summary_matrix_names = unique([s.matrix for s in o.summaries if hasfield(typeof(s), :matrix)])
     if length(summary_matrix_names) > 0
-        adj_matrices = values(o.arrays[summary_matrix_names])
+        adj_matrices = [o.arrays[sn] for sn in summary_matrix_names]
         return(sum(adj_matrices) .!= 0.0)
     else
         return(LinearAlgebra.I(DataAPI.nrow(o)))
@@ -701,7 +701,7 @@ function dependency_matrix(o::CausalTable)
     if length(summary_matrix_names) > 0
 
         # extract adjacency matrices from CausalTables
-        adj_matrices = values(o.arrays[summary_matrix_names])
+        adj_matrices = [o.arrays[sn] for sn in summary_matrix_names]
 
         # each unit to itself
         zero_hop = LinearAlgebra.I(DataAPI.nrow(o))
