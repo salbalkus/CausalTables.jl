@@ -51,7 +51,29 @@ DataGeneratingProcess
 
 Note that when using the `@dgp` macro, any symbol defined on the left side of an equation in the sequence can be used to pass in the output of a previous step on the right side. For example, in the above code, the symbol `W` is used to pass in the output of the first step to the second step. This works by metaprogramming which replaces `W` with `O.W` when the function is constructed by `@dgp`. 
 
-In this way, we can define virtually any DGP that can be expressed as a sequence of conditional distributions. For ease of use, one can still use the `O` object in the `@dgp` macro to pass in the output of all previous steps, which is especially useful for programmatically-defined DGPs. For example, the following code is equivalent to the above code:
+We can also define steps other than distributions. There are four different types of "steps" that can be defined in a DGP sequence, each being constructed from a different "linking" symbol. Consider the following example, which uses all four types of steps:
+
+```jldoctest generation; output = false, filter = r"(?<=.{21}).*"s
+using Graphs
+@dgp(
+    W ~ Poisson(1),
+    θ = exp.(W .+ 1),
+    X ~ Normal.(θ, θ),
+    G ≈ erdos_renyi(10, 0.5),
+    M = Graphs.adjacency_matrix(ER),
+    Xs $ Sum(:X, :G)
+)
+
+# output
+DataGeneratingProcess
+```
+
+- Each `~` is used to denote a *Distribution* from Distributions.jl. These can both generate random data as well as admit expressions for the exact conditional distribution when calling functions like `condensity` (See [Computing ground truth conditional distributions](ground-truth.md)).
+- The `=` symbol is used to denote *deterministic* functions of previous steps. They can be used to easily compute and reuse transformations of random variables. When a function like `condensity` is called on a `CausalTable`, each step will be recomputed to propagate any changes or interventions that may have been made, on the table.
+- The `≈` symbol is used to denote *random* functions of previous steps that cannot necessarily be expressed as distributions -- for example, here we use `≈` to generate a random graph. When a function like `condensity` is called on a `CausalTable`, these steps will *not* be re-evaluated, so this symbol should not be used for functions depend on the values of previous steps.
+- The `$` symbol is used to denote `NetworkSummary` functions. Similar to `=`, a NetworkSummary computes a deterministic transformation of previous steps, usually based on a random graph; the only difference is that when drawn from a StructuralCausalModel (see next section), the `NetworkSummary` will be stored in the CausalTable that is generated. See [Networks of Causally-Connected Units](#networks-of-causally-connected-units) or [Network summaries](network-summaries.md) for more details.
+
+In this way, we can define virtually any DGP that can be expressed as a sequence of conditional distributions or transformations. For ease of use, one can still use the `O` object in the `@dgp` macro to pass in the output of all previous steps, which is especially useful for programmatically-defined DGPs. For example, the following code is equivalent to the above code:
 
 ```jldoctest generation; output = false, filter = r"(?<=.{21}).*"s
 distributions = @dgp(
@@ -109,9 +131,11 @@ dgp_family(1, 10; σ2X = 2, σ2Y = 2)
 DataGeneratingProcess
 ```
 
+Finally, if `dgp` denotes a `DataGeneratingProcess`, one can draw a sample path from it by calling `rand(dgp, n)` where `n` is the number of samples to draw. This will return a `NamedTuple` with the output of each step in the DGP. However, when running causal simulations, it is often more convenient to obtain a `CausalTable` object directly, which brings us to the next section: the `StructuralCausalModel`.
+
 ## Defining a StructuralCausalModel
 
-In CausalTables.jl, a StructuralCausalModel is a data generating process endowed with some causal interpretation. Constructing a StructuralCausalModel allows users to randomly draw a CausalTable with the necessary components from the DataGeneratingProcess they've defined. With the previous DataGeneratingProcess in hand, we can define a `StructuralCausalModel` object like so -- treatment and response in the causal model are specified as keyword arguments to the `DataGeneratingProcess` constructor:
+In CausalTables.jl, a `StructuralCausalModel` is a data generating process endowed with some causal interpretation. Constructing a StructuralCausalModel allows users to randomly draw a CausalTable with the necessary components from the DataGeneratingProcess they've defined. With the previous DataGeneratingProcess in hand, we can define a `StructuralCausalModel` object like so -- treatment and response in the causal model are specified as keyword arguments to the `DataGeneratingProcess` constructor:
 
 
 ```jldoctest generation; output = false, filter = r"(?<=.{21}).*"s

@@ -1,12 +1,22 @@
+CASTABLE_ERR(name) = throw(ArgumentError("All $(name) must be able to be cast into Symbols. Check to make sure elements of `$(treatment)` are provided as a Symbol or Vector of Symbol, or a castable type such as String or Vector of String."))
+
+# Helper functions to wrap singular Symbols as lists
+wrap_list(x::Symbol) = [x]
+wrap_list(x::AbstractArray) = x
+
 function _process_causal_variable_names(treatment, response, causes)
 
-    # Wrap symbols in lists if they haven't been already
-    if treatment isa Symbol
-        treatment = [treatment]
+    # Cast any Strings into Symbols, and wrap them in lists if they haven't been already
+    try
+        treatment = wrap_list(Symbol.(treatment))
+    catch e
+        CASTABLE_ERR("treatment")
     end
 
-    if response isa Symbol
-        response = [response]
+    try
+        response = wrap_list(Symbol.(response))
+    catch e
+        CASTABLE_ERR("response")
     end
 
     # Ensure treatment and response do not overlap
@@ -15,6 +25,14 @@ function _process_causal_variable_names(treatment, response, causes)
     length(name_repeats) > 0 && throw(ArgumentError("The following variable names are repeated across treatment and response lists: $(keys(name_repeats))")) 
     
     if !isnothing(causes)
+
+        # Convert all causes to Symbols
+        try
+            causes = NamedTuple{keys(causes)}(wrap_list(Symbol.(causes[k])) for k in keys(causes))
+        catch e
+            CASTABLE_ERR("causes")
+        end
+
         # Check that `causes` is acyclic
         _check_dag(causes) && throw(ArgumentError("`causes` contains a cycle, but causal relationships must form a directed acyclic graph (DAG), meaning no cycles are allowed."))
 
@@ -54,17 +72,20 @@ function _check_dag(causes_original)
     return any(length.(values(causes)) .!= 0)
 end
 
-# Default assumption: if not specified, set anything not labeled as a cause of all treatments and all responses
-function set_unlabeled_causes(data, treatment, response)
-    u = vcat(treatment, response)
-    confounders = setdiff(Tables.columnnames(data), u)
+# Default assumption: if not specified, set anything not labeled as a cause of all treatments and all responses,
+#                     and that treatments do not cause other treatments
+function set_unlabeled_causes(data, summaries, treatment, response)
+    labeled = vcat(treatment, response)
+    everything = Tables.columnnames(data)
+
+    confounders = setdiff(everything, labeled)
     causes = Dict()
 
     for t in treatment
         causes[t] = confounders
     end
 
-    confounders_and_treatment = vcat(confounders, treatment)
+    confounders_and_treatment = union(confounders, treatment)
     for r in response
         causes[r] = confounders_and_treatment
     end
@@ -93,11 +114,11 @@ mutable struct CausalTable
         data_table = Tables.columntable(data)
 
         ## Process treatment and response variables into vectors
-        treatment, response, _ = _process_causal_variable_names(treatment, response, causes)        
+        treatment, response, causes = _process_causal_variable_names(treatment, response, causes)        
 
         # Decide what to do when no causes are provided
         if(isnothing(causes))
-            causes = set_unlabeled_causes(data, treatment, response)
+            causes = set_unlabeled_causes(data, summaries, treatment, response)
         end
         
         # Construct a CausalTable with an underlying MatrixTable to store random vectors
@@ -184,20 +205,6 @@ A new `CausalTable` object with the specified fields replaced.
 """
 Base.replace(o::CausalTable; kwargs...) = CausalTable([field in keys(kwargs) ?  kwargs[field] : getfield(o, field) for field in fieldnames(typeof(o))]...)
 
-"""
-    getscm(o::CausalTable)
-
-This function merges the column table of the `CausalTable` object with its arrays.
-
-# Arguments
-- `o::CausalTable`: The `CausalTable` object.
-
-# Returns
-- A merged table containing the column table and arrays of the `CausalTable` object.
-
-"""
-getscm(o::CausalTable) = merge(o.arrays, Tables.columntable(o.data)) # arrays must come first so that any summaries that are changed in the data are updated
-
 Base.getindex(o::CausalTable, i::Int, j::Int) = Base.getindex(Tables.matrix(o.data), i, j)
 
 function Base.show(io::IO, o::CausalTable)
@@ -209,6 +216,9 @@ function Base.show(io::IO, o::CausalTable)
 end
 
 # Functions to select variables from the data
+select_summaries(summaries::NamedTuple, symbols) = keys(summaries)[findall(map(x -> x ∈ symbols, CausalTables.gettarget.(values(summaries))))]
+select_summaries(o::CausalTable, symbols) = keys(o.summaries)[findall(map(x -> x ∈ symbols, CausalTables.gettarget.(values(o.summaries))))]
+
 
 """
     select(o::CausalTable, symbols)
@@ -223,8 +233,25 @@ Selects specified columns from a `CausalTable` object.
 - A new `CausalTable` object with only the selected columns.
 
 """
-select(o::CausalTable, symbols::Symbol) = replace(o; data = NamedTupleTools.select(o.data, (symbols,)))
-select(o::CausalTable, symbols) = replace(o; data = NamedTupleTools.select(o.data, symbols))
+function select(o::CausalTable, symbols::Symbol)
+    # Get all variables that summarize the given symbol (or are solely a function of `arrays`, like Friends)
+    summary_targets = gettarget.(values(o.summaries))
+    selected_summaries = keys(o.summaries)[findall((symbols .== summary_targets) .| isnothing.(summary_targets))]
+
+    # Select only `symbols` from the data, and any relevant summaries
+    return replace(o; data = NamedTupleTools.select(o.data, symbols ∈ keys(o.data) ? (symbols,) : (;)),
+                      summaries = NamedTupleTools.select(o.summaries, selected_summaries))
+end
+
+function select(o::CausalTable, symbols)
+    # Get all variables that summarize the given symbol (or are solely a function of arrays, like Friends)
+    summary_targets = gettarget.(values(o.summaries))
+    selected_summaries = keys(o.summaries)[findall(map(st -> isnothing(st) || (st ∈ symbols), summary_targets))]
+
+    # Select only `symbols` from the data, and any relevant summaries
+    replace(o; data = NamedTupleTools.select(o.data, intersect(symbols, keys(o.data))), 
+               summaries = NamedTupleTools.select(o.summaries, selected_summaries))
+end
 
 """
     reject(o::CausalTable, symbols)
@@ -239,8 +266,25 @@ Removes the columns specified by `symbols` from the `CausalTable` object `o`.
 A new `CausalTable` object with the specified symbols removed from its data.
 
 """
-reject(o::CausalTable, symbols::Symbol) = replace(o; data = NamedTupleTools.delete(o.data, symbols))
-reject(o::CausalTable, symbols) = replace(o; data = NamedTupleTools.delete(o.data, symbols...))
+function reject(o::CausalTable, symbols::Symbol)
+    # Get all variables that summarize the given symbol (or are solely a function of `arrays`, like Friends)
+    summary_targets = gettarget.(values(o.summaries))
+    selected_summaries = keys(o.summaries)[findall(symbols .!= summary_targets)]
+
+    # Remove only `symbols` from the data, and any summaries of it
+    replace(o; data = NamedTupleTools.delete(o.data, symbols), 
+               summaries = NamedTupleTools.select(o.summaries, selected_summaries))
+end
+
+function reject(o::CausalTable, symbols)
+    # Get all variables that summarize the given symbol (or are solely a function of arrays, like Friends)
+    summary_targets = gettarget.(values(o.summaries))
+    selected_summaries = keys(o.summaries)[findall(map(st -> isnothing(st) || (st ∈ symbols), summary_targets))]
+
+    # Select only `symbols` from the data, and any summaries of them
+    replace(o; data = NamedTupleTools.delete(o.data, symbols...),
+               summaries = NamedTupleTools.select(o.summaries, selected_summaries))
+end
 
 
 """
@@ -307,7 +351,7 @@ Selects the variables that precede `symbol` causally from the CausalTable `o`, b
 # Returns
 A new `CausalTable` containing only the parents of `symbol`
 """
-function parents(o::CausalTable, symbol)
+function parents(o::CausalTable, symbol::Symbol)
     if symbol in keys(o.causes)
         select(o, o.causes[symbol])
     else
@@ -374,9 +418,10 @@ map_over_dicts(tbl, f::Function) = Dict(k => Dict(k2 => f(v2) for (k2, v2) in v)
 
 function select_over_dicts(o::CausalTable, varnames; collapse_parents = true) 
     # When possible, only select a single `CausalTable` representing the selection of all variables
+    flattened_dicts = reduce(vcat, collect.(values.(values(varnames))))
     if(collapse_parents && 
-        (length(o.response) + length(o.treatment) == 1 || #  if there is only one treatment-response pair
-        all(x -> x == varnames[o.treatment[1]][o.response[1]], reduce(vcat, values.(values(varnames)))))) # if all pairs share the same set of variables
+        (length(o.response) == 1 && length(o.treatment) == 1) || #  if there is only one treatment-response pair
+        all( ==(flattened_dicts[1]), flattened_dicts))# if all pairs share the same set of variables
 
         return(select(o, varnames[o.treatment[1]][o.response[1]]))
     # Otherwise, return a matrix of `CausalTables` representing the selection of each treatment-response pair
@@ -385,7 +430,7 @@ function select_over_dicts(o::CausalTable, varnames; collapse_parents = true)
     end
 end
 
-matrix(tbl::Dict{Symbol, Dict{Symbol, CausalTable}}) = map_over_dicts(tbl, x -> isempty(x) ? [;] : Tables.matrix(x))
+matrix(tbl::Dict{Symbol, Dict{Symbol, CausalTable}}) = map_over_dicts(tbl, x -> isempty(x) ? [] : Tables.matrix(x))
 matrix(tbl::CausalTable) = Tables.matrix(tbl)
 
 ### Confounders ###
@@ -443,7 +488,7 @@ Selects the common causes for a specific pair of variables (x,y) from the given 
 # Returns
 A new `CausalTable` containing only the confounders of both x and y.
 """
-confounders(o::CausalTable, x::Symbol, y::Symbol) = select(o, confoundernames(o, x, y))
+confounders(o::CausalTable, x::Symbol, y::Symbol) = CausalTables.select(o, confoundernames(o, x, y))
 
 """
     confoundersmatrix(o::CausalTable; collapse_parents = true)
@@ -514,7 +559,7 @@ Selects the mediators for a specific pair of variables (x,y) from the given `Cau
 # Returns
 A new `CausalTable` containing only the mediators of both x and y.
 """
-mediators(o::CausalTable, x::Symbol, y::Symbol) = select(o, mediatornames(o, x, y))
+mediators(o::CausalTable, x::Symbol, y::Symbol) = CausalTables.select(o, mediatornames(o, x, y))
 
 """
     mediatorsmatrix(o::CausalTable; collapse_parents = true)
@@ -585,7 +630,7 @@ Selects the instruments for a specific pair of variables (x,y) from the given `C
 # Returns
 A new `CausalTable` containing only the instruments of both x and y.
 """
-instruments(o::CausalTable, x::Symbol, y::Symbol) = select(o, instrumentnames(o, x, y))
+instruments(o::CausalTable, x::Symbol, y::Symbol) = CausalTables.select(o, instrumentnames(o, x, y))
 
 """
     instrumentsmatrix(o::CausalTable; collapse_parents = true)
@@ -630,7 +675,7 @@ function adjacency_matrix(o::CausalTable)
     # Get the matrices used to summarize across observations in the table
     summary_matrix_names = unique([s.matrix for s in o.summaries if hasfield(typeof(s), :matrix)])
     if length(summary_matrix_names) > 0
-        adj_matrices = values(o.arrays[summary_matrix_names])
+        adj_matrices = [o.arrays[sn] for sn in summary_matrix_names]
         return(sum(adj_matrices) .!= 0.0)
     else
         return(LinearAlgebra.I(DataAPI.nrow(o)))
@@ -656,7 +701,7 @@ function dependency_matrix(o::CausalTable)
     if length(summary_matrix_names) > 0
 
         # extract adjacency matrices from CausalTables
-        adj_matrices = values(o.arrays[summary_matrix_names])
+        adj_matrices = [o.arrays[sn] for sn in summary_matrix_names]
 
         # each unit to itself
         zero_hop = LinearAlgebra.I(DataAPI.nrow(o))

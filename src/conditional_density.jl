@@ -12,13 +12,18 @@ Compute the conditional density of variable `name` in CausalTable `ct` that has 
 The conditional density of the variable `var` given the observed data.
 
 """
-function condensity(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
+function condensity(scm::StructuralCausalModel, ct::CausalTable, name::Union{Symbol, String}; dup_sep = "_")
+    name = Symbol(name)
+    ct = summarize(ct) # summarize the CausalTable to propagate any interventions downstream
     
     varpos = findfirst(scm.dgp.names .== name)
-    isnothing(varpos) && throw(ArgumentError("Argument `var` is not contained within the StructuralCausalModel"))
+    isnothing(varpos) && throw(ArgumentError("Variable $(name) is not contained within the StructuralCausalModel"))
 
     prev_names = scm.dgp.names[1:(varpos-1)]
-    scm_result = NamedTupleTools.select(getscm(ct), prev_names)
+    # We need to record how far up the path we need to look
+    # to avoid trying to compute :Y when it might not be present in the CausalTable
+    max_step = findfirst(x -> x == name, scm.dgp.names) - 1
+    scm_result = NamedTupleTools.select(get_path(scm.dgp, ct; dup_sep = dup_sep, max_step = max_step), prev_names)
 
     try
         if scm.dgp.types[varpos] == :distribution
@@ -26,7 +31,7 @@ function condensity(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
         elseif scm.dgp.types[varpos] == :transformation
             return get_conditional_distribution(scm.dgp.funcs[varpos](scm_result), scm, scm_result)
         else
-            throw(ArgumentError("Cannot get conditional density. Variable $name is not a distribution or transformation of distributions in the StructuralCausalModel."))
+            throw(ArgumentError("Cannot get conditional density. Variable $(name) is not a distribution or transformation of distributions in the StructuralCausalModel."))
         end
     catch e
         error(DIST_ERR_MSG(name))
@@ -66,7 +71,7 @@ Compute the conditional mean of variable `name` in CausalTable `ct` that has bee
 An array of conditional means for the specified variable.
 
 """
-conmean(scm::StructuralCausalModel, ct::CausalTable, name::Symbol) = mean.(condensity(scm, ct, name))
+conmean(scm::StructuralCausalModel, ct::CausalTable, name::Union{Symbol, String}) = mean.(condensity(scm, ct, name))
 
 """
     convar(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
@@ -82,7 +87,7 @@ Compute the conditional variance of variable `name` in CausalTable `ct` that has
 An array of conditional variances for the specified variable.
 
 """
-convar(scm::StructuralCausalModel, ct::CausalTable, name::Symbol) = var.(condensity(scm, ct, name))
+convar(scm::StructuralCausalModel, ct::CausalTable, name::Union{Symbol, String}) = var.(condensity(scm, ct, name))
 
 """
     propensity(scm::StructuralCausalModel, ct::CausalTable, name::Symbol)
@@ -98,7 +103,7 @@ Compute the (generalized) propensity score of variable `name` in CausalTable `ct
 An array of conditional probabilities for the specified variable (or densities, if the specified variable is continuous).
 
 """
-propensity(scm::StructuralCausalModel, ct::CausalTable, name::Symbol) = pdf.(condensity(scm, ct, name), Tables.getcolumn(ct, name))
+propensity(scm::StructuralCausalModel, ct::CausalTable, name::Union{Symbol, String}) = pdf.(condensity(scm, ct, name), Tables.getcolumn(ct, Symbol(name)))
 
 
 

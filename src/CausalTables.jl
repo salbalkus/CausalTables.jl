@@ -29,11 +29,12 @@ include("conditional_density.jl")
 include("estimands.jl")
 
 
+
 # Exports
 
 # causal_table.jl
 export CausalTable
-export select, reject
+export select, reject, select_summaries
 export replace, treatment, response, confounders, data
 export treatmentmatrix, responsematrix, treatmentparents, responseparents, parents
 export confounders, confoundernames, confoundersmatrix
@@ -48,10 +49,13 @@ export summarize
 # data_generating_process.jl
 export DataGeneratingProcess
 export @dgp
+export rand
+export get_path
 
 # structural_causal_model.jl
-export StructuralCausalModel, getscm
-export rand, condensity, conmean, convar, propensity
+export StructuralCausalModel
+export condensity, conmean, convar, propensity
+export update_arrays
 
 # estimands.jl
 export intervene, draw_counterfactual 
